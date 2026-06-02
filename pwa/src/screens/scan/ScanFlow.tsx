@@ -70,7 +70,7 @@ function CameraBG() {
           width: '100%',
           height: '100%',
           objectFit: 'cover',
-          opacity: hasCamera ? 0.72 : 0,
+          opacity: hasCamera ? 0.55 : 0,
           transition: 'opacity 0.6s ease',
         }}
       />
@@ -167,8 +167,8 @@ function ActiveScan({
         const zz = z + 0.6;
         return [cx + (x / zz) * f, cy - ((y - 0.75) / zz) * f];
       };
-      const roomA = 0.05 + 0.16 * p;
-      ctx.lineWidth = 1 * dpr;
+      const roomA = 0.18 + 0.32 * p;
+      ctx.lineWidth = 1.5 * dpr;
       ctx.strokeStyle = `rgba(20,184,192,${roomA})`;
       ctx.beginPath();
       for (const gx of [-1, -0.5, 0, 0.5, 1]) {
