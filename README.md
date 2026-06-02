@@ -48,9 +48,21 @@ lean (single codebase, native feel, Azhar's primary stack), with real ARKit LiDA
 platform channel, IFC import, cloud analysis and PDF export. Placeholder only today —
 see [`native/README.md`](native/README.md).
 
+## Documentation
+
+| Doc | Purpose |
+|---|---|
+| [`CLAUDE.md`](CLAUDE.md) | How to work in this repo (AI/dev orientation; reading order; the "keep docs updated" rule) |
+| [`SPEC.md`](SPEC.md) | Product / data / competitive / design **source of truth** + decision log (§15) |
+| [`CLAUDE_CODE_BUILD.md`](CLAUDE_CODE_BUILD.md) | Engineering brief + native-feel acceptance criteria (§4) |
+| [`pwa/ARCHITECTURE.md`](pwa/ARCHITECTURE.md) | ⭐ **Full engineering reference for the PWA codebase** — read this instead of scanning the project |
+| [`design-source/`](design-source/) | Locked design export (visual reference — ported, not reinvented) |
+
 ## Working method
 
 - `SPEC.md` and `CLAUDE_CODE_BUILD.md` are the contract. Deviations / decisions are
   logged in `SPEC.md` §15.
 - The design in `design-source/` is locked — port it faithfully, don't redesign.
 - Commit per logical step; keep diffs small and reviewable.
+- **Keep the docs current**: on every change update `pwa/ARCHITECTURE.md` (+ its date) and
+  `SPEC.md` §15 in the same commit. See `CLAUDE.md`.
