@@ -82,6 +82,7 @@ pwa/
     hooks/
       useCountUp.ts           Timer-driven count-up (donut/ring), respects a `run` gate.
       useReady.ts             App-shell skeleton gate; caches "settled" per key (instant on revisit).
+      useBackLayer.ts         Make the system/browser Back button dismiss a boolean overlay (scan/sheet).
     components/
       Icon.tsx                Icon (line-icon set, IconName union), TypeGlyph, TYPE_GLYPH.
       Brand.tsx               Mark (the real product app icon, icon-192.png), Wordmark.
@@ -93,7 +94,8 @@ pwa/
       InstallPrompt.tsx       Add-to-home-screen banner (Android/desktop native + iOS hint).
       ErrorBoundary.tsx       Branded crash recovery screen.
     navigation/
-      Navigator.tsx           Navigator (push/pop stack, iOS transitions) + Screen + useNav.
+      backstack.ts            System/gesture Back-button ↔ in-memory nav integration (History API).
+      Navigator.tsx           Navigator (push/pop stack, iOS transitions, Back-integrated) + Screen + useNav.
       PushHeader.tsx          PushHeader (back bar) + RoundBtn.
       TabBar.tsx              Bottom tab bar: Projects · Reports · [Scan] · Settings.
       AppActions.tsx          AppActionsCtx + useAppActions (startScan/addProject/projects/goToReports).
@@ -123,6 +125,7 @@ pwa/
 - **`PushHeader` / `RoundBtn`** — translucent back bar (top pad `calc(env(safe-area-inset-top) + 12px)`) + round icon button. Both have `aria-label`s.
 - **`TabBar`** — sticky bottom bar, `paddingBottom: max(24px, env(safe-area-inset-bottom))`; center Scan is the emphasized teal action.
 - **`AppActions`** — `useAppActions()` → `{ startScan(project?), addProject(p), projects, goToReports() }`.
+- **System/browser Back button** (`backstack.ts` + `useBackLayer`) — the app navigates in-memory (no URL routing), so the Android hardware/gesture Back button (and the browser Back button) is wired in via the History API: every open dismissible layer (pushed screen, scan modal, sheet) holds **one history entry**, and Back closes the **top-most** one — pops a screen / closes the scan / closes a sheet — instead of leaving the PWA. At the root, Back falls through (exits), the correct native behavior. `Navigator` integrates this for screen push/pop; `useBackLayer(open, onClose)` does it for boolean overlays (scan modal, `ShareSheet`, `BimUploadSheet`). In-app back controls and the system Back share one code path, so they never double-pop. (iOS standalone PWAs have no Back button/edge-swipe — users rely on the in-app back controls.)
 
 ### Components (`components/`)
 - **`Icon`** — `name: IconName` (union of the keys in `ICONS`), `size/stroke/color/style`. Inline SVG; **add new icons to the `ICONS` map**. `TypeGlyph` + `TYPE_GLYPH` map project type → blueprint glyph.
@@ -232,6 +235,7 @@ Authoritative list lives in **`SPEC.md` §15** (v1.2 / v1.3). Summary of code-af
 - **Static first-paint splash** in `index.html`.
 - **Single rAF** scan canvas + **CSS-spin** processing (perf hardening over the design's `setInterval`).
 - **Deterministic SVG pattern IDs** (no `Math.random`) in `BlueprintTile`/`IsoMassing`.
+- **System Back button integrated** (`backstack.ts`) with the in-memory nav via the History API — Android/browser Back pops screens / closes the scan & sheets instead of leaving the app. Not in the design-source.
 - **In-memory state** — created projects don't persist across reload (no backend; fine for the pitch).
 - ESLint relaxed for the design's idiomatic `cond && fn()` statements; Fast-Refresh co-location hint off.
 
@@ -244,7 +248,9 @@ all 6 projects incl. 100% Leith (empty state) & 39% Stirling (red massing/bars);
 list/detail/New-project→BIM→create→empty-state; Reports list/detail (count-up, massing, issues);
 Settings/Profile/Plans; full scan select→guidance→**live point cloud**→processing→result→
 view-report/share/done; share sheet + PDF/share toasts; filters; cancel-scan; install banner;
-SW active + full precache (offline). Lint + build clean.
+**system Back button** (pops one screen at a time, closes the scan modal, closes sheets without
+popping the screen beneath, coexists with in-app back — no double-pop); SW active + full precache
+(offline). Lint + build clean.
 
 **Not yet device-tested** (needs the physical iPhone + an HTTPS deploy): actual WebAPK/standalone
 launch + real Airplane-mode relaunch on hardware.
@@ -291,6 +297,7 @@ install banner / Share → *Add to Home Screen*. Preload once on Wi-Fi, then it'
 - No GitHub Actions CI yet (repo has no remote). Optional: lint+build on push.
 - Icon-only buttons have `aria-label`s; deeper a11y (focus traps in sheets, full keyboard nav) not audited.
 - Subpath deploys would need a Vite `base` + manifest path changes (currently root-only).
+- System Back across a **tab switch** is approximate: go deep in one tab, switch tabs, then press Back → it may pop the (now-hidden) other tab's screen / cost one extra press. The common cases (Back within a tab, close scan/sheet) are exact.
 - A small monochrome mark for tiny placements is an option if the detailed icon ever feels busy.
 
 ---

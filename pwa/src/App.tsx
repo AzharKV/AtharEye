@@ -9,6 +9,7 @@ import { DATA } from './data';
 import type { Project } from './types';
 import { Mark, Wordmark } from './components/Brand';
 import { InstallPrompt } from './components/InstallPrompt';
+import { useBackLayer } from './hooks/useBackLayer';
 import { Navigator } from './navigation/Navigator';
 import type { NavHandle } from './navigation/Navigator';
 import { TabBar } from './navigation/TabBar';
@@ -97,6 +98,8 @@ function AppRoot() {
 
   const startScan = (project?: Project | null) => setScan({ project: project || null });
   const closeScan = () => setScan(null);
+  // system/browser Back closes the full-screen scan modal
+  useBackLayer(scan !== null, closeScan);
   const addProject = (p: Project) => setProjects((list) => [p, ...list]);
   const viewReport = (p: Project) => {
     setScan(null);

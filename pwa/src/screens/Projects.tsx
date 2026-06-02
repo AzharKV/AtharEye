@@ -7,6 +7,7 @@ import { haptic } from '../lib/haptic';
 import { teamName } from '../lib/format';
 import { useCountUp } from '../hooks/useCountUp';
 import { useReady } from '../hooks/useReady';
+import { useBackLayer } from '../hooks/useBackLayer';
 import { Icon } from '../components/Icon';
 import type { IconName } from '../components/Icon';
 import {
@@ -509,6 +510,7 @@ function BimUploadSheet({
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
+  useBackLayer(open, onClose); // system Back closes the sheet
   if (!open) return null;
   const choose = (f: BimSample) => {
     haptic();

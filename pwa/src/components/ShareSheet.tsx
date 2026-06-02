@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { T } from '../theme';
 import { haptic } from '../lib/haptic';
+import { useBackLayer } from '../hooks/useBackLayer';
 import { Icon } from './Icon';
 import type { IconName } from './Icon';
 
@@ -114,6 +115,7 @@ export function ShareSheet({
   useEffect(() => {
     if (open) setSel('client');
   }, [open]);
+  useBackLayer(open, onClose); // system Back closes the sheet
   if (!open) return null;
   const typeLabel = REPORT_TYPES.find((t) => t.id === sel)!.label;
   const pick = (tg: ShareTarget) => {

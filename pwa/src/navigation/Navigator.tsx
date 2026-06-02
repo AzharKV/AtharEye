@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type { CSSProperties, MutableRefObject, ReactNode } from 'react';
 import { T } from '../theme';
 import { haptic } from '../lib/haptic';
+import { openBackLayer } from './backstack';
 
 export interface NavApi {
   push: (el: ReactNode) => void;
@@ -45,20 +46,12 @@ export function Navigator({
   const [stack, setStack] = useState<StackItem[]>(() => [{ id: uid(), el: root }]);
   const [anim, setAnim] = useState<Anim>(null);
   const lock = useRef(false);
+  // one history-entry release per pushed screen (system Back integration)
+  const releases = useRef<Array<() => void>>([]);
 
-  const push = useCallback((el: ReactNode) => {
-    if (lock.current) return;
-    lock.current = true;
-    haptic();
-    setStack((s) => [...s, { id: uid(), el }]);
-    setAnim({ type: 'push' });
-    setTimeout(() => {
-      setAnim(null);
-      lock.current = false;
-    }, 380);
-  }, []);
-
-  const pop = useCallback(() => {
+  // Visual pop only (no history side-effects). Self-guards on the animation lock;
+  // always driven by the real stack, so in-app Back can never get stuck.
+  const animatePop = useCallback(() => {
     setStack((s) => {
       if (s.length <= 1) return s;
       if (lock.current) return s;
@@ -74,7 +67,39 @@ export function Navigator({
     });
   }, []);
 
-  const popToRoot = useCallback(() => setStack((s) => s.slice(0, 1)), []);
+  const push = useCallback(
+    (el: ReactNode) => {
+      if (lock.current) return;
+      lock.current = true;
+      haptic();
+      setStack((s) => [...s, { id: uid(), el }]);
+      setAnim({ type: 'push' });
+      // system/browser Back pops this screen (its history entry is already gone)
+      const release = openBackLayer(() => {
+        releases.current.pop();
+        animatePop();
+      });
+      releases.current.push(release);
+      setTimeout(() => {
+        setAnim(null);
+        lock.current = false;
+      }, 380);
+    },
+    [animatePop],
+  );
+
+  const pop = useCallback(() => {
+    if (lock.current || releases.current.length === 0) return;
+    // in-app Back: visually pop AND consume the matching history entry
+    const release = releases.current.pop();
+    animatePop();
+    release?.();
+  }, [animatePop]);
+
+  const popToRoot = useCallback(() => {
+    while (releases.current.length) releases.current.pop()?.();
+    setStack((s) => s.slice(0, 1));
+  }, []);
 
   // Expose imperative handle (kept fresh each render so `depth` is current).
   useEffect(() => {

@@ -244,6 +244,15 @@ athar-eye/
 ---
 
 ## 15. Change log
+- **v1.4 (2 Jun 2026) — system Back button (native-app feel).** The app navigates with an
+  in-memory stack (no URL routing), so the Android hardware/gesture Back button (and the browser
+  Back button) would have left/closed the PWA instead of going back inside it. Added a History-API
+  back-stack (`pwa/src/navigation/backstack.ts` + `useBackLayer`): every open layer (pushed screen,
+  scan modal, sheet) owns one history entry; Back closes the top-most layer (pops a screen / closes
+  the scan / closes a sheet), and at the root falls through (exits) — correct native behavior.
+  In-app back controls and the system Back share one path (no double-pop). iOS standalone has no
+  Back button, so users there use the in-app back controls. Verified in-browser; the real Android
+  hardware-Back behavior needs a device + HTTPS deploy to fully confirm.
 - **v1.3 (2 Jun 2026) — PWA install + browser-experience fixes (owner feedback).**
   - **Removed the desktop device-frame "simulator" (and its hardcoded status bar).** The app is now a pure responsive web app: it fills the screen on phones and floats as a clean centered phone-width card (rounded, subtle border/shadow, **no fake status bar / bezel / home indicator**) on desktop & large tablets. Fully honours §6.1 and supersedes the v1.2 "device-frame standalone-detection" note (`IOSDevice` deleted).
   - **Fixed the browser top gap.** Header / large-title top padding changed from `max(Npx, env(safe-area-inset-top))` to `calc(env(safe-area-inset-top) + base)`. In a browser (inset = 0) there's only a small intentional gap; installed/standalone still clears the status bar / Dynamic Island.
