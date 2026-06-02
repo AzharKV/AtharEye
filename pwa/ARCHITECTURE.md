@@ -10,8 +10,10 @@
 > - [`../design-source/`](../design-source/) — the locked Claude Design export (visual reference; **ported, not reinvented**).
 > - [`../CLAUDE.md`](../CLAUDE.md) — how an AI/dev session should work in this repo.
 
-**Last updated:** 2026-06-02 · **Status:** Phase A complete (production PWA, verified) + localStorage
-persistence, system Back button, install prompt, and a room-wireframe scan visual. ~6k LOC in `src/`.
+**Last updated:** 2026-06-02 · **Status:** Phase A complete (production PWA, verified). Includes:
+responsive web (no device-frame/fake status bar) · localStorage persistence (create/delete/scan) ·
+working search · system Back button · install prompt · SW auto-update · live-camera scan + room
+wireframe · OS-matched splash. ~6k LOC in `src/`.
 
 ---
 
@@ -71,7 +73,7 @@ pwa/
   public/                     icon-180/192/512.png, icon-maskable-512.png, apple-touch-icon,
                               favicon — copied to dist root, precached.
   src/
-    main.tsx                  createRoot + StrictMode + ErrorBoundary; removes #initial-splash.
+    main.tsx                  createRoot + StrictMode + ErrorBoundary; registerSW (auto-update); removes #initial-splash.
     App.tsx                   Root: App (responsive container), Splash, ScanFallback, AppRoot
                               (tab host + per-tab Navigators + scan modal + InstallPrompt).
     theme.ts                  Design tokens T, STATUS, SEV; ProjectStatus/Severity types.
@@ -101,7 +103,7 @@ pwa/
       Navigator.tsx           Navigator (push/pop stack, iOS transitions, Back-integrated) + Screen + useNav.
       PushHeader.tsx          PushHeader (back bar) + RoundBtn.
       TabBar.tsx              Bottom tab bar: Projects · Reports · [Scan] · Settings.
-      AppActions.tsx          AppActionsCtx + useAppActions (startScan/addProject/projects/goToReports).
+      AppActions.tsx          AppActionsCtx + useAppActions (startScan/addProject/deleteProject/onScanComplete/projects/goToReports).
     screens/
       Projects.tsx            ProjectsList, ProjectDetail, NewProject (+ local BimUploadSheet, Field).
       Reports.tsx             ReportsList, ReportDetail (the hero screen).
@@ -115,10 +117,10 @@ pwa/
 ## 4. Module reference (exports & behavior)
 
 ### Entry & shell
-- **`main.tsx`** → mounts `<App/>` inside `<StrictMode><ErrorBoundary>`; on first frame fades out and removes `#initial-splash` (the static HTML splash) so there's never a blank flash.
+- **`main.tsx`** → `registerSW({ immediate: true })` (auto-update, see §7); mounts `<App/>` inside `<StrictMode><ErrorBoundary>`; on first frame fades out and removes `#initial-splash` (the static HTML splash) so there's never a blank flash.
 - **`App.tsx`**
   - `App` — responsive container. `floating = innerWidth > 480 || innerHeight > 1024`. **Phone → fullscreen** (`width/height: 100%`, no chrome). **Desktop/tablet → centered 440×924 card** (`border-radius: 30`, hairline border, shadow) on a dark radial bg. **No device bezel, no fake status bar** (the OS/browser draws its own).
-  - `Splash` — 1.7s; inner content `splashRise`, then `splashOut` fade at 1.4s. Renders `Mark` + `Wordmark` + tagline.
+  - `Splash` — ~1.7s (fade-out at 1.4s). Solid `#0C0F12` bg with the `Mark` (112px) **centered** and the `Wordmark` + tagline absolutely positioned below — matches the OS native splash so the launch hand-off has no icon jump (see §9).
   - `ScanFallback` — branded `Suspense` fallback (pulsing `Mark`) while the scan chunk loads.
   - `AppRoot` — tab host. State: `tab`, `scan` (`{project}|null`), `projects`. Three persistent `Navigator`s (Projects/Reports/Settings) shown/hidden via `display`. Renders `TabBar` + `InstallPrompt` when not scanning; mounts lazy `ScanFlow` when `scan` set. `viewReport(p)` closes scan, switches to Reports, pushes `ReportDetail`.
 
@@ -251,7 +253,7 @@ small base paddings keep it clean (no top gap).
 
 ## 9. Key decisions & deviations
 
-Authoritative list lives in **`SPEC.md` §15** (v1.2 / v1.3). Summary of code-affecting ones:
+Authoritative list lives in **`SPEC.md` §15** (v1.2 – v1.9). Summary of code-affecting ones:
 - In-app brand `Mark` = the **real product icon** (not the design-source's separate eye glyph) — owner direction.
 - **No desktop device-frame/fake status bar** — responsive web (fullscreen phone / centered card desktop). `IOSDevice` deleted.
 - **Skeleton loaders** added (`useReady`) — not in the static design but required by §4.3.
@@ -270,13 +272,14 @@ Authoritative list lives in **`SPEC.md` §15** (v1.2 / v1.3). Summary of code-af
 
 Verified on small (375), large (428) and desktop (centered card) — dev + production preview:
 all 6 projects incl. 100% Leith (empty state) & 39% Stirling (red massing/bars); Projects
-list/detail/New-project→BIM→create→empty-state→**persists across reload** (localStorage);
-Reports list/detail (count-up, massing, issues);
-Settings/Profile/Plans; full scan select→guidance→**live point cloud**→processing→result→
+list/detail/New-project→BIM→create→empty-state→**persists across reload**, and **delete**
+(confirm sheet → removed → persists); **search** on Projects & Reports (filters by
+name/location/type/client; Back closes it); Reports list/detail (count-up, massing, issues);
+Settings/Profile/Plans; full scan select→guidance→**live point cloud + camera**→processing→result→
 view-report/share/done; share sheet + PDF/share toasts; filters; cancel-scan; install banner;
 **system Back button** (pops one screen at a time, closes the scan modal, closes sheets without
 popping the screen beneath, coexists with in-app back — no double-pop); SW active + full precache
-(offline). Lint + build clean.
+(offline) + auto-update on refresh; OS-matched splash (icon centered, no jump). Lint + build clean.
 
 **Not yet device-tested** (needs the physical iPhone + an HTTPS deploy): actual WebAPK/standalone
 launch + real Airplane-mode relaunch on hardware.
@@ -296,6 +299,11 @@ launch + real Airplane-mode relaunch on hardware.
 | Edit the manifest | `vite.config.ts` → `VitePWA({ manifest })`; rebuild; re-verify `dist/manifest.webmanifest` |
 | Tune install prompt | `src/components/InstallPrompt.tsx` (timing, copy, dismiss window) |
 | Adjust safe-area gap | header `padding` / `Screen` `padTop` (`calc(env(safe-area-inset-top) + N)`) |
+| Change search fields | the `searchList` filter in `ProjectsList`/`ReportsList` (currently name/location/type/client) |
+| Persist a new data field | it's already in the `Project` shape → `lib/store.ts` saves the whole array; add a mutation action in `AppRoot` + `AppActions` |
+| Reset persisted data | `localStorage.removeItem('athar-eye:data')`, or bump `SEED_VERSION` in `lib/store.ts` |
+| Swap camera ↔ generated bg | `CameraBG` in `scan/ScanFlow.tsx` (remove `getUserMedia` to keep only the gradient) |
+| Make updates a prompt not silent | `registerSW({ onNeedRefresh })` in `main.tsx` + a "reload" toast |
 
 **Regenerate icons** (macOS `sips`):
 ```bash
@@ -322,7 +330,7 @@ install banner / Share → *Add to Home Screen*. Preload once on Wi-Fi, then it'
 - Persistence is **per-device** localStorage (no cross-device sync, no real auth). A real backend (Firebase/etc.) is the future path — `lib/store.ts` is the seam.
 - Bumping `SEED_VERSION` to ship updated demo data **discards** any runtime additions on existing installs.
 - Scan uses the **live rear camera** (`getUserMedia`) behind the point cloud — needs HTTPS + a one-time camera permission; gracefully falls back to a gradient if denied/unavailable.
-- No GitHub Actions CI yet (repo has no remote). Optional: lint+build on push.
+- No GitHub Actions CI yet (the repo has a GitHub remote + PR flow, but no workflow). Optional: lint+build on push.
 - Icon-only buttons have `aria-label`s; deeper a11y (focus traps in sheets, full keyboard nav) not audited.
 - Subpath deploys would need a Vite `base` + manifest path changes (currently root-only).
 - System Back across a **tab switch** is approximate: go deep in one tab, switch tabs, then press Back → it may pop the (now-hidden) other tab's screen / cost one extra press. The common cases (Back within a tab, close scan/sheet) are exact.

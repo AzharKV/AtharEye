@@ -30,6 +30,13 @@ first load, installs to the home screen and runs fullscreen with no browser chro
 Functionally simulated (the scan, BIM upload, coverage maths are faked) but visually
 and interactively a shipping product.
 
+**Includes:** Projects / Reports / Settings + the full scan→processing→report→share flow;
+live search; create / delete / persist projects (localStorage); recorded scans; a live-camera
+scan background with point-cloud + room wireframe; system Back-button navigation; an install
+prompt; service-worker auto-update + offline; and a responsive shell (fullscreen on phones,
+centered card on desktop — no fake device chrome). Full detail in
+[`pwa/ARCHITECTURE.md`](pwa/ARCHITECTURE.md).
+
 ```bash
 cd pwa
 npm install

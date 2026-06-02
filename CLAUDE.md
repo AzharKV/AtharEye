@@ -61,5 +61,11 @@ A change where the code moved but the docs didn't is **incomplete**. These docs 
 
 ## Current status
 Phase A PWA is **complete and verified** (all §4 criteria; full test matrix in
-`pwa/ARCHITECTURE.md` §10). Not yet hardware-tested: actual WebAPK standalone install + real
-Airplane-mode relaunch on a physical iPhone against an HTTPS deploy.
+`pwa/ARCHITECTURE.md` §10). Beyond the original brief it now also has: a responsive web shell
+(no device-frame/fake status bar), **localStorage persistence** (create/delete/scan survive
+reload), working **search**, the **system Back button** wired to navigation, an **install prompt**,
+**SW auto-update** on refresh, a **live-camera** scan background (with gradient fallback), and an
+**OS-matched splash**. See `SPEC.md` §15 (v1.2–v1.9) for the decision log.
+
+Not yet hardware-tested (needs a physical phone + an HTTPS deploy): the actual WebAPK/standalone
+install, real Airplane-mode relaunch, and the live-camera permission flow.
