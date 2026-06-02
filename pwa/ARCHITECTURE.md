@@ -262,7 +262,7 @@ Authoritative list lives in **`SPEC.md` §15** (v1.2 – v1.9). Summary of code-
 - **Deterministic SVG pattern IDs** (no `Math.random`) in `BlueprintTile`/`IsoMassing`.
 - **System Back button integrated** (`backstack.ts`) with the in-memory nav via the History API — Android/browser Back pops screens / closes the scan & sheets instead of leaving the app. Not in the design-source.
 - **Persisted to localStorage** (`lib/store.ts`) seeded from `data.ts` — created projects + recorded scans survive reload; no backend. (Firebase/etc. is the future multi-device path.)
-- **Scan visual:** the **live rear camera** (`CameraBG` → `getUserMedia({ facingMode: 'environment' })`, dimmed + vignette) behind a faint perspective **room wireframe** + the point cloud — reads as a real LiDAR scan. Falls back to a dark gradient if the camera is denied/unavailable (needs HTTPS + a one-time permission prompt).
+- **Scan visual:** the **live rear camera** (`CameraBG` → `getUserMedia({ facingMode: 'environment' })`, 55% opacity + vignette) behind a perspective **room wireframe** (alpha `0.18 + 0.32 × p`, 1.5 px lines) + the point cloud — reads as a real LiDAR scan. Falls back to a dark gradient if the camera is denied/unavailable (needs HTTPS + a one-time permission prompt).
 - **Splash matches the OS splash:** the static HTML splash, the React `<Splash>`, and the manifest `background_color` all use solid `#0C0F12` with the icon centered, so the Android/iOS native launch splash hands off to the web splash with no icon jump/shrink.
 - ESLint relaxed for the design's idiomatic `cond && fn()` statements; Fast-Refresh co-location hint off.
 
