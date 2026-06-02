@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- maximum-scale=1 + user-scalable=no kills the 300ms tap delay & pinch-zoom; viewport-fit=cover enables safe-area insets -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no"
+    />
+    <title>Athar Eye</title>
+    <meta
+      name="description"
+      content="Turn an iPhone LiDAR scan + a BIM model into an instant construction progress report."
+    />
+    <meta name="theme-color" content="#0C0F12" />
+    <!-- iOS standalone PWA: fullscreen, no Safari chrome, translucent status bar over our navy -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Athar Eye" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0c0f12;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      #root {
+        height: 100vh;
+        height: 100dvh;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        font-family: -apple-system, system-ui, 'SF Pro', sans-serif;
+        /* no 300ms tap delay, no double-tap zoom (§4.4) */
+        touch-action: manipulation;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      /* hidden scrollbars + momentum scrolling (§4.5) */
+      .no-scrollbar::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none;
+      }
+      .no-scrollbar {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      ::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+      }
+
+      /* nav stack transitions (iOS push/pop) — transform-only, GPU-composited */
+      @keyframes navEnter {
+        from {
+          transform: translateX(100%);
+        }
+        to {
+          transform: translateX(0);
+        }
+      }
+      @keyframes navExit {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(100%);
+        }
+      }
+      @keyframes navToUnder {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-24%);
+        }
+      }
+      @keyframes navFromUnder {
+        from {
+          transform: translateX(-24%);
+        }
+        to {
+          transform: translateX(0);
+        }
+      }
+
+      /* sheets / scrim / toast / modal */
+      @keyframes sheetUp {
+        from {
+          transform: translateY(100%);
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+      @keyframes sheetDown {
+        from {
+          transform: translateY(0);
+        }
+        to {
+          transform: translateY(100%);
+        }
+      }
+      @keyframes scrimIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes scrimOut {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+      @keyframes toastUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes modalUp {
+        from {
+          transform: translateY(100%);
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+
+      /* misc */
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes splashRise {
+        from {
+          opacity: 0;
+          transform: translateY(14px) scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @keyframes splashOut {
+        to {
+          opacity: 0;
+          visibility: hidden;
+        }
+      }
+      /* skeleton sheen — transform-only so it stays GPU-composited (§4.2) */
+      @keyframes shimmerX {
+        from {
+          transform: translateX(-100%);
+        }
+        to {
+          transform: translateX(100%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+        }
+      }
+
+      /* Static first-paint splash — visible before React hydrates so there is
+         never a blank flash (§4.3). Removed by main.tsx once React mounts. */
+      #initial-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: radial-gradient(130% 100% at 50% 35%, #14222b, #0a0e12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.4s ease;
+      }
+      #initial-splash .stack {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        animation: splashRise 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+      }
+      #initial-splash .mark {
+        width: 76px;
+        height: 76px;
+        border-radius: 20px;
+        background: radial-gradient(120% 120% at 30% 25%, #18242b, #0c151b);
+        border: 1px solid rgba(20, 184, 192, 0.33);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #initial-splash .word {
+        font-family: -apple-system, system-ui, 'SF Pro', sans-serif;
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        color: #f4f6f8;
+      }
+      #initial-splash .word span {
+        color: #14b8c0;
+      }
+      #initial-splash .tag {
+        font-family: -apple-system, system-ui, 'SF Pro', sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.6px;
+        color: #8a949e;
+        margin-top: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- instant brand splash; identical to the React <Splash>, handed off seamlessly -->
+    <div id="initial-splash">
+      <div class="stack">
+        <div class="mark">
+          <svg width="47" height="47" viewBox="0 0 24 24" fill="none">
+            <circle
+              cx="12"
+              cy="12"
+              r="9.5"
+              stroke="#14B8C0"
+              stroke-width="1.6"
+              stroke-dasharray="3 3"
+              opacity="0.5"
+            />
+            <circle cx="12" cy="12" r="5.5" stroke="#14B8C0" stroke-width="1.8" />
+            <circle cx="12" cy="12" r="2" fill="#14B8C0" />
+          </svg>
+        </div>
+        <div class="word">Athar<span>Eye</span></div>
+        <div class="tag">See progress · Prove progress</div>
+      </div>
+    </div>
+    <noscript
+      ><div style="color: #f4f6f8; font-family: -apple-system, system-ui; padding: 24px">
+        Athar Eye needs JavaScript enabled to run.
+      </div></noscript
+    >
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
