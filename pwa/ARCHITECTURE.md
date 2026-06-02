@@ -10,7 +10,8 @@
 > - [`../design-source/`](../design-source/) — the locked Claude Design export (visual reference; **ported, not reinvented**).
 > - [`../CLAUDE.md`](../CLAUDE.md) — how an AI/dev session should work in this repo.
 
-**Last updated:** 2026-06-02 · **Status:** Phase A complete (production PWA, verified). ~5.8k LOC in `src/`.
+**Last updated:** 2026-06-02 · **Status:** Phase A complete (production PWA, verified) + localStorage
+persistence, system Back button, install prompt, and a room-wireframe scan visual. ~6k LOC in `src/`.
 
 ---
 
@@ -79,6 +80,7 @@ pwa/
     lib/
       haptic.ts               haptic() — navigator.vibrate(8), best-effort.
       format.ts               roundM(area,pct), teamName(initials).
+      store.ts                localStorage persistence (load/save projects), seeded from data.ts.
     hooks/
       useCountUp.ts           Timer-driven count-up (donut/ring), respects a `run` gate.
       useReady.ts             App-shell skeleton gate; caches "settled" per key (instant on revisit).
@@ -124,7 +126,7 @@ pwa/
 - **`Screen({ padTop, padBottom, scrollRef, children })`** — scroll wrapper (`overflow-y:auto`, momentum, `overscroll-behavior:contain`, hidden bars). **`padTop` default = `calc(env(safe-area-inset-top) + 14px)`** (small gap in browser, clears the status bar/island when standalone). Detail screens pass explicit numeric `padTop` (0/92).
 - **`PushHeader` / `RoundBtn`** — translucent back bar (top pad `calc(env(safe-area-inset-top) + 12px)`) + round icon button. Both have `aria-label`s.
 - **`TabBar`** — sticky bottom bar, `paddingBottom: max(24px, env(safe-area-inset-bottom))`; center Scan is the emphasized teal action.
-- **`AppActions`** — `useAppActions()` → `{ startScan(project?), addProject(p), projects, goToReports() }`.
+- **`AppActions`** — `useAppActions()` → `{ startScan(project?), addProject(p), onScanComplete(project), projects, goToReports() }`. `projects` is the **live, persisted** working set (every screen reads it from here, not from `data.ts`).
 - **System/browser Back button** (`backstack.ts` + `useBackLayer`) — the app navigates in-memory (no URL routing), so the Android hardware/gesture Back button (and the browser Back button) is wired in via the History API: every open dismissible layer (pushed screen, scan modal, sheet) holds **one history entry**, and Back closes the **top-most** one — pops a screen / closes the scan / closes a sheet — instead of leaving the PWA. At the root, Back falls through (exits), the correct native behavior. `Navigator` integrates this for screen push/pop; `useBackLayer(open, onClose)` does it for boolean overlays (scan modal, `ShareSheet`, `BimUploadSheet`). In-app back controls and the system Back share one code path, so they never double-pop. (iOS standalone PWAs have no Back button/edge-swipe — users rely on the in-app back controls.)
 
 ### Components (`components/`)
@@ -146,7 +148,7 @@ pwa/
 - **`Projects.tsx`** — `ProjectsList` (portfolio summary ring + counts, filter chips, skeleton list, cards → `ProjectDetail`), `ProjectDetail` (scroll-aware floating header, parallax `BannerBlueprint`, progress `Ring` card, BIM model card + `BimUploadSheet`, coverage-by-area `Bar`s, team `Avatar`s, CTAs → `actions.startScan` / push `ReportDetail`), `NewProject` (form + `Field`s + BIM attach → builds a `Project` and `actions.addProject`). Local: `BimUploadSheet` (faked upload→align), `Field`, `BIM_SAMPLES`, `PTYPES`.
 - **`Reports.tsx`** — `ReportsList` (filter chips, skeleton, cards → `ReportDetail`), `ReportDetail` (branded sticky header, **count-up `Donut`**, Covered/Missing m², `IsoMassing`, meta table, coverage-by-room, open-issues with severity badges, `ShareSheet` + PDF `Toast`).
 - **`Settings.tsx`** — `Settings` (profile row → `Profile`, subscription card + usage `Bar` → `Plans`, scanning/app `Row`s + `Toggle`s, footer lockup), `Profile` (avatar, stats, details), `Plans` (tier cards, add-ons, switch `Toast`). Local: `Toggle`, `Row`.
-- **`scan/ScanFlow.tsx`** (lazy chunk) — controller stepping `select → home → active → processing → result`. `ActiveScan` draws the point cloud on a **single `requestAnimationFrame` loop** (DPR capped at 2, cancelled on unmount, time-based progress over `DUR=7000`). `Processing` spinner uses **CSS `spin`** (no per-frame React). `ScanResult` count-up donut + stats; CTAs → `onViewReport` / share / done. Complete projects are excluded from `ScanSelect`.
+- **`scan/ScanFlow.tsx`** (lazy chunk) — controller stepping `select → home → active → processing → result`. `ActiveScan` draws a faint **perspective room wireframe** (floor grid + walls) + the point cloud on a **single `requestAnimationFrame` loop** (DPR capped at 2, cancelled on unmount, time-based progress over `DUR=7000`); bottom controls (stats · progress · stop) are a single safe-area-aware **column** (no overlap). `Processing` spinner uses **CSS `spin`** (no per-frame React); on completion it calls `onScanComplete(project)` (persists the scan). `ScanResult` count-up donut + stats; CTAs → `onViewReport` / share / done. Complete projects are excluded from `ScanSelect`.
 
 ---
 
@@ -166,6 +168,15 @@ SubPlan { id, name, price, period, tagline, current?, features[] }
 **6 projects** (use for tests): `p1` Byres Road 74% Needs Review · `p2` Morningside 58% · `p3` Union St 91% · `p4` Dundee 82% Needs Review · `p5` Stirling **39%** (red massing) · `p6` Leith **100% Complete** (empty issues). User: James Mackay (Site Supervisor). Sub: Small Business £99/mo, 3/5 projects. `scanStats`: 1.84 M points, ±21 mm.
 
 > `PLANS`/`planFor(id)` gives the iso-massing grid (only `p1`, `p5` are bespoke; others fall back). `BIM`/`bimFor(id)` gives each project's linked model.
+
+**Persistence (`lib/store.ts`).** `data.ts` is the **seed** (typed, editable single source). On
+first run the app seeds from it, then persists the live `projects` to `localStorage`
+(key `athar-eye:data`, with a `SEED_VERSION`) — so **created projects and recorded scans survive a
+reload / relaunch**. Every screen reads the live set via `useAppActions().projects` (never `data.ts`
+directly), so the data is centralized and manipulable. A completed scan calls
+`onScanComplete(project)` → bumps `scans` + `last` (and gives a fresh 0% project a starter
+coverage). **Reset:** bump `SEED_VERSION`, or run `localStorage.removeItem('athar-eye:data')`. This
+is the seam where a backend (e.g. Firebase, for multi-device sync) would later slot in.
 
 ---
 
@@ -236,7 +247,8 @@ Authoritative list lives in **`SPEC.md` §15** (v1.2 / v1.3). Summary of code-af
 - **Single rAF** scan canvas + **CSS-spin** processing (perf hardening over the design's `setInterval`).
 - **Deterministic SVG pattern IDs** (no `Math.random`) in `BlueprintTile`/`IsoMassing`.
 - **System Back button integrated** (`backstack.ts`) with the in-memory nav via the History API — Android/browser Back pops screens / closes the scan & sheets instead of leaving the app. Not in the design-source.
-- **In-memory state** — created projects don't persist across reload (no backend; fine for the pitch).
+- **Persisted to localStorage** (`lib/store.ts`) seeded from `data.ts` — created projects + recorded scans survive reload; no backend. (Firebase/etc. is the future multi-device path.)
+- **Scan visual:** a faint perspective **room wireframe** (floor grid + walls) renders under the point cloud so the scan reads as reconstructing a room (generated, not the device camera — no permission prompt).
 - ESLint relaxed for the design's idiomatic `cond && fn()` statements; Fast-Refresh co-location hint off.
 
 ---
@@ -245,7 +257,8 @@ Authoritative list lives in **`SPEC.md` §15** (v1.2 / v1.3). Summary of code-af
 
 Verified on small (375), large (428) and desktop (centered card) — dev + production preview:
 all 6 projects incl. 100% Leith (empty state) & 39% Stirling (red massing/bars); Projects
-list/detail/New-project→BIM→create→empty-state; Reports list/detail (count-up, massing, issues);
+list/detail/New-project→BIM→create→empty-state→**persists across reload** (localStorage);
+Reports list/detail (count-up, massing, issues);
 Settings/Profile/Plans; full scan select→guidance→**live point cloud**→processing→result→
 view-report/share/done; share sheet + PDF/share toasts; filters; cancel-scan; install banner;
 **system Back button** (pops one screen at a time, closes the scan modal, closes sheets without
@@ -293,7 +306,9 @@ install banner / Share → *Add to Home Screen*. Preload once on Wi-Fi, then it'
 
 ## 13. Known limitations / backlog
 
-- No backend → state is in-memory (new projects vanish on hard reload).
+- Persistence is **per-device** localStorage (no cross-device sync, no real auth). A real backend (Firebase/etc.) is the future path — `lib/store.ts` is the seam.
+- Bumping `SEED_VERSION` to ship updated demo data **discards** any runtime additions on existing installs.
+- Scan visual is a generated room wireframe + point cloud, **not** the live device camera (deliberate — no permission prompt; a real-camera `getUserMedia` background is an optional future toggle).
 - No GitHub Actions CI yet (repo has no remote). Optional: lint+build on push.
 - Icon-only buttons have `aria-label`s; deeper a11y (focus traps in sheets, full keyboard nav) not audited.
 - Subpath deploys would need a Vite `base` + manifest path changes (currently root-only).

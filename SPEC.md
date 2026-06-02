@@ -239,11 +239,25 @@ athar-eye/
 - [ ] Whether vendor needs the app on their own device (→ keep PWA link handy regardless).
 - [ ] Collect written letters of interest from the ~20 contacted companies.
 - [ ] "How long to complete?" timeline doc for the vendor (separate deliverable — not yet written).
-- [ ] Decide if the scan view needs a real camera-style background vs the generated point cloud.
+- [x] **Scan background: DECIDED (v1.5)** — generated perspective room wireframe + point cloud (no permission prompt, controlled visuals). A real-camera `getUserMedia` background remains an optional future toggle if a live-camera "wow" is wanted for the demo.
 
 ---
 
 ## 15. Change log
+- **v1.5 (2 Jun 2026) — persistence, scan recording, scan visual + layout (owner feedback).**
+  - **Local persistence (supersedes the v1.2 "in-memory" note):** `data.ts` is now the *seed*; the
+    app persists the live projects to `localStorage` (`pwa/src/lib/store.ts`, key `athar-eye:data`,
+    `SEED_VERSION`) so **created projects and recorded scans survive a reload / relaunch**. Every
+    screen reads the live set via `useAppActions().projects` — data is centralized & manipulable.
+    Offline-friendly, no backend; Firebase/etc. is the future multi-device path (this is the seam).
+  - **Scan recording:** completing a scan calls `onScanComplete(project)` → bumps the project's
+    `scans` + `last`; a fresh (0%) project gets a plausible starter coverage so the scan produces a
+    real-looking report.
+  - **Scan visual:** added a faint perspective **room wireframe** (floor grid + walls) under the
+    point cloud so the scan reads as reconstructing a room. (Generated, not the live device camera —
+    avoids a permission prompt; a real-camera background is an optional future toggle, ref §14.)
+  - **Scan layout fix:** the AR brackets + live stats + progress bar no longer overlap — bottom
+    controls are now one safe-area-aware stacked column.
 - **v1.4 (2 Jun 2026) — system Back button (native-app feel).** The app navigates with an
   in-memory stack (no URL routing), so the Android hardware/gesture Back button (and the browser
   Back button) would have left/closed the PWA instead of going back inside it. Added a History-API
