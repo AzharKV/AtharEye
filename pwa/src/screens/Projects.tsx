@@ -168,7 +168,7 @@ export function ProjectDetail({ project: p }: { project: Project }) {
           display: 'flex',
           alignItems: 'center',
           gap: 8,
-          padding: 'max(50px, env(safe-area-inset-top)) 14px 10px',
+          padding: 'calc(env(safe-area-inset-top) + 12px) 14px 10px',
           background: scrolled ? 'rgba(12,15,18,0.8)' : 'transparent',
           backdropFilter: scrolled ? 'blur(18px) saturate(160%)' : 'none',
           WebkitBackdropFilter: scrolled ? 'blur(18px)' : 'none',

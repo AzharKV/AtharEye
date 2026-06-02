@@ -8,7 +8,7 @@ import { T } from './theme';
 import { DATA } from './data';
 import type { Project } from './types';
 import { Mark, Wordmark } from './components/Brand';
-import { IOSDevice } from './components/IOSDevice';
+import { InstallPrompt } from './components/InstallPrompt';
 import { Navigator } from './navigation/Navigator';
 import type { NavHandle } from './navigation/Navigator';
 import { TabBar } from './navigation/TabBar';
@@ -134,6 +134,7 @@ function AppRoot() {
         {tabPane('Reports', repNav, <ReportsList />)}
         {tabPane('Settings', setNav, <Settings />)}
         {!scan && <TabBar active={tab} onTab={setTab} onScan={() => startScan(null)} />}
+        {!scan && <InstallPrompt />}
         {scan && (
           <Suspense fallback={<ScanFallback />}>
             <ScanFlow
@@ -149,59 +150,48 @@ function AppRoot() {
   );
 }
 
-const isStandalone = (): boolean =>
-  window.matchMedia?.('(display-mode: standalone)').matches ||
-  (navigator as unknown as { standalone?: boolean }).standalone === true;
-
 export function App() {
   const [splash, setSplash] = useState(true);
-  const [framed, setFramed] = useState(false);
-  const [scale, setScale] = useState(1);
+  // Pure web, responsive: on a phone the app fills the screen; on desktop /
+  // large tablets it floats as a centered phone-width card. No fake device
+  // bezel, no hardcoded status bar (SPEC §6.1) — the OS / browser draws its own.
+  const [floating, setFloating] = useState(false);
 
   useEffect(() => {
-    const check = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      // Show the device-frame chrome only on a roomy desktop window AND only
-      // when NOT running as an installed standalone app — so a real iPhone (in
-      // Safari or installed) always renders fullscreen with the OS status bar.
-      const fits = w >= 430 && h >= 470 && !isStandalone();
-      setFramed(fits);
-      if (fits) setScale(Math.min((w - 40) / 402, (h - 28) / 874, 1.1));
-    };
+    const check = () => setFloating(window.innerWidth > 480 || window.innerHeight > 1024);
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  if (framed) {
-    return (
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: floating ? 'radial-gradient(120% 120% at 50% 0%, #12161B, #06080A)' : T.bg,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+      }}
+    >
       <div
         style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'radial-gradient(120% 120% at 50% 0%, #1a2027, #0a0d10)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          position: 'relative',
+          overflow: 'hidden',
+          background: T.bg,
+          color: T.text,
+          width: floating ? 'min(100%, 440px)' : '100%',
+          height: floating ? 'min(100%, 924px)' : '100%',
+          borderRadius: floating ? 30 : 0,
+          border: floating ? '1px solid rgba(255,255,255,0.08)' : 'none',
+          boxShadow: floating ? '0 40px 90px rgba(0,0,0,0.55)' : 'none',
         }}
       >
-        <div style={{ transform: `scale(${scale})`, transformOrigin: 'center' }}>
-          <IOSDevice dark>
-            <div style={{ height: '100%', position: 'relative' }}>
-              <AppRoot />
-              {splash && <Splash onDone={() => setSplash(false)} />}
-            </div>
-          </IOSDevice>
-        </div>
+        <AppRoot />
+        {splash && <Splash onDone={() => setSplash(false)} />}
       </div>
-    );
-  }
-  // fullscreen PWA mode (real phone / installed)
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: T.bg }}>
-      <AppRoot />
-      {splash && <Splash onDone={() => setSplash(false)} />}
     </div>
   );
 }

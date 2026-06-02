@@ -148,9 +148,11 @@ export function Navigator({
 // ── Screen scroll wrapper
 export function Screen({
   children,
-  // list/large-title screens get the status-bar inset; detail screens pass an
-  // explicit numeric padTop (0/92…) and are unaffected (§4.6 safe areas).
-  padTop = 'max(54px, env(safe-area-inset-top))',
+  // list/large-title screens: small base gap + the status-bar inset. In a
+  // browser the inset is 0 (no gap); installed/standalone it clears the
+  // status bar / Dynamic Island. Detail screens pass an explicit numeric
+  // padTop (0/92…) and are unaffected (§4.6 safe areas).
+  padTop = 'calc(env(safe-area-inset-top) + 14px)',
   padBottom = 100,
   scrollRef,
   style = {},

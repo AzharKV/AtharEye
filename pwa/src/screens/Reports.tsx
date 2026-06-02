@@ -132,7 +132,7 @@ export function ReportDetail({ project: p }: { project: Project }) {
           right: 0,
           zIndex: 30,
           paddingTop: 50,
-          padding: 'max(50px, env(safe-area-inset-top)) 16px 12px',
+          padding: 'calc(env(safe-area-inset-top) + 12px) 16px 12px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',

@@ -248,7 +248,7 @@ function ActiveScan({
           left: 0,
           right: 0,
           paddingTop: 52,
-          padding: 'max(52px, env(safe-area-inset-top)) 18px 0',
+          padding: 'calc(env(safe-area-inset-top) + 14px) 18px 0',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -675,7 +675,7 @@ function ScanHome({
       <div
         style={{
           paddingTop: 52,
-          padding: 'max(52px, env(safe-area-inset-top)) 18px 0',
+          padding: 'calc(env(safe-area-inset-top) + 14px) 18px 0',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -891,7 +891,7 @@ function ScanSelect({
       <div
         style={{
           paddingTop: 52,
-          padding: 'max(52px, env(safe-area-inset-top)) 18px 4px',
+          padding: 'calc(env(safe-area-inset-top) + 14px) 18px 4px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',

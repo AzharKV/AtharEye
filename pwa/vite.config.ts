@@ -23,26 +23,26 @@ export default defineConfig({
       // Manifest mirrors design-source/manifest.json (name "Athar Eye",
       // theme #0C0F12, standalone, portrait) with production icon paths.
       manifest: {
+        // Absolute id/start_url/scope + 192/512 (any) and a maskable icon are
+        // what Android needs to build a standalone WebAPK (not a browser
+        // shortcut). Assumes a root deploy (Netlify/Vercel/Cloudflare).
+        id: '/',
         name: 'Athar Eye',
         short_name: 'AtharEye',
         description:
           'Turn an iPhone LiDAR scan + a BIM model into an instant construction progress report.',
-        start_url: '.',
-        scope: '.',
+        start_url: '/',
+        scope: '/',
         display: 'standalone',
+        display_override: ['standalone'],
         orientation: 'portrait',
         background_color: '#0C0F12',
         theme_color: '#0C0F12',
         categories: ['business', 'productivity', 'utilities'],
         icons: [
-          { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          {
-            src: 'icon-maskable-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {

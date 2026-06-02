@@ -28,7 +28,7 @@ export function PushHeader({
         display: 'flex',
         alignItems: 'center',
         gap: 8,
-        padding: 'max(50px, env(safe-area-inset-top)) 14px 10px',
+        padding: 'calc(env(safe-area-inset-top) + 12px) 14px 10px',
         background: transparent ? 'transparent' : 'rgba(12,15,18,0.78)',
         backdropFilter: transparent ? 'none' : 'blur(18px) saturate(160%)',
         WebkitBackdropFilter: transparent ? 'none' : 'blur(18px) saturate(160%)',

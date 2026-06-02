@@ -244,6 +244,12 @@ athar-eye/
 ---
 
 ## 15. Change log
+- **v1.3 (2 Jun 2026) — PWA install + browser-experience fixes (owner feedback).**
+  - **Removed the desktop device-frame "simulator" (and its hardcoded status bar).** The app is now a pure responsive web app: it fills the screen on phones and floats as a clean centered phone-width card (rounded, subtle border/shadow, **no fake status bar / bezel / home indicator**) on desktop & large tablets. Fully honours §6.1 and supersedes the v1.2 "device-frame standalone-detection" note (`IOSDevice` deleted).
+  - **Fixed the browser top gap.** Header / large-title top padding changed from `max(Npx, env(safe-area-inset-top))` to `calc(env(safe-area-inset-top) + base)`. In a browser (inset = 0) there's only a small intentional gap; installed/standalone still clears the status bar / Dynamic Island.
+  - **Hardened the manifest for Android standalone install** (was opening as a browser shortcut, not a WebAPK): absolute `id` / `start_url` / `scope` = `/`, added `display_override: ["standalone"]`. Assumes a **root deploy** (Netlify/Vercel/Cloudflare).
+  - **Added an in-app install prompt** (`InstallPrompt`): on Android/desktop Chromium it captures `beforeinstallprompt` and triggers the real install (→ standalone WebAPK); on iOS Safari it shows the *Share → Add to Home Screen* instruction (no programmatic install exists there). Dismissible (7-day), auto-hidden when already installed.
+
 - **v1.2 (2 Jun 2026) — PWA build (Claude Code), engineering decisions log.** Repo set up as a monorepo: shared `SPEC.md` / `CLAUDE_CODE_BUILD.md` / `design-source/` at root; production PWA built in `pwa/`; `native/` placeholder for Phase B. Faithful port of the locked design (`design-source/app/*.jsx` is the running reference; `athar-primitives.jsx` and `frames/design-canvas.jsx` are unused by the running app and were not ported). Decisions / deviations:
   - **Device frame standalone-detection:** the desktop-preview iPhone frame (which draws a mock status bar) is now suppressed whenever the app runs as an installed standalone PWA (`display-mode: standalone` / `navigator.standalone`), so the installed app is always fullscreen and the OS draws the real status bar (honours §6.1). The design's size-only heuristic would have wrongly framed 430pt-wide iPhones.
   - **Skeleton loaders added** (`useReady` hook): app shell + skeleton rows paint instantly, real content fills in after a short simulated fetch, cached per tab so revisits are instant. Required by `CLAUDE_CODE_BUILD.md` §4.3/§5; not present in the static design.
