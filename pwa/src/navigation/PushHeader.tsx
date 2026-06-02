@@ -37,6 +37,7 @@ export function PushHeader({
     >
       <button
         onClick={() => (onBack || nav.pop)()}
+        aria-label="Back"
         style={{
           width: 38,
           height: 38,
@@ -72,13 +73,22 @@ export function PushHeader({
   );
 }
 
-export function RoundBtn({ icon, onClick }: { icon: IconName; onClick?: () => void }) {
+export function RoundBtn({
+  icon,
+  onClick,
+  label,
+}: {
+  icon: IconName;
+  onClick?: () => void;
+  label?: string;
+}) {
   return (
     <button
       onClick={() => {
         haptic();
         onClick && onClick();
       }}
+      aria-label={label ?? icon}
       style={{
         width: 38,
         height: 38,

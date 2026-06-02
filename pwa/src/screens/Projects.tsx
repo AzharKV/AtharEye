@@ -58,8 +58,12 @@ export function ProjectsList() {
         sub={`${projects.length} projects · Scotland`}
         trailing={
           <div style={{ display: 'flex', gap: 8 }}>
-            <RoundBtn icon="search" />
-            <RoundBtn icon="plus" onClick={() => nav.push(<NewProject onCreate={actions.addProject} />)} />
+            <RoundBtn icon="search" label="Search" />
+            <RoundBtn
+              icon="plus"
+              label="New project"
+              onClick={() => nav.push(<NewProject onCreate={actions.addProject} />)}
+            />
           </div>
         }
       />
@@ -174,6 +178,7 @@ export function ProjectDetail({ project: p }: { project: Project }) {
       >
         <button
           onClick={() => nav.pop()}
+          aria-label="Back"
           style={{
             width: 38,
             height: 38,

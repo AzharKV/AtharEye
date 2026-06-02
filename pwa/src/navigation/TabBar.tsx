@@ -68,6 +68,7 @@ export function TabBar({
             haptic();
             onScan();
           }}
+          aria-label="New scan"
           style={{
             marginTop: -16,
             width: 58,

@@ -44,7 +44,11 @@ export function ReportsList() {
   );
   return (
     <Screen>
-      <ScreenHeader title="Reports" sub="Latest scan reports" trailing={<RoundBtn icon="search" />} />
+      <ScreenHeader
+        title="Reports"
+        sub="Latest scan reports"
+        trailing={<RoundBtn icon="search" label="Search" />}
+      />
       <Chips items={['All', 'Needs review', 'On track', 'Complete']} active={filter} onPick={setFilter} />
       {!ready ? (
         <SkeletonList count={6} />
@@ -140,6 +144,7 @@ export function ReportDetail({ project: p }: { project: Project }) {
       >
         <button
           onClick={() => nav.pop()}
+          aria-label="Back"
           style={{
             width: 38,
             height: 38,

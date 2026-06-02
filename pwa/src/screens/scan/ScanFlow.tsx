@@ -256,6 +256,7 @@ function ActiveScan({
       >
         <button
           onClick={onCancel}
+          aria-label="Cancel scan"
           style={{
             width: 40,
             height: 40,
@@ -397,6 +398,7 @@ function ActiveScan({
               haptic();
               onComplete();
             }}
+            aria-label="Stop scan"
             style={{
               width: 64,
               height: 64,
@@ -681,6 +683,7 @@ function ScanHome({
       >
         <button
           onClick={onClose}
+          aria-label="Close"
           style={{
             width: 40,
             height: 40,
@@ -896,6 +899,7 @@ function ScanSelect({
       >
         <button
           onClick={onClose}
+          aria-label="Close"
           style={{
             width: 40,
             height: 40,
