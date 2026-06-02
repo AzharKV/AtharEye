@@ -232,12 +232,10 @@
       #initial-splash .mark {
         width: 76px;
         height: 76px;
-        border-radius: 20px;
-        background: radial-gradient(120% 120% at 30% 25%, #18242b, #0c151b);
-        border: 1px solid rgba(20, 184, 192, 0.33);
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        border-radius: 17px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        object-fit: cover;
+        display: block;
       }
       #initial-splash .word {
         font-family: -apple-system, system-ui, 'SF Pro', sans-serif;
@@ -264,21 +262,7 @@
     <!-- instant brand splash; identical to the React <Splash>, handed off seamlessly -->
     <div id="initial-splash">
       <div class="stack">
-        <div class="mark">
-          <svg width="47" height="47" viewBox="0 0 24 24" fill="none">
-            <circle
-              cx="12"
-              cy="12"
-              r="9.5"
-              stroke="#14B8C0"
-              stroke-width="1.6"
-              stroke-dasharray="3 3"
-              opacity="0.5"
-            />
-            <circle cx="12" cy="12" r="5.5" stroke="#14B8C0" stroke-width="1.8" />
-            <circle cx="12" cy="12" r="2" fill="#14B8C0" />
-          </svg>
-        </div>
+        <img class="mark" src="/icon-192.png" alt="Athar Eye" width="76" height="76" />
         <div class="word">Athar<span>Eye</span></div>
         <div class="tag">See progress · Prove progress</div>
       </div>

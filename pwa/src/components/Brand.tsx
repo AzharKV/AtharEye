@@ -1,36 +1,31 @@
-// Brand.tsx — Mark (scan-aperture eye) + Wordmark lockup. Ported verbatim from
-// design-source/app/app-ui.jsx. Brand: navy + teal, AtharEye wordmark.
+// Brand.tsx — Mark (the actual product app icon) + Wordmark lockup.
+// Brand: navy + teal, AtharEye wordmark. The mark renders the real home-screen
+// icon (drone + scanning eye) so the in-app lockup matches the installed icon
+// exactly — owner direction; supersedes the design-source's separate stylized
+// "scan-aperture eye" glyph (see SPEC §15).
 import { T } from '../theme';
 
-export function Mark({ size = 30, r = 9 }: { size?: number; r?: number }) {
+// Public asset; BASE_URL keeps it correct under any deploy base path.
+const ICON_SRC = `${import.meta.env.BASE_URL}icon-192.png`;
+
+export function Mark({ size = 30, r }: { size?: number; r?: number }) {
   return (
-    <div
+    <img
+      src={ICON_SRC}
+      alt="Athar Eye"
+      width={size}
+      height={size}
       style={{
         width: size,
         height: size,
-        borderRadius: r,
+        // ~iOS squircle ratio; matches the icon's own rounded corners
+        borderRadius: r ?? Math.round(size * 0.22),
         flexShrink: 0,
-        background: 'radial-gradient(120% 120% at 30% 25%, #18242B, #0C151B)',
-        border: `1px solid ${T.accent}55`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        display: 'block',
+        objectFit: 'cover',
+        border: '1px solid rgba(255,255,255,0.08)',
       }}
-    >
-      <svg width={size * 0.62} height={size * 0.62} viewBox="0 0 24 24" fill="none">
-        <circle
-          cx="12"
-          cy="12"
-          r="9.5"
-          stroke={T.accent}
-          strokeWidth="1.6"
-          strokeDasharray="3 3"
-          opacity="0.5"
-        />
-        <circle cx="12" cy="12" r="5.5" stroke={T.accent} strokeWidth="1.8" />
-        <circle cx="12" cy="12" r="2" fill={T.accent} />
-      </svg>
-    </div>
+    />
   );
 }
 

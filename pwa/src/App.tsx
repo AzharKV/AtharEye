@@ -56,7 +56,7 @@ function Splash({ onDone }: { onDone: () => void }) {
           animation: 'splashRise .6s cubic-bezier(.32,.72,0,1) both',
         }}
       >
-        <Mark size={76} r={20} />
+        <Mark size={76} />
         <Wordmark size={30} />
         <div style={{ fontSize: 13, color: T.muted, fontWeight: 600, letterSpacing: 0.6, marginTop: 2 }}>
           See progress · Prove progress
@@ -81,7 +81,7 @@ function ScanFallback() {
       }}
     >
       <div style={{ animation: 'pulse 1.4s ease-in-out infinite' }}>
-        <Mark size={56} r={16} />
+        <Mark size={56} />
       </div>
     </div>
   );
