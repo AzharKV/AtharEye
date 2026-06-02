@@ -43,6 +43,17 @@
         touch-action: manipulation;
         -webkit-font-smoothing: antialiased;
         text-rendering: optimizeLegibility;
+        /* app-like: no accidental text selection / iOS long-press callout on UI chrome */
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+      /* …but keep real form fields selectable/editable */
+      input,
+      textarea,
+      [contenteditable] {
+        -webkit-user-select: text;
+        user-select: text;
       }
       /* hidden scrollbars + momentum scrolling (§4.5) */
       .no-scrollbar::-webkit-scrollbar {
