@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "pwa", "run", "dev", "--", "--host"],
       "port": 5173
+    },
+    {
+      "name": "pwa-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "pwa", "run", "preview", "--", "--port", "4173", "--host"],
+      "port": 4173
     }
   ]
 }

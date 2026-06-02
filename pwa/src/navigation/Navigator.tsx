@@ -148,13 +148,15 @@ export function Navigator({
 // ── Screen scroll wrapper
 export function Screen({
   children,
-  padTop = 54,
+  // list/large-title screens get the status-bar inset; detail screens pass an
+  // explicit numeric padTop (0/92…) and are unaffected (§4.6 safe areas).
+  padTop = 'max(54px, env(safe-area-inset-top))',
   padBottom = 100,
   scrollRef,
   style = {},
 }: {
   children: ReactNode;
-  padTop?: number;
+  padTop?: number | string;
   padBottom?: number;
   scrollRef?: MutableRefObject<HTMLDivElement | null>;
   style?: CSSProperties;
