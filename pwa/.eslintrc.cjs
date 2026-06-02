@@ -11,8 +11,16 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   plugins: ['react-refresh'],
   rules: {
-    'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    // We intentionally co-locate design tokens/helpers with their components
+    // (theme, primitives, navigation) — this is a dev-only Fast Refresh hint.
+    'react-refresh/only-export-components': 'off',
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     '@typescript-eslint/no-explicit-any': 'off',
+    // The ported design uses `cond && fn()` / ternaries as statements idiomatically.
+    'no-unused-expressions': 'off',
+    '@typescript-eslint/no-unused-expressions': [
+      'error',
+      { allowShortCircuit: true, allowTernary: true },
+    ],
   },
 };
