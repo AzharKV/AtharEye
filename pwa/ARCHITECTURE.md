@@ -206,6 +206,17 @@ theme/bg `#0C0F12`, icons 192 + 512 (`any`) + maskable 512. **Assumes a root dep
 `navigateFallback: index.html`. → full **offline / Airplane-mode** support after first load.
 (There is no separate CSS file — all styles are inline, baked into JS + `index.html`.)
 
+**Updates / why a refresh may show old code.** Because the SW serves the app from cache (that's
+what makes it offline/installable), a plain refresh after a rebuild/deploy can serve the *cached old
+JS*. `main.tsx` calls `registerSW({ immediate: true })` (from `virtual:pwa-register`) so a new
+version is fetched and the app **auto-reloads to the latest on the next visit/refresh** (one
+refresh, not two; localStorage data is untouched). In **`npm run dev` the SW is disabled**
+(`devOptions.enabled: false`) so dev refresh is always fresh. To force-clear during manual testing:
+DevTools → Application → Service Workers → *Update on reload* / Unregister, or clear site data.
+> ⚠️ Don't confuse the **SW code cache** (above — affects whether new *code* loads) with
+> **localStorage data** (`lib/store.ts` — your projects). They're independent: clearing site data
+> wipes both; `localStorage.removeItem('athar-eye:data')` only re-seeds the *data*.
+
 **Install (`InstallPrompt.tsx`):** shown only in a browser (never standalone), after ~2.8s,
 dismissible (7-day, `localStorage`). **Android/desktop Chromium** → captures `beforeinstallprompt`
 and an **Install** button triggers the real install (→ standalone WebAPK). **iOS Safari** (no

@@ -244,6 +244,15 @@ athar-eye/
 ---
 
 ## 15. Change log
+- **v1.8 (2 Jun 2026) — PWA auto-update on refresh (owner feedback).** Symptom: after a rebuild,
+  a refresh kept showing the old code (new features like search only appeared after clearing site
+  data). Cause: the service worker serves the app from cache (offline/installable), and the minimal
+  auto-injected registration didn't reload the page when the new SW took over — so it needed a 2nd
+  refresh / cache clear. Fix: `main.tsx` now calls `registerSW({ immediate: true })`
+  (`virtual:pwa-register`), so a new deploy **auto-reloads to the latest on the next visit/refresh**.
+  Dev (`npm run dev`) has the SW disabled, so dev refresh is always fresh. Note: the **SW code
+  cache** (whether new code loads) is independent of **localStorage data** (your projects) — see
+  ARCHITECTURE §7.
 - **v1.7 (2 Jun 2026) — working search (owner feedback).** The Projects/Reports search icons were
   decorative (no handler). Wired up real search: tapping it reveals an inline iOS-style `SearchBar`
   (autofocus, clear ×, Cancel) that **live-filters** the list by name / location / type / client.
