@@ -149,7 +149,7 @@ pwa/
 - **`Projects.tsx`** — `ProjectsList` (portfolio summary ring + counts, filter chips, **search** (`SearchBar` → live filter by name/location/type/client), skeleton list, cards → `ProjectDetail`), `ProjectDetail` (scroll-aware floating header, parallax `BannerBlueprint`, progress `Ring` card, BIM model card + `BimUploadSheet`, coverage-by-area `Bar`s, team `Avatar`s, CTAs → `actions.startScan` / push `ReportDetail`, and **Delete project** → `DeleteConfirm` action sheet → `actions.deleteProject` (persisted)), `NewProject` (form + `Field`s + BIM attach → builds a `Project` and `actions.addProject`). Local: `DeleteConfirm`, `BimUploadSheet` (faked upload→align), `Field`, `BIM_SAMPLES`, `PTYPES`.
 - **`Reports.tsx`** — `ReportsList` (filter chips, **search**, skeleton, cards → `ReportDetail`), `ReportDetail` (branded sticky header, **count-up `Donut`**, Covered/Missing m², `IsoMassing`, meta table, coverage-by-room, open-issues with severity badges, `ShareSheet` + PDF `Toast`).
 - **`Settings.tsx`** — `Settings` (profile row → `Profile`, subscription card + usage `Bar` → `Plans`, scanning/app `Row`s + `Toggle`s, footer lockup), `Profile` (avatar, stats, details), `Plans` (tier cards, add-ons, switch `Toast`). Local: `Toggle`, `Row`.
-- **`scan/ScanFlow.tsx`** (lazy chunk) — controller stepping `select → home → active → processing → result`. `ActiveScan` draws a faint **perspective room wireframe** (floor grid + walls) + the point cloud on a **single `requestAnimationFrame` loop** (DPR capped at 2, cancelled on unmount, time-based progress over `DUR=7000`); bottom controls (stats · progress · stop) are a single safe-area-aware **column** (no overlap). `Processing` spinner uses **CSS `spin`** (no per-frame React); on completion it calls `onScanComplete(project)` (persists the scan). `ScanResult` count-up donut + stats; CTAs → `onViewReport` / share / done. Complete projects are excluded from `ScanSelect`.
+- **`scan/ScanFlow.tsx`** (lazy chunk) — controller stepping `select → home → active → processing → result`. `ActiveScan` shows the **live rear camera** (`CameraBG`, dimmed + vignette, gradient fallback) under a faint **perspective room wireframe** + the point cloud drawn on a **single `requestAnimationFrame` loop** (DPR capped at 2, cancelled on unmount, time-based progress over `DUR=7000`); bottom controls (stats · progress · stop) are a single safe-area-aware **column** (no overlap). `Processing` spinner uses **CSS `spin`** (no per-frame React); on completion it calls `onScanComplete(project)` (persists the scan). `ScanResult` count-up donut + stats; CTAs → `onViewReport` / share / done. Complete projects are excluded from `ScanSelect`.
 
 ---
 
@@ -260,7 +260,8 @@ Authoritative list lives in **`SPEC.md` §15** (v1.2 / v1.3). Summary of code-af
 - **Deterministic SVG pattern IDs** (no `Math.random`) in `BlueprintTile`/`IsoMassing`.
 - **System Back button integrated** (`backstack.ts`) with the in-memory nav via the History API — Android/browser Back pops screens / closes the scan & sheets instead of leaving the app. Not in the design-source.
 - **Persisted to localStorage** (`lib/store.ts`) seeded from `data.ts` — created projects + recorded scans survive reload; no backend. (Firebase/etc. is the future multi-device path.)
-- **Scan visual:** a faint perspective **room wireframe** (floor grid + walls) renders under the point cloud so the scan reads as reconstructing a room (generated, not the device camera — no permission prompt).
+- **Scan visual:** the **live rear camera** (`CameraBG` → `getUserMedia({ facingMode: 'environment' })`, dimmed + vignette) behind a faint perspective **room wireframe** + the point cloud — reads as a real LiDAR scan. Falls back to a dark gradient if the camera is denied/unavailable (needs HTTPS + a one-time permission prompt).
+- **Splash matches the OS splash:** the static HTML splash, the React `<Splash>`, and the manifest `background_color` all use solid `#0C0F12` with the icon centered, so the Android/iOS native launch splash hands off to the web splash with no icon jump/shrink.
 - ESLint relaxed for the design's idiomatic `cond && fn()` statements; Fast-Refresh co-location hint off.
 
 ---
@@ -320,7 +321,7 @@ install banner / Share → *Add to Home Screen*. Preload once on Wi-Fi, then it'
 
 - Persistence is **per-device** localStorage (no cross-device sync, no real auth). A real backend (Firebase/etc.) is the future path — `lib/store.ts` is the seam.
 - Bumping `SEED_VERSION` to ship updated demo data **discards** any runtime additions on existing installs.
-- Scan visual is a generated room wireframe + point cloud, **not** the live device camera (deliberate — no permission prompt; a real-camera `getUserMedia` background is an optional future toggle).
+- Scan uses the **live rear camera** (`getUserMedia`) behind the point cloud — needs HTTPS + a one-time camera permission; gracefully falls back to a gradient if denied/unavailable.
 - No GitHub Actions CI yet (repo has no remote). Optional: lint+build on push.
 - Icon-only buttons have `aria-label`s; deeper a11y (focus traps in sheets, full keyboard nav) not audited.
 - Subpath deploys would need a Vite `base` + manifest path changes (currently root-only).

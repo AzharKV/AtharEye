@@ -35,32 +35,37 @@ function Splash({ onDone }: { onDone: () => void }) {
     };
   }, [onDone]);
   return (
+    // Solid bg + centered icon match the OS splash and the static HTML splash, so
+    // the icon never moves across OS → HTML → React → app (no glitch).
     <div
       style={{
         position: 'absolute',
         inset: 0,
         zIndex: 999,
-        background: 'radial-gradient(130% 100% at 50% 35%, #14222B, #0A0E12)',
+        background: T.bg,
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         animation: exiting ? 'splashOut .3s ease forwards' : undefined,
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 16,
-          animation: 'splashRise .6s cubic-bezier(.32,.72,0,1) both',
-        }}
-      >
-        <Mark size={76} />
-        <Wordmark size={30} />
-        <div style={{ fontSize: 13, color: T.muted, fontWeight: 600, letterSpacing: 0.6, marginTop: 2 }}>
-          See progress · Prove progress
+      <div style={{ position: 'relative' }}>
+        <Mark size={112} />
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            marginTop: 20,
+            textAlign: 'center',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <Wordmark size={28} />
+          <div style={{ fontSize: 13, color: T.muted, fontWeight: 600, letterSpacing: 0.6, marginTop: 6 }}>
+            See progress · Prove progress
+          </div>
         </div>
       </div>
     </div>

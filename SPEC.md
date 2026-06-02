@@ -239,11 +239,20 @@ athar-eye/
 - [ ] Whether vendor needs the app on their own device (→ keep PWA link handy regardless).
 - [ ] Collect written letters of interest from the ~20 contacted companies.
 - [ ] "How long to complete?" timeline doc for the vendor (separate deliverable — not yet written).
-- [x] **Scan background: DECIDED (v1.5)** — generated perspective room wireframe + point cloud (no permission prompt, controlled visuals). A real-camera `getUserMedia` background remains an optional future toggle if a live-camera "wow" is wanted for the demo.
+- [x] **Scan background: DECIDED (v1.5 → v1.9)** — **live rear camera** (`getUserMedia`, `facingMode: environment`) behind the room wireframe + point cloud, for a real "it's scanning the room" feel; falls back to a dark gradient if the camera is denied/unavailable. Needs HTTPS + a one-time camera permission (fine on the deployed site; the demoer grants it once).
 
 ---
 
 ## 15. Change log
+- **v1.9 (2 Jun 2026) — splash OS-handoff + live camera scan.**
+  - **Splash glitch fix (owner feedback):** on Android, the OS native splash (icon centered on the
+    manifest colour) handed off to a web splash with a *different* layout (smaller icon, higher up,
+    gradient bg) → the icon visibly jumped/shrank. Now the static HTML splash and the React `<Splash>`
+    both use **solid `#0C0F12`** with the **icon centered at 112px** (wordmark fades in below,
+    absolutely positioned so the icon never moves) — matching the OS splash, so the handoff is seamless.
+  - **Live camera scan background:** `ActiveScan`'s `CameraBG` now uses the **live rear camera**
+    (`getUserMedia`, dimmed + vignette) behind the wireframe + point cloud, with a gradient fallback
+    (see §14). Adds realism; needs HTTPS + a one-time camera permission.
 - **v1.8 (2 Jun 2026) — PWA auto-update on refresh (owner feedback).** Symptom: after a rebuild,
   a refresh kept showing the old code (new features like search only appeared after clearing site
   data). Cause: the service worker serves the app from cache (offline/installable), and the minimal

@@ -223,34 +223,44 @@
 
       /* Static first-paint splash — visible before React hydrates so there is
          never a blank flash (§4.3). Removed by main.tsx once React mounts. */
+      /* Match the OS (Android/iOS) native launch splash: same solid background
+         color as the manifest, and the icon centered at the same spot — so when
+         the OS splash hands off to the web app the icon doesn't jump/shrink. The
+         wordmark fades in below the icon (absolute, so the icon never moves). */
       #initial-splash {
         position: fixed;
         inset: 0;
         z-index: 9999;
-        background: radial-gradient(130% 100% at 50% 35%, #14222b, #0a0e12);
+        background: #0c0f12;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: opacity 0.4s ease;
       }
-      #initial-splash .stack {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
-        animation: splashRise 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+      #initial-splash .brand {
+        position: relative;
       }
       #initial-splash .mark {
-        width: 76px;
-        height: 76px;
-        border-radius: 17px;
+        display: block;
+        width: 112px;
+        height: 112px;
+        border-radius: 25px;
         border: 1px solid rgba(255, 255, 255, 0.08);
         object-fit: cover;
-        display: block;
+      }
+      #initial-splash .meta {
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-top: 20px;
+        text-align: center;
+        white-space: nowrap;
+        animation: fadeIn 0.5s ease 0.35s both;
       }
       #initial-splash .word {
         font-family: -apple-system, system-ui, 'SF Pro', sans-serif;
-        font-size: 30px;
+        font-size: 28px;
         font-weight: 800;
         letter-spacing: -0.5px;
         color: #f4f6f8;
@@ -264,18 +274,20 @@
         font-weight: 600;
         letter-spacing: 0.6px;
         color: #8a949e;
-        margin-top: 2px;
+        margin-top: 6px;
       }
     </style>
   </head>
   <body>
     <div id="root"></div>
-    <!-- instant brand splash; identical to the React <Splash>, handed off seamlessly -->
+    <!-- instant brand splash; matches the OS splash + the React <Splash>, handed off seamlessly -->
     <div id="initial-splash">
-      <div class="stack">
-        <img class="mark" src="/icon-192.png" alt="Athar Eye" width="76" height="76" />
-        <div class="word">Athar<span>Eye</span></div>
-        <div class="tag">See progress · Prove progress</div>
+      <div class="brand">
+        <img class="mark" src="/icon-192.png" alt="Athar Eye" width="112" height="112" />
+        <div class="meta">
+          <div class="word">Athar<span>Eye</span></div>
+          <div class="tag">See progress · Prove progress</div>
+        </div>
       </div>
     </div>
     <noscript
