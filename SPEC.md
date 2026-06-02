@@ -244,6 +244,33 @@ athar-eye/
 ---
 
 ## 15. Change log
+- **v1.12 (3 Jun 2026) — Phase B native app: React Native + Expo (`reactnative/`).** Built the native iOS
+  app as an **exact feature + visual copy** of the PWA, in a new **`reactnative/`** stack (renamed from the
+  `native/` placeholder so future **native-iOS-Swift** and **Flutter** comparison ports can sit as siblings —
+  owner direction). Stack: **Expo SDK 56 · React Native 0.85 · React 19 · TypeScript strict · expo-router**
+  (file-based) with **@shopify/react-native-skia** (the scan point cloud, redrawn on the UI thread via
+  `useClock`/`createPicture` for 60fps), **expo-camera** (live rear-camera scan background, gradient
+  fallback), **react-native-svg** (icons / donut / ring / iso-massing / blueprint tiles),
+  **react-native-reanimated 4** (splash, sheets, skeleton sheen, scan progress), **AsyncStorage**
+  (replaces localStorage), and expo-haptics / expo-sharing / expo-blur / expo-linear-gradient.
+  - **All 13 screens** ported 1:1 (Splash, Projects list/detail/new, Reports list/detail, Settings/Profile/
+    Plans, Scan select/guidance/active/processing/result, Share sheet). `theme.ts` / `types.ts` / `data.ts`
+    copied verbatim; the design tokens + every padding/size/colour match the PWA.
+  - **Navigation:** native push/pop + edge-swipe-back via expo-router. Each tab is a real-folder Stack so the
+    **tab bar persists on detail** (matches the PWA, and avoids expo-router's bare-`(group)` index collision);
+    the scan flow is a full-screen modal. Sheets/confirms use RN `Modal` (`onRequestClose` = Android back).
+  - **Persistence:** seeds from `data.ts`, hydrates from AsyncStorage, persists create/delete/scan across a
+    cold restart (`store/AppStore.tsx` — the backend seam).
+  - **Config:** `app.json` name "Athar Eye", bundleId `com.atharrobotics.eye`, dark-locked, navy OS-matched
+    splash, camera-permission plugin. `ios/`/`android/` are gitignored CNG output.
+  - **Validated:** `tsc --noEmit`, `expo export` (Metro bundle, 1945 modules, React Compiler on),
+    `expo-doctor` (21/21), `expo prebuild -p ios`, and `expo lint` all clean. **Not yet device-tested** —
+    the one remaining manual step is `npx expo run:ios --device` on the iPhone (free Apple ID; needs the
+    on-device camera-permission grant). Full reference: [`reactnative/ARCHITECTURE.md`](reactnative/ARCHITECTURE.md).
+  - **Deltas vs PWA (native equivalents, no behaviour change):** Skia↔2D-canvas, expo-camera↔getUserMedia,
+    AsyncStorage↔localStorage, expo-haptics↔navigator.vibrate, native back↔History-API back-stack; the camera
+    vignette + radial card gradients are approximated (RN has no inset shadow / radial gradient). PWA-only
+    concepts (install prompt, service worker, responsive desktop card) are omitted as irrelevant on native.
 - **v1.11 (3 Jun 2026) — codebase cleanup (no behavior change).** Structural and style pass: `ProjectStatus`/`Severity` types moved from `theme.ts` → `types.ts` (correct dependency direction; `theme.ts` now imports them). `vite-env.d.ts` moved to `src/` (standard Vite convention). `SEV2` in `Reports.tsx` replaced with the existing `SEV` from `theme.ts`. Optional chaining (`onClick?.()`) in `PushHeader`. Removed "Ported from design-source" provenance comments, `// ════════════════` section banners, and comments that restate what the code already says.
 - **v1.10 (2 Jun 2026) — scan overlay visibility tuning (owner feedback).** The room wireframe and point cloud were barely readable against the live camera feed. Camera opacity reduced 72% → 55% (darker background lets the teal pop); wireframe start alpha raised from 5% → 18% (`roomA = 0.18 + 0.32 × p`, max ~50% at scan end); line width 1 px → 1.5 px. Point cloud unchanged. Net: the AR overlay is clearly legible on any real-world camera background.
 - **v1.9 (2 Jun 2026) — splash OS-handoff + live camera scan.**
