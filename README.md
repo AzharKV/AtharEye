@@ -20,7 +20,8 @@ This is a monorepo holding the same product built across multiple stacks (so the
 ├── design-source/           # Approved Claude Design export — the visual reference
 ├── pwa/                     # ✅ Phase A — production PWA (Vite + React 18 + TS + vite-plugin-pwa)
 ├── reactnative/             # ✅ Phase B — native iOS app (React Native + Expo) — exact 1:1 copy of the PWA
-└── native/                  # ⏳ Phase B (comparison) — native iOS (Swift) + Flutter ports (planned)
+├── flutter/                 # 🔬 Comparison — Flutter port (tokens + data + hero screens; `flutter analyze` clean)
+└── ios-native/              # 🔬 Comparison — native iOS SwiftUI port (tokens + data + hero screens; builds for simulator)
 ```
 
 ### `pwa/` — Phase A (now)
@@ -66,12 +67,23 @@ npm install                 # Node 20 LTS
 npx expo run:ios --device   # build + install on a connected iPhone
 ```
 
-### `native/` — Phase B comparison ports (planned)
+### `flutter/` + `ios-native/` — stack comparison ports (built)
 
-A **native iOS (Swift/SwiftUI)** port and a **Flutter** port of the same design, for a
-direct stack-by-stack comparison of native feel/performance against `reactnative/`. The
-production direction (real ARKit LiDAR, IFC import, cloud analysis, PDF export) lands in
-whichever stack wins. Placeholder today — see [`native/README.md`](native/README.md).
+Focused **comparison subsets** of the same locked design — built to compare native feel /
+animation performance / DX across stacks against `reactnative/`. Each has the navy/teal tokens,
+the 6 demo projects (verbatim) and the **hero screens**: Projects list, Report detail (animated
+count-up donut), and the **LiDAR point-cloud scan** (the perf showcase — Flutter `CustomPainter`
+vs SwiftUI `Canvas`/`TimelineView` vs RN `react-native-skia`). Reports/Settings are stubs; the
+other screens, search, persistence, BIM and live camera are intentionally out of scope.
+
+- **`flutter/`** — Flutter 3.41 (Material 3, dark). Validated: `fvm flutter analyze` clean + a
+  widget smoke test. Run: `cd flutter && fvm flutter run`.
+- **`ios-native/`** — SwiftUI (iOS 17+, Swift 6, xcodegen). Validated: `xcodebuild … -sdk
+  iphonesimulator` → **BUILD SUCCEEDED**. Open `AtharEyeCompare.xcodeproj` in Xcode, or
+  `xcodegen generate` to regenerate.
+
+The production direction (real ARKit LiDAR, IFC import, cloud analysis, PDF export) lands in
+whichever stack wins the comparison.
 
 ## Documentation
 

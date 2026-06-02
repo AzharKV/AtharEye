@@ -20,7 +20,8 @@ pwa/                    ✅ Phase A — the production PWA (Vite + React 18 + TS
   ARCHITECTURE.md       ⭐ Full engineering reference for the PWA codebase (read this, don't scan)
 reactnative/            ✅ Phase B — native iOS app (React Native + Expo) — exact 1:1 copy of the PWA
   ARCHITECTURE.md       ⭐ Full engineering reference for the RN app (read this, don't scan)
-native/                 ⏳ Phase B comparison — native iOS (Swift) + Flutter ports (placeholder)
+flutter/                🔬 Comparison — Flutter port (tokens + data + hero screens; `flutter analyze` clean)
+ios-native/             🔬 Comparison — native iOS SwiftUI port (tokens + data + hero screens; builds for simulator)
 ```
 
 ## Read in this order
@@ -85,4 +86,7 @@ Passes `tsc`, Metro bundle, `expo-doctor`, iOS prebuild and lint clean. See `SPE
 `reactnative/ARCHITECTURE.md`. **Not yet device-tested:** the remaining manual step is
 `npx expo run:ios --device` on the iPhone (free Apple ID + the on-device camera-permission grant).
 
-Comparison ports (native iOS Swift + Flutter) under `native/` are planned, not built.
+**Comparison subsets** — `flutter/` (Flutter 3.41) and `ios-native/` (SwiftUI) — are **built & validated**
+(`flutter analyze` clean / `xcodebuild` simulator build succeeds). They port the tokens + demo data + the
+hero screens (Projects list, animated Report donut, the LiDAR point-cloud scan) to compare native feel /
+animation perf across stacks; Reports/Settings are stubs and the other screens are out of scope by design.
