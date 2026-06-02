@@ -7,6 +7,10 @@ import type { Project } from '../types';
 export interface AppActions {
   startScan: (project?: Project | null) => void;
   addProject: (p: Project) => void;
+  /** Remove a project (and its data) — persisted. */
+  deleteProject: (id: string) => void;
+  /** Record a completed scan against a project (bumps scans/last; persisted). */
+  onScanComplete: (project: Project) => void;
   projects: Project[];
   goToReports: () => void;
 }
@@ -14,6 +18,8 @@ export interface AppActions {
 export const AppActionsCtx = createContext<AppActions>({
   startScan: () => {},
   addProject: () => {},
+  deleteProject: () => {},
+  onScanComplete: () => {},
   projects: [],
   goToReports: () => {},
 });

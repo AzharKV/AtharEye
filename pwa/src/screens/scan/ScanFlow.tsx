@@ -163,6 +163,54 @@ function ActiveScan({
         cy = H * 0.46,
         f = H * 0.62;
       ctx.clearRect(0, 0, W, H);
+
+      // ── faint perspective room wireframe (reads as a room being reconstructed);
+      //    same 1-point projection as the points, fades in as the scan progresses
+      const proj = (x: number, y: number, z: number): [number, number] => {
+        const zz = z + 0.6;
+        return [cx + (x / zz) * f, cy - ((y - 0.75) / zz) * f];
+      };
+      const roomA = 0.05 + 0.16 * p;
+      ctx.lineWidth = 1 * dpr;
+      ctx.strokeStyle = `rgba(20,184,192,${roomA})`;
+      ctx.beginPath();
+      for (const gx of [-1, -0.5, 0, 0.5, 1]) {
+        const a = proj(gx, 0, 0),
+          b = proj(gx, 0, 3.4);
+        ctx.moveTo(a[0], a[1]);
+        ctx.lineTo(b[0], b[1]);
+      }
+      for (const gz of [0, 0.85, 1.7, 2.55, 3.4]) {
+        const a = proj(-1, 0, gz),
+          b = proj(1, 0, gz);
+        ctx.moveTo(a[0], a[1]);
+        ctx.lineTo(b[0], b[1]);
+      }
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(20,184,192,${roomA * 0.55})`;
+      ctx.beginPath();
+      for (const [cxn, czn] of [
+        [-1, 0],
+        [1, 0],
+        [-1, 3.4],
+        [1, 3.4],
+      ] as Array<[number, number]>) {
+        const a = proj(cxn, 0, czn),
+          b = proj(cxn, 1.5, czn);
+        ctx.moveTo(a[0], a[1]);
+        ctx.lineTo(b[0], b[1]);
+      }
+      const r1 = proj(-1, 1.5, 0),
+        r2 = proj(1, 1.5, 0),
+        r3 = proj(1, 1.5, 3.4),
+        r4 = proj(-1, 1.5, 3.4);
+      ctx.moveTo(r1[0], r1[1]);
+      ctx.lineTo(r2[0], r2[1]);
+      ctx.lineTo(r3[0], r3[1]);
+      ctx.lineTo(r4[0], r4[1]);
+      ctx.closePath();
+      ctx.stroke();
+
       const reveal = Math.floor(p * pts.length);
       for (let i = 0; i < reveal; i++) {
         const pt = pts[i];
@@ -208,8 +256,14 @@ function ActiveScan({
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
       />
 
-      {/* AR corner brackets */}
-      <div style={{ position: 'absolute', inset: '120px 26px 200px', pointerEvents: 'none' }}>
+      {/* AR corner brackets — bottom lifted clear of the controls column */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: '120px 26px calc(226px + env(safe-area-inset-bottom))',
+          pointerEvents: 'none',
+        }}
+      >
         {(
           [
             [0, 0, '2px 0 0 2px', '14px 0 0 0'],
@@ -338,50 +392,61 @@ function ActiveScan({
         </div>
       </div>
 
-      {/* live stats */}
-      <div style={{ position: 'absolute', left: 18, right: 18, bottom: 132, display: 'flex', gap: 10 }}>
-        {(
-          [
-            ['Points', `${pointsM}M`],
-            ['Coverage', `${liveCov}%`],
-            ['Tracking', 'Strong'],
-          ] as Array<[string, string]>
-        ).map(([l, v]) => (
-          <div
-            key={l}
-            style={{
-              flex: 1,
-              background: 'rgba(8,12,16,0.6)',
-              backdropFilter: 'blur(10px)',
-              border: `1px solid ${T.hairline}`,
-              borderRadius: 14,
-              padding: '10px 12px',
-            }}
-          >
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{l}</div>
+      {/* bottom controls — stats · progress · stop, stacked (no overlap), safe-area aware */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 18,
+          right: 18,
+          bottom: 'calc(22px + env(safe-area-inset-bottom))',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+        }}
+      >
+        {/* live stats */}
+        <div style={{ display: 'flex', gap: 10 }}>
+          {(
+            [
+              ['Points', `${pointsM}M`],
+              ['Coverage', `${liveCov}%`],
+              ['Tracking', 'Strong'],
+            ] as Array<[string, string]>
+          ).map(([l, v]) => (
             <div
+              key={l}
               style={{
-                fontSize: 17,
-                fontWeight: 800,
-                color: l === 'Tracking' ? T.accent2 : '#fff',
-                marginTop: 3,
+                flex: 1,
+                background: 'rgba(8,12,16,0.6)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                border: `1px solid ${T.hairline}`,
+                borderRadius: 14,
+                padding: '10px 12px',
               }}
             >
-              {v}
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{l}</div>
+              <div
+                style={{
+                  fontSize: 17,
+                  fontWeight: 800,
+                  color: l === 'Tracking' ? T.accent2 : '#fff',
+                  marginTop: 3,
+                }}
+              >
+                {v}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      {/* progress + stop */}
-      <div style={{ position: 'absolute', left: 18, right: 18, bottom: 56 }}>
+        {/* progress bar */}
         <div
           style={{
             height: 6,
             borderRadius: 6,
             background: 'rgba(255,255,255,0.14)',
             overflow: 'hidden',
-            marginBottom: 18,
           }}
         >
           <div
@@ -392,7 +457,9 @@ function ActiveScan({
             }}
           />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
+
+        {/* stop */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 2 }}>
           <button
             onClick={() => {
               haptic();
@@ -1009,11 +1076,13 @@ export function ScanFlow({
   projects,
   onClose,
   onViewReport,
+  onScanComplete,
 }: {
   project: Project | null;
   projects: Project[];
   onClose: () => void;
   onViewReport: (p: Project) => void;
+  onScanComplete?: (p: Project) => void;
 }) {
   const list = projects || DATA.projects;
   const [picked, setPicked] = useState<Project | null>(project || null);
@@ -1039,7 +1108,14 @@ export function ScanFlow({
       {step === 'active' && p && (
         <ActiveScan project={p} onComplete={() => setStep('processing')} onCancel={onClose} />
       )}
-      {step === 'processing' && <Processing onComplete={() => setStep('result')} />}
+      {step === 'processing' && (
+        <Processing
+          onComplete={() => {
+            if (p) onScanComplete?.(p); // record the scan (persisted)
+            setStep('result');
+          }}
+        />
+      )}
       {step === 'result' && p && (
         <ScanResult project={p} onDone={onClose} onViewReport={onViewReport} />
       )}

@@ -5,8 +5,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { T } from './theme';
-import { DATA } from './data';
 import type { Project } from './types';
+import { loadProjects, saveProjects } from './lib/store';
 import { Mark, Wordmark } from './components/Brand';
 import { InstallPrompt } from './components/InstallPrompt';
 import { useBackLayer } from './hooks/useBackLayer';
@@ -91,7 +91,9 @@ function ScanFallback() {
 function AppRoot() {
   const [tab, setTab] = useState<TabName>('Projects');
   const [scan, setScan] = useState<{ project: Project | null } | null>(null);
-  const [projects, setProjects] = useState<Project[]>(DATA.projects);
+  // seeded from data.ts on first run, then persisted to localStorage so created
+  // projects and recorded scans survive a reload / relaunch (see lib/store.ts)
+  const [projects, setProjects] = useState<Project[]>(() => loadProjects());
   const projNav = useRef<NavHandle | null>(null);
   const repNav = useRef<NavHandle | null>(null);
   const setNav = useRef<NavHandle | null>(null);
@@ -101,6 +103,31 @@ function AppRoot() {
   // system/browser Back closes the full-screen scan modal
   useBackLayer(scan !== null, closeScan);
   const addProject = (p: Project) => setProjects((list) => [p, ...list]);
+  const deleteProject = (id: string) => setProjects((list) => list.filter((p) => p.id !== id));
+  // record a completed scan: bump scan count + "last scan"; a fresh (0%) project
+  // gets a plausible starter coverage so the scan produces a real-looking report.
+  const onScanComplete = (project: Project) => {
+    setProjects((list) =>
+      list.map((p) => {
+        if (p.id !== project.id) return p;
+        const scans = p.scans + 1;
+        if (p.pct === 0 && p.rooms.length === 0) {
+          const rooms = [
+            { name: 'Main Area', pct: 58 },
+            { name: 'Entrance', pct: 47 },
+            { name: 'Rear', pct: 39 },
+          ];
+          const pct = Math.round(rooms.reduce((s, r) => s + r.pct, 0) / rooms.length);
+          return { ...p, scans, last: 'Just now', pct, rooms };
+        }
+        return { ...p, scans, last: 'Just now' };
+      }),
+    );
+  };
+  // persist the working set whenever it changes
+  useEffect(() => {
+    saveProjects(projects);
+  }, [projects]);
   const viewReport = (p: Project) => {
     setScan(null);
     setTab('Reports');
@@ -122,7 +149,14 @@ function AppRoot() {
 
   return (
     <AppActionsCtx.Provider
-      value={{ startScan, addProject, projects, goToReports: () => setTab('Reports') }}
+      value={{
+        startScan,
+        addProject,
+        deleteProject,
+        onScanComplete,
+        projects,
+        goToReports: () => setTab('Reports'),
+      }}
     >
       <div
         style={{
@@ -145,6 +179,7 @@ function AppRoot() {
               projects={projects}
               onClose={closeScan}
               onViewReport={viewReport}
+              onScanComplete={onScanComplete}
             />
           </Suspense>
         )}

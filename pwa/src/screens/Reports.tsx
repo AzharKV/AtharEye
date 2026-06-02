@@ -24,6 +24,7 @@ import { ShareSheet, Toast } from '../components/ShareSheet';
 import { SkeletonList } from '../components/Skeleton';
 import { Screen, useNav } from '../navigation/Navigator';
 import { RoundBtn } from '../navigation/PushHeader';
+import { useAppActions } from '../navigation/AppActions';
 
 const SEV2: Record<Severity, string> = { high: T.danger, med: T.warning, low: T.faint };
 const SEV_LABEL: Record<Severity, string> = { high: 'High', med: 'Med', low: 'Low' };
@@ -32,8 +33,9 @@ const SEV_LABEL: Record<Severity, string> = { high: 'High', med: 'Med', low: 'Lo
 export function ReportsList() {
   const nav = useNav();
   const ready = useReady('reports');
+  const { projects } = useAppActions();
   const [filter, setFilter] = useState('All');
-  const list = DATA.projects.filter((p) =>
+  const list = projects.filter((p) =>
     filter === 'All'
       ? true
       : filter === 'Needs review'
