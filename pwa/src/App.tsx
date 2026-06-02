@@ -103,6 +103,7 @@ function AppRoot() {
   // system/browser Back closes the full-screen scan modal
   useBackLayer(scan !== null, closeScan);
   const addProject = (p: Project) => setProjects((list) => [p, ...list]);
+  const deleteProject = (id: string) => setProjects((list) => list.filter((p) => p.id !== id));
   // record a completed scan: bump scan count + "last scan"; a fresh (0%) project
   // gets a plausible starter coverage so the scan produces a real-looking report.
   const onScanComplete = (project: Project) => {
@@ -148,7 +149,14 @@ function AppRoot() {
 
   return (
     <AppActionsCtx.Provider
-      value={{ startScan, addProject, onScanComplete, projects, goToReports: () => setTab('Reports') }}
+      value={{
+        startScan,
+        addProject,
+        deleteProject,
+        onScanComplete,
+        projects,
+        goToReports: () => setTab('Reports'),
+      }}
     >
       <div
         style={{

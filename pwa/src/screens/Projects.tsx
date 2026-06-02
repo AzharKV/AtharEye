@@ -146,6 +146,7 @@ export function ProjectDetail({ project: p }: { project: Project }) {
   const [bim, setBim] = useState<BimModel>(() => p.bim || bimFor(p.id));
   const [bimSheet, setBimSheet] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [confirmDel, setConfirmDel] = useState(false);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -444,6 +445,31 @@ export function ProjectDetail({ project: p }: { project: Project }) {
             <Button icon="reports" onClick={() => nav.push(<ReportDetail project={p} />)}>
               View latest report
             </Button>
+            <button
+              onClick={() => {
+                haptic();
+                setConfirmDel(true);
+              }}
+              style={{
+                height: 48,
+                borderRadius: 14,
+                border: `1px solid ${T.danger}33`,
+                background: 'transparent',
+                color: T.danger,
+                fontSize: 15.5,
+                fontWeight: 700,
+                fontFamily: T.font,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                marginTop: 4,
+              }}
+            >
+              <Icon name="trash" size={18} color={T.danger} />
+              Delete project
+            </button>
           </div>
         </div>
       </Screen>
@@ -458,6 +484,113 @@ export function ProjectDetail({ project: p }: { project: Project }) {
         }}
       />
       <Toast msg={toast} onDone={() => setToast(null)} />
+      <DeleteConfirm
+        open={confirmDel}
+        name={p.name}
+        onCancel={() => setConfirmDel(false)}
+        onDelete={() => {
+          actions.deleteProject(p.id);
+          nav.pop();
+        }}
+      />
+    </div>
+  );
+}
+
+// ── Destructive confirm (iOS action sheet) for deleting a project
+function DeleteConfirm({
+  open,
+  name,
+  onCancel,
+  onDelete,
+}: {
+  open: boolean;
+  name: string;
+  onCancel: () => void;
+  onDelete: () => void;
+}) {
+  useBackLayer(open, onCancel); // system Back dismisses the confirm
+  if (!open) return null;
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        zIndex: 360,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+      }}
+    >
+      <div
+        onClick={onCancel}
+        style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', animation: 'scrimIn .3s ease' }}
+      />
+      <div
+        style={{
+          position: 'relative',
+          padding: '0 10px',
+          paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
+          animation: 'sheetUp .34s cubic-bezier(.32,.72,0,1)',
+        }}
+      >
+        <div
+          style={{
+            background: '#1C232A',
+            borderRadius: 16,
+            overflow: 'hidden',
+            marginBottom: 8,
+            border: `1px solid ${T.hairline}`,
+          }}
+        >
+          <div style={{ padding: '18px 16px 14px', textAlign: 'center' }}>
+            <div style={{ fontSize: 16, fontWeight: 800 }}>Delete project?</div>
+            <div style={{ fontSize: 13, color: T.muted, marginTop: 5, lineHeight: 1.45 }}>
+              “{name}” and its reports will be removed. This can’t be undone.
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              haptic();
+              onDelete();
+            }}
+            style={{
+              width: '100%',
+              height: 54,
+              border: 'none',
+              borderTop: `1px solid ${T.hairline}`,
+              background: 'transparent',
+              color: T.danger,
+              fontSize: 17,
+              fontWeight: 700,
+              fontFamily: T.font,
+              cursor: 'pointer',
+            }}
+          >
+            Delete project
+          </button>
+        </div>
+        <button
+          onClick={() => {
+            haptic();
+            onCancel();
+          }}
+          style={{
+            width: '100%',
+            height: 54,
+            borderRadius: 16,
+            border: `1px solid ${T.hairline}`,
+            background: '#1C232A',
+            color: T.accent,
+            fontSize: 17,
+            fontWeight: 700,
+            fontFamily: T.font,
+            cursor: 'pointer',
+          }}
+        >
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }

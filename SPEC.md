@@ -244,6 +244,11 @@ athar-eye/
 ---
 
 ## 15. Change log
+- **v1.6 (2 Jun 2026) — delete project (owner feedback).** Added a per-project **Delete** action
+  (ProjectDetail → destructive "Delete project" button → iOS-style `DeleteConfirm` action sheet →
+  `deleteProject(id)`). It removes only that project and **persists** (survives reload) — so the
+  storage reset is no longer the only way to remove a project. System Back dismisses the confirm.
+  Verified: delete → back to list → reload → stays gone (6 projects).
 - **v1.5 (2 Jun 2026) — persistence, scan recording, scan visual + layout (owner feedback).**
   - **Local persistence (supersedes the v1.2 "in-memory" note):** `data.ts` is now the *seed*; the
     app persists the live projects to `localStorage` (`pwa/src/lib/store.ts`, key `athar-eye:data`,
