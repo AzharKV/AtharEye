@@ -24,6 +24,7 @@ import {
 } from '../components/primitives';
 import { Toast } from '../components/ShareSheet';
 import { SkeletonList } from '../components/Skeleton';
+import { SearchBar } from '../components/SearchBar';
 import { Screen, useNav } from '../navigation/Navigator';
 import { PushHeader, RoundBtn } from '../navigation/PushHeader';
 import { useAppActions } from '../navigation/AppActions';
@@ -36,7 +37,17 @@ export function ProjectsList() {
   const projects = actions.projects || DATA.projects;
   const ready = useReady('projects');
   const [filter, setFilter] = useState('All');
-  const portfolio = Math.round(projects.reduce((s, p) => s + p.pct, 0) / projects.length);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const closeSearch = () => {
+    setSearchOpen(false);
+    setQuery('');
+  };
+  useBackLayer(searchOpen, closeSearch); // system Back closes search
+
+  const portfolio = projects.length
+    ? Math.round(projects.reduce((s, p) => s + p.pct, 0) / projects.length)
+    : 0;
   const counts = {
     on: projects.filter((p) => p.status === 'On Track').length,
     rev: projects.filter((p) => p.status === 'Needs Review').length,
@@ -51,6 +62,53 @@ export function ProjectsList() {
           ? p.status === 'Needs Review'
           : p.status === 'Complete',
   );
+  const q = query.trim().toLowerCase();
+  const searchList = q
+    ? projects.filter((p) =>
+        [p.name, p.location, p.type, p.client].some((s) => (s || '').toLowerCase().includes(q)),
+      )
+    : projects;
+
+  const renderCards = (arr: Project[], empty: string) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '4px 20px 8px' }}>
+      {arr.map((p) => (
+        <Card
+          key={p.id}
+          pressable
+          onClick={() => nav.push(<ProjectDetail project={p} />)}
+          style={{ padding: 13, display: 'flex', gap: 14, alignItems: 'center' }}
+        >
+          <Ring value={p.pct} size={54} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: 16,
+                fontWeight: 700,
+                letterSpacing: -0.3,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {p.name}
+            </div>
+            <div style={{ fontSize: 12.5, color: T.muted, marginTop: 3 }}>
+              {p.location} · {p.area} m² · {p.scans} scans
+            </div>
+            <div style={{ marginTop: 8 }}>
+              <StatusBadge status={p.status} small />
+            </div>
+          </div>
+          <Icon name="chevron" size={18} color="rgba(255,255,255,0.22)" />
+        </Card>
+      ))}
+      {arr.length === 0 && (
+        <div style={{ textAlign: 'center', color: T.faint, fontSize: 14, padding: '40px 0' }}>
+          {empty}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <Screen>
@@ -59,7 +117,7 @@ export function ProjectsList() {
         sub={`${projects.length} projects · Scotland`}
         trailing={
           <div style={{ display: 'flex', gap: 8 }}>
-            <RoundBtn icon="search" label="Search" />
+            <RoundBtn icon="search" label="Search" onClick={() => setSearchOpen(true)} />
             <RoundBtn
               icon="plus"
               label="New project"
@@ -68,68 +126,45 @@ export function ProjectsList() {
           </div>
         }
       />
-      {/* summary strip — teal hero */}
-      <div style={{ padding: '2px 20px 8px' }}>
-        <Card style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Ring value={portfolio} size={66} stroke={6} accent label="AVG" />
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between' }}>
-            {(
-              [
-                ['On track', counts.on, T.accent],
-                ['Review', counts.rev, T.warning],
-                ['Complete', counts.done, T.muted],
-              ] as [string, number, string][]
-            ).map(([l, n, c]) => (
-              <div key={l}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: c }}>{n}</div>
-                <div style={{ fontSize: 11.5, color: T.muted, fontWeight: 600 }}>{l}</div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-      <Chips items={['All', 'On site', 'Needs review', 'Complete']} active={filter} onPick={setFilter} />
-      {!ready ? (
-        <SkeletonList count={5} />
+      {searchOpen ? (
+        <>
+          <SearchBar
+            value={query}
+            onChange={setQuery}
+            onCancel={closeSearch}
+            placeholder="Search projects"
+          />
+          {renderCards(searchList, q ? `No projects match “${query.trim()}”` : 'Type to search projects.')}
+        </>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '4px 20px 8px' }}>
-          {list.map((p) => (
-            <Card
-              key={p.id}
-              pressable
-              onClick={() => nav.push(<ProjectDetail project={p} />)}
-              style={{ padding: 13, display: 'flex', gap: 14, alignItems: 'center' }}
-            >
-              <Ring value={p.pct} size={54} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 700,
-                    letterSpacing: -0.3,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {p.name}
-                </div>
-                <div style={{ fontSize: 12.5, color: T.muted, marginTop: 3 }}>
-                  {p.location} · {p.area} m² · {p.scans} scans
-                </div>
-                <div style={{ marginTop: 8 }}>
-                  <StatusBadge status={p.status} small />
-                </div>
+        <>
+          {/* summary strip — teal hero */}
+          <div style={{ padding: '2px 20px 8px' }}>
+            <Card style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
+              <Ring value={portfolio} size={66} stroke={6} accent label="AVG" />
+              <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between' }}>
+                {(
+                  [
+                    ['On track', counts.on, T.accent],
+                    ['Review', counts.rev, T.warning],
+                    ['Complete', counts.done, T.muted],
+                  ] as [string, number, string][]
+                ).map(([l, n, c]) => (
+                  <div key={l}>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: c }}>{n}</div>
+                    <div style={{ fontSize: 11.5, color: T.muted, fontWeight: 600 }}>{l}</div>
+                  </div>
+                ))}
               </div>
-              <Icon name="chevron" size={18} color="rgba(255,255,255,0.22)" />
             </Card>
-          ))}
-          {list.length === 0 && (
-            <div style={{ textAlign: 'center', color: T.faint, fontSize: 14, padding: '40px 0' }}>
-              No projects in this filter.
-            </div>
-          )}
-        </div>
+          </div>
+          <Chips
+            items={['All', 'On site', 'Needs review', 'Complete']}
+            active={filter}
+            onPick={setFilter}
+          />
+          {!ready ? <SkeletonList count={5} /> : renderCards(list, 'No projects in this filter.')}
+        </>
       )}
     </Screen>
   );

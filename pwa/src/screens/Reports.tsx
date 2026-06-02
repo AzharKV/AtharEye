@@ -6,6 +6,7 @@ import { DATA, planFor, bimFor } from '../data';
 import { roundM } from '../lib/format';
 import { useCountUp } from '../hooks/useCountUp';
 import { useReady } from '../hooks/useReady';
+import { useBackLayer } from '../hooks/useBackLayer';
 import { Icon } from '../components/Icon';
 import { Mark, Wordmark } from '../components/Brand';
 import {
@@ -22,6 +23,7 @@ import {
 import { IsoMassing, isoFills } from '../components/IsoMassing';
 import { ShareSheet, Toast } from '../components/ShareSheet';
 import { SkeletonList } from '../components/Skeleton';
+import { SearchBar } from '../components/SearchBar';
 import { Screen, useNav } from '../navigation/Navigator';
 import { RoundBtn } from '../navigation/PushHeader';
 import { useAppActions } from '../navigation/AppActions';
@@ -35,6 +37,14 @@ export function ReportsList() {
   const ready = useReady('reports');
   const { projects } = useAppActions();
   const [filter, setFilter] = useState('All');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const closeSearch = () => {
+    setSearchOpen(false);
+    setQuery('');
+  };
+  useBackLayer(searchOpen, closeSearch); // system Back closes search
+
   const list = projects.filter((p) =>
     filter === 'All'
       ? true
@@ -44,66 +54,96 @@ export function ReportsList() {
           ? p.status === 'On Track'
           : p.status === 'Complete',
   );
+  const q = query.trim().toLowerCase();
+  const searchList = q
+    ? projects.filter((p) =>
+        [p.name, p.location, p.type, p.client].some((s) => (s || '').toLowerCase().includes(q)),
+      )
+    : projects;
+
+  const renderCards = (arr: Project[], empty: string) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '4px 20px 8px' }}>
+      {arr.map((p) => (
+        <Card
+          key={p.id}
+          pressable
+          onClick={() => nav.push(<ReportDetail project={p} />)}
+          style={{ padding: 14, display: 'flex', gap: 13, alignItems: 'center' }}
+        >
+          <BlueprintTile type={p.type} w={48} h={48} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: 15.5,
+                fontWeight: 700,
+                letterSpacing: -0.3,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {p.name}
+            </div>
+            <div
+              style={{
+                fontSize: 12.5,
+                color: T.muted,
+                marginTop: 3,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+              }}
+            >
+              <Icon name="clock" size={13} color={T.muted} />
+              Scanned {p.last} · {p.area} m²
+            </div>
+            <div style={{ marginTop: 8 }}>
+              <StatusBadge status={p.status} small />
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: T.accent, letterSpacing: -0.5 }}>
+              {p.pct}
+              <span style={{ fontSize: 12, color: T.muted }}>%</span>
+            </div>
+            <Icon name="chevron" size={16} color="rgba(255,255,255,0.22)" style={{ marginTop: 4 }} />
+          </div>
+        </Card>
+      ))}
+      {arr.length === 0 && (
+        <div style={{ textAlign: 'center', color: T.faint, fontSize: 14, padding: '40px 0' }}>
+          {empty}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <Screen>
       <ScreenHeader
         title="Reports"
         sub="Latest scan reports"
-        trailing={<RoundBtn icon="search" label="Search" />}
+        trailing={<RoundBtn icon="search" label="Search" onClick={() => setSearchOpen(true)} />}
       />
-      <Chips items={['All', 'Needs review', 'On track', 'Complete']} active={filter} onPick={setFilter} />
-      {!ready ? (
-        <SkeletonList count={6} />
+      {searchOpen ? (
+        <>
+          <SearchBar
+            value={query}
+            onChange={setQuery}
+            onCancel={closeSearch}
+            placeholder="Search reports"
+          />
+          {renderCards(searchList, q ? `No reports match “${query.trim()}”` : 'Type to search reports.')}
+        </>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '4px 20px 8px' }}>
-          {list.map((p) => (
-            <Card
-              key={p.id}
-              pressable
-              onClick={() => nav.push(<ReportDetail project={p} />)}
-              style={{ padding: 14, display: 'flex', gap: 13, alignItems: 'center' }}
-            >
-              <BlueprintTile type={p.type} w={48} h={48} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: 15.5,
-                    fontWeight: 700,
-                    letterSpacing: -0.3,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {p.name}
-                </div>
-                <div
-                  style={{
-                    fontSize: 12.5,
-                    color: T.muted,
-                    marginTop: 3,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                  }}
-                >
-                  <Icon name="clock" size={13} color={T.muted} />
-                  Scanned {p.last} · {p.area} m²
-                </div>
-                <div style={{ marginTop: 8 }}>
-                  <StatusBadge status={p.status} small />
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: T.accent, letterSpacing: -0.5 }}>
-                  {p.pct}
-                  <span style={{ fontSize: 12, color: T.muted }}>%</span>
-                </div>
-                <Icon name="chevron" size={16} color="rgba(255,255,255,0.22)" style={{ marginTop: 4 }} />
-              </div>
-            </Card>
-          ))}
-        </div>
+        <>
+          <Chips
+            items={['All', 'Needs review', 'On track', 'Complete']}
+            active={filter}
+            onPick={setFilter}
+          />
+          {!ready ? <SkeletonList count={6} /> : renderCards(list, 'No reports in this filter.')}
+        </>
       )}
     </Screen>
   );

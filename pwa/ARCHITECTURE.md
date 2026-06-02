@@ -93,6 +93,7 @@ pwa/
       IsoMassing.tsx          Isometric BIM-vs-as-built massing; isoFills, isoColorFor.
       ShareSheet.tsx          ShareSheet (iOS action sheet) + Toast (auto-hide).
       Skeleton.tsx            SkeletonBlock/Card/List (transform-only shimmer).
+      SearchBar.tsx           Inline iOS-style search field (used by the list screens).
       InstallPrompt.tsx       Add-to-home-screen banner (Android/desktop native + iOS hint).
       ErrorBoundary.tsx       Branded crash recovery screen.
     navigation/
@@ -145,8 +146,8 @@ pwa/
 - **`hooks`** — `useCountUp(target, dur?, run?)`, `useReady(key, delay?)`.
 
 ### Screens (`screens/`)
-- **`Projects.tsx`** — `ProjectsList` (portfolio summary ring + counts, filter chips, skeleton list, cards → `ProjectDetail`), `ProjectDetail` (scroll-aware floating header, parallax `BannerBlueprint`, progress `Ring` card, BIM model card + `BimUploadSheet`, coverage-by-area `Bar`s, team `Avatar`s, CTAs → `actions.startScan` / push `ReportDetail`, and **Delete project** → `DeleteConfirm` action sheet → `actions.deleteProject` (persisted)), `NewProject` (form + `Field`s + BIM attach → builds a `Project` and `actions.addProject`). Local: `DeleteConfirm`, `BimUploadSheet` (faked upload→align), `Field`, `BIM_SAMPLES`, `PTYPES`.
-- **`Reports.tsx`** — `ReportsList` (filter chips, skeleton, cards → `ReportDetail`), `ReportDetail` (branded sticky header, **count-up `Donut`**, Covered/Missing m², `IsoMassing`, meta table, coverage-by-room, open-issues with severity badges, `ShareSheet` + PDF `Toast`).
+- **`Projects.tsx`** — `ProjectsList` (portfolio summary ring + counts, filter chips, **search** (`SearchBar` → live filter by name/location/type/client), skeleton list, cards → `ProjectDetail`), `ProjectDetail` (scroll-aware floating header, parallax `BannerBlueprint`, progress `Ring` card, BIM model card + `BimUploadSheet`, coverage-by-area `Bar`s, team `Avatar`s, CTAs → `actions.startScan` / push `ReportDetail`, and **Delete project** → `DeleteConfirm` action sheet → `actions.deleteProject` (persisted)), `NewProject` (form + `Field`s + BIM attach → builds a `Project` and `actions.addProject`). Local: `DeleteConfirm`, `BimUploadSheet` (faked upload→align), `Field`, `BIM_SAMPLES`, `PTYPES`.
+- **`Reports.tsx`** — `ReportsList` (filter chips, **search**, skeleton, cards → `ReportDetail`), `ReportDetail` (branded sticky header, **count-up `Donut`**, Covered/Missing m², `IsoMassing`, meta table, coverage-by-room, open-issues with severity badges, `ShareSheet` + PDF `Toast`).
 - **`Settings.tsx`** — `Settings` (profile row → `Profile`, subscription card + usage `Bar` → `Plans`, scanning/app `Row`s + `Toggle`s, footer lockup), `Profile` (avatar, stats, details), `Plans` (tier cards, add-ons, switch `Toast`). Local: `Toggle`, `Row`.
 - **`scan/ScanFlow.tsx`** (lazy chunk) — controller stepping `select → home → active → processing → result`. `ActiveScan` draws a faint **perspective room wireframe** (floor grid + walls) + the point cloud on a **single `requestAnimationFrame` loop** (DPR capped at 2, cancelled on unmount, time-based progress over `DUR=7000`); bottom controls (stats · progress · stop) are a single safe-area-aware **column** (no overlap). `Processing` spinner uses **CSS `spin`** (no per-frame React); on completion it calls `onScanComplete(project)` (persists the scan). `ScanResult` count-up donut + stats; CTAs → `onViewReport` / share / done. Complete projects are excluded from `ScanSelect`.
 

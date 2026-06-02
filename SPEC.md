@@ -244,6 +244,11 @@ athar-eye/
 ---
 
 ## 15. Change log
+- **v1.7 (2 Jun 2026) — working search (owner feedback).** The Projects/Reports search icons were
+  decorative (no handler). Wired up real search: tapping it reveals an inline iOS-style `SearchBar`
+  (autofocus, clear ×, Cancel) that **live-filters** the list by name / location / type / client.
+  System Back closes the search. Verified on both screens (e.g. "edinburgh" → both Edinburgh
+  projects, "shop" → the Shop-refit one).
 - **v1.6 (2 Jun 2026) — delete project (owner feedback).** Added a per-project **Delete** action
   (ProjectDetail → destructive "Delete project" button → iOS-style `DeleteConfirm` action sheet →
   `deleteProject(id)`). It removes only that project and **persists** (survives reload) — so the
