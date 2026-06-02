@@ -20,66 +20,63 @@ const TIPS = [
   'Overlap areas you’ve already scanned',
 ];
 
-// ── Faux camera feed (dim, blurred room) behind the point cloud
+// ── Real camera feed (rear camera) behind the point cloud, with vignette overlay.
+// Falls back to dark gradient if permission is denied or API unavailable.
 function CameraBG() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [hasCamera, setHasCamera] = useState(false);
+
+  useEffect(() => {
+    if (!navigator.mediaDevices?.getUserMedia) return;
+    let stream: MediaStream | null = null;
+    navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } })
+      .then((s) => {
+        stream = s;
+        if (videoRef.current) {
+          videoRef.current.srcObject = s;
+          setHasCamera(true);
+        }
+      })
+      .catch(() => {
+        // permission denied or no camera — fallback gradient stays visible
+      });
+    return () => {
+      stream?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: '#0A0E12' }}>
+      {/* fallback gradient always present; hidden once camera is live */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          background:
-            'radial-gradient(120% 80% at 50% 110%, #1A2630 0%, #0C141B 45%, #070B0F 100%)',
+          background: 'radial-gradient(120% 80% at 50% 110%, #1A2630 0%, #0C141B 45%, #070B0F 100%)',
+          opacity: hasCamera ? 0 : 1,
+          transition: 'opacity 0.6s ease',
         }}
       />
-      {/* soft window light */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '14%',
-          left: '8%',
-          width: 150,
-          height: 200,
-          borderRadius: 18,
-          background: 'rgba(150,180,200,0.10)',
-          filter: 'blur(34px)',
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          top: '22%',
-          right: '12%',
-          width: 120,
-          height: 160,
-          borderRadius: 18,
-          background: 'rgba(120,150,170,0.07)',
-          filter: 'blur(40px)',
-        }}
-      />
-      {/* floor sheen */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: '38%',
-          background: 'linear-gradient(to top, rgba(70,95,115,0.16), transparent)',
-          filter: 'blur(8px)',
-        }}
-      />
-      <div
+      {/* live camera feed */}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
         style={{
           position: 'absolute',
           inset: 0,
-          backdropFilter: 'blur(1.5px)',
-          WebkitBackdropFilter: 'blur(1.5px)',
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          opacity: hasCamera ? 0.72 : 0,
+          transition: 'opacity 0.6s ease',
         }}
       />
       {/* vignette */}
       <div
-        style={{ position: 'absolute', inset: 0, boxShadow: 'inset 0 0 140px 30px rgba(0,0,0,0.7)' }}
+        style={{ position: 'absolute', inset: 0, boxShadow: 'inset 0 0 140px 30px rgba(0,0,0,0.75)' }}
       />
     </div>
   );
