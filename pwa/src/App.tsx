@@ -1,7 +1,4 @@
-// App.tsx — root: splash, adaptive device frame (desktop preview only), tab host
-// with per-tab navigators, and the lazy-loaded scan modal. Ported from
-// design-source/app/app.jsx; standalone-detection added so an installed app is
-// always fullscreen (SPEC §6.1 — no fake status bar on device). See SPEC §15.
+// Root: splash, responsive shell (phone-width card on desktop), per-tab navigators, and lazy scan modal.
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { T } from './theme';
@@ -96,8 +93,6 @@ function ScanFallback() {
 function AppRoot() {
   const [tab, setTab] = useState<TabName>('Projects');
   const [scan, setScan] = useState<{ project: Project | null } | null>(null);
-  // seeded from data.ts on first run, then persisted to localStorage so created
-  // projects and recorded scans survive a reload / relaunch (see lib/store.ts)
   const [projects, setProjects] = useState<Project[]>(() => loadProjects());
   const projNav = useRef<NavHandle | null>(null);
   const repNav = useRef<NavHandle | null>(null);
@@ -105,7 +100,6 @@ function AppRoot() {
 
   const startScan = (project?: Project | null) => setScan({ project: project || null });
   const closeScan = () => setScan(null);
-  // system/browser Back closes the full-screen scan modal
   useBackLayer(scan !== null, closeScan);
   const addProject = (p: Project) => setProjects((list) => [p, ...list]);
   const deleteProject = (id: string) => setProjects((list) => list.filter((p) => p.id !== id));
@@ -129,7 +123,6 @@ function AppRoot() {
       }),
     );
   };
-  // persist the working set whenever it changes
   useEffect(() => {
     saveProjects(projects);
   }, [projects]);

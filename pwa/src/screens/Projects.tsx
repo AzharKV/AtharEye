@@ -1,4 +1,3 @@
-// Projects.tsx — Projects list (tab root) + Project detail + New project. Ported from design-source/app/app-projects.jsx.
 import { useState, useEffect, useRef } from 'react';
 import { T } from '../theme';
 import type { Project, BimModel } from '../types';
@@ -30,7 +29,6 @@ import { PushHeader, RoundBtn } from '../navigation/PushHeader';
 import { useAppActions } from '../navigation/AppActions';
 import { ReportDetail } from './Reports';
 
-// ════════════════ PROJECTS LIST ════════════════
 export function ProjectsList() {
   const nav = useNav();
   const actions = useAppActions();
@@ -43,7 +41,7 @@ export function ProjectsList() {
     setSearchOpen(false);
     setQuery('');
   };
-  useBackLayer(searchOpen, closeSearch); // system Back closes search
+  useBackLayer(searchOpen, closeSearch);
 
   const portfolio = projects.length
     ? Math.round(projects.reduce((s, p) => s + p.pct, 0) / projects.length)
@@ -170,7 +168,6 @@ export function ProjectsList() {
   );
 }
 
-// ════════════════ PROJECT DETAIL ════════════════
 export function ProjectDetail({ project: p }: { project: Project }) {
   const nav = useNav();
   const actions = useAppActions();

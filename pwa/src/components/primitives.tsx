@@ -1,10 +1,8 @@
-// primitives.tsx — Athar Eye UI kit atoms. Ported verbatim from
-// design-source/app/app-ui.jsx. Discipline: ONE teal hero per screen; structural
-// elements grey; red only for missing/critical.
+// Athar Eye UI kit atoms. ONE teal hero per screen; structural elements grey; red only for missing/critical.
 import { useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { STATUS, T } from '../theme';
-import type { ProjectStatus } from '../theme';
+import type { ProjectStatus } from '../types';
 import { haptic } from '../lib/haptic';
 import { Icon } from './Icon';
 import type { IconName } from './Icon';

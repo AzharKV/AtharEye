@@ -1,4 +1,4 @@
-// ScanFlow.tsx — immersive scan flow (lazy chunk): select → home → active point cloud → processing → result → share. Ported from design-source/app/app-scan.jsx. Canvas uses a single rAF loop (§4.9); processing spinner uses CSS spin (§4.2).
+// Immersive scan flow (lazy chunk): project picker → guidance → active point cloud → processing → result. Canvas uses a single rAF loop; processing spinner uses CSS spin.
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { T } from '../../theme';
 import type { Project } from '../../types';

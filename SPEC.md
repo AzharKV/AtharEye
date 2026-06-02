@@ -244,6 +244,7 @@ athar-eye/
 ---
 
 ## 15. Change log
+- **v1.11 (3 Jun 2026) — codebase cleanup (no behavior change).** Structural and style pass: `ProjectStatus`/`Severity` types moved from `theme.ts` → `types.ts` (correct dependency direction; `theme.ts` now imports them). `vite-env.d.ts` moved to `src/` (standard Vite convention). `SEV2` in `Reports.tsx` replaced with the existing `SEV` from `theme.ts`. Optional chaining (`onClick?.()`) in `PushHeader`. Removed "Ported from design-source" provenance comments, `// ════════════════` section banners, and comments that restate what the code already says.
 - **v1.10 (2 Jun 2026) — scan overlay visibility tuning (owner feedback).** The room wireframe and point cloud were barely readable against the live camera feed. Camera opacity reduced 72% → 55% (darker background lets the teal pop); wireframe start alpha raised from 5% → 18% (`roomA = 0.18 + 0.32 × p`, max ~50% at scan end); line width 1 px → 1.5 px. Point cloud unchanged. Net: the AR overlay is clearly legible on any real-world camera background.
 - **v1.9 (2 Jun 2026) — splash OS-handoff + live camera scan.**
   - **Splash glitch fix (owner feedback):** on Android, the OS native splash (icon centered on the

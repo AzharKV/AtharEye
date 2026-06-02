@@ -1,6 +1,5 @@
-// Reports.tsx — Reports list (tab root) + Report detail (the hero screen). Ported from design-source/app/app-reports.jsx.
 import { useState, useEffect } from 'react';
-import { T } from '../theme';
+import { SEV, T } from '../theme';
 import type { Project, Severity } from '../types';
 import { DATA, planFor, bimFor } from '../data';
 import { roundM } from '../lib/format';
@@ -28,10 +27,8 @@ import { Screen, useNav } from '../navigation/Navigator';
 import { RoundBtn } from '../navigation/PushHeader';
 import { useAppActions } from '../navigation/AppActions';
 
-const SEV2: Record<Severity, string> = { high: T.danger, med: T.warning, low: T.faint };
 const SEV_LABEL: Record<Severity, string> = { high: 'High', med: 'Med', low: 'Low' };
 
-// ════════════════ REPORTS LIST ════════════════
 export function ReportsList() {
   const nav = useNav();
   const ready = useReady('reports');
@@ -43,7 +40,7 @@ export function ReportsList() {
     setSearchOpen(false);
     setQuery('');
   };
-  useBackLayer(searchOpen, closeSearch); // system Back closes search
+  useBackLayer(searchOpen, closeSearch);
 
   const list = projects.filter((p) =>
     filter === 'All'
@@ -149,7 +146,6 @@ export function ReportsList() {
   );
 }
 
-// ════════════════ REPORT DETAIL (hero) ════════════════
 export function ReportDetail({ project: p }: { project: Project }) {
   const nav = useNav();
   const [ready, setReady] = useState(false);
@@ -415,15 +411,15 @@ export function ReportDetail({ project: p }: { project: Project }) {
                         gap: 5,
                         padding: '4px 9px',
                         borderRadius: 8,
-                        background: `${SEV2[it.sev]}1c`,
-                        color: SEV2[it.sev],
+                        background: `${SEV[it.sev]}1c`,
+                        color: SEV[it.sev],
                         fontSize: 11,
                         fontWeight: 700,
                         textTransform: 'uppercase',
                         letterSpacing: 0.3,
                       }}
                     >
-                      <span style={{ width: 6, height: 6, borderRadius: 6, background: SEV2[it.sev] }} />
+                      <span style={{ width: 6, height: 6, borderRadius: 6, background: SEV[it.sev] }} />
                       {SEV_LABEL[it.sev]}
                     </span>
                   </div>

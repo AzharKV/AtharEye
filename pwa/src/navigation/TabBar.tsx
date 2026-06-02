@@ -1,5 +1,4 @@
-// TabBar.tsx — bottom tab bar: Projects · Reports · [Scan] · Settings.
-// Center Scan is the emphasized teal action. Ported from design-source/app/app-nav.jsx.
+// Bottom tab bar: Projects · Reports · [Scan] · Settings. Center Scan is the teal hero action.
 import { T } from '../theme';
 import { haptic } from '../lib/haptic';
 import { Icon } from '../components/Icon';
