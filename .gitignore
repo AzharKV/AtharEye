@@ -39,3 +39,6 @@ pnpm-debug.log*
 
 # Misc design-tool sidecar
 .design-canvas.state.json
+
+# TypeScript incremental build info
+*.tsbuildinfo
