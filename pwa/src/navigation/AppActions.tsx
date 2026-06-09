@@ -1,6 +1,4 @@
-// AppActions.tsx — app-level actions provided by App (launch scan, add project,
-// jump to reports) + the live projects list. Ported from design-source/app/app-nav.jsx
-// (AppActionsCtx) and app.jsx (the provider value).
+// App-level actions (launch scan, add/delete project, navigate to reports) + live projects list.
 import { createContext, useContext } from 'react';
 import type { Project } from '../types';
 

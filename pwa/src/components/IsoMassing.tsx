@@ -1,6 +1,4 @@
-// IsoMassing.tsx — stylized isometric floor-plan / massing diagram (SPEC §8.5).
-// Built = teal, partial = grey, missing = red (hatched). Geometric parallelograms
-// only. Ported verbatim from design-source/athar-iso.jsx.
+// Stylized isometric floor-plan diagram (SPEC §8.5). Built = teal, partial = grey, missing = red (hatched).
 import { useState } from 'react';
 import type { PlanRoom } from '../types';
 

@@ -1,4 +1,3 @@
-// Settings.tsx — Settings (tab root) + Profile + Plans. Ported from design-source/app/app-settings.jsx.
 import { useState } from 'react';
 import { T } from '../theme';
 import { DATA, SUB_PLANS, SUB_ADDONS } from '../data';
@@ -109,7 +108,6 @@ function Row({ icon, iconBg, title, value, toggle, onToggle, chevron, onClick, l
   );
 }
 
-// ════════════════ SETTINGS ════════════════
 export function Settings() {
   const nav = useNav();
   const u = DATA.user,
@@ -248,7 +246,6 @@ export function Settings() {
   );
 }
 
-// ════════════════ PROFILE ════════════════
 export function Profile() {
   const u = DATA.user;
   return (
@@ -330,7 +327,6 @@ export function Profile() {
   );
 }
 
-// ════════════════ PLANS ════════════════
 export function Plans() {
   const [sel, setSel] = useState(() => (SUB_PLANS.find((p) => p.current) || SUB_PLANS[2]).id);
   const [toast, setToast] = useState<string | null>(null);

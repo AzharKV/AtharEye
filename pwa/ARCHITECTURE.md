@@ -10,7 +10,7 @@
 > - [`../design-source/`](../design-source/) — the locked Claude Design export (visual reference; **ported, not reinvented**).
 > - [`../CLAUDE.md`](../CLAUDE.md) — how an AI/dev session should work in this repo.
 
-**Last updated:** 2026-06-02 · **Status:** Phase A complete (production PWA, verified). Includes:
+**Last updated:** 2026-06-03 · **Status:** Phase A complete (production PWA, verified). Includes:
 responsive web (no device-frame/fake status bar) · localStorage persistence (create/delete/scan) ·
 working search · system Back button · install prompt · SW auto-update · live-camera scan + room
 wireframe · OS-matched splash. ~6k LOC in `src/`.
@@ -76,8 +76,9 @@ pwa/
     main.tsx                  createRoot + StrictMode + ErrorBoundary; registerSW (auto-update); removes #initial-splash.
     App.tsx                   Root: App (responsive container), Splash, ScanFallback, AppRoot
                               (tab host + per-tab Navigators + scan modal + InstallPrompt).
-    theme.ts                  Design tokens T, STATUS, SEV; ProjectStatus/Severity types.
-    types.ts                  Domain interfaces (Project, Room, Issue, BimModel, SubPlan…).
+    vite-env.d.ts             Vite + vite-plugin-pwa client type references.
+    theme.ts                  Design tokens (T, STATUS, SEV); imports ProjectStatus/Severity from types.ts.
+    types.ts                  Domain types: ProjectStatus, Severity, Project, Room, Issue, BimModel, SubPlan…
     data.ts                   SPEC §10 demo data: DATA, PLANS/planFor, BIM/bimFor, SUB_PLANS, SUB_ADDONS.
     lib/
       haptic.ts               haptic() — navigator.vibrate(8), best-effort.

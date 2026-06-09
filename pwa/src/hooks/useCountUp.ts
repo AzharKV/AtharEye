@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 
-// useCountUp — timer-driven count-up (robust even where rAF is throttled).
-// Ported from design-source/app/app-ui.jsx. Respects a `run` gate so the donut
-// can hold at 0 until its screen has settled, then animate.
+// Timer-driven count-up (robust even where rAF is throttled). Respects a `run` gate.
 export function useCountUp(target: number, dur = 1100, run = true): number {
   const [v, setV] = useState(0);
   useEffect(() => {

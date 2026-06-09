@@ -1,0 +1,13 @@
+# Build output
+build/
+DerivedData/
+*.xcuserstate
+
+# Xcode user state (the generated .xcodeproj may be committed; user state must not)
+*.xcuserdata
+**/xcuserdata/
+*.xcuserdatad/
+**/*.xcuserdatad/
+
+# macOS
+.DS_Store

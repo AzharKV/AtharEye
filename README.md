@@ -11,7 +11,7 @@ competitive and design specification (the single source of truth) and
 
 ## Repository layout
 
-This is a monorepo holding two stacks that build the same product at different fidelities.
+This is a monorepo holding the same product built across multiple stacks (so the look/feel can be compared).
 
 ```
 .
@@ -19,7 +19,9 @@ This is a monorepo holding two stacks that build the same product at different f
 ├── CLAUDE_CODE_BUILD.md     # Engineering brief + native-feel acceptance criteria
 ├── design-source/           # Approved Claude Design export — the visual reference
 ├── pwa/                     # ✅ Phase A — production PWA (Vite + React 18 + TS + vite-plugin-pwa)
-└── native/                  # ⏳ Phase B — native Flutter / iOS app (placeholder for now)
+├── reactnative/             # ✅ Phase B — native iOS app (React Native + Expo) — exact 1:1 copy of the PWA
+├── flutter/                 # 🔬 Comparison — Flutter port (tokens + data + hero screens; `flutter analyze` clean)
+└── ios-native/              # 🔬 Comparison — native iOS SwiftUI port (tokens + data + hero screens; builds for simulator)
 ```
 
 ### `pwa/` — Phase A (now)
@@ -48,12 +50,40 @@ npm run preview  # preview the production build
 Deploy: build `npm run build`, publish `dist/`. Share the URL → iPhone **Safari** →
 **Add to Home Screen**. Preload once on Wi-Fi, then it runs offline.
 
-### `native/` — Phase B (after validation)
+### `reactnative/` — Phase B native app (now)
 
-The real product, built once the vendor pitch validates the workflow. Flutter is the
-lean (single codebase, native feel, Azhar's primary stack), with real ARKit LiDAR via
-platform channel, IFC import, cloud analysis and PDF export. Placeholder only today —
-see [`native/README.md`](native/README.md).
+The **native iOS app**, built as an **exact feature + visual copy** of the PWA using
+**React Native + Expo** (SDK 56, expo-router) — all 13 screens, the navy/teal design and
+the full scan→report→share flow, with native smoothness: a **react-native-skia** point
+cloud on the UI thread (60fps), the **live device camera**, native push/pop navigation,
+native haptics, and AsyncStorage persistence. Validated (`tsc` · Metro bundle · expo-doctor ·
+iOS prebuild · lint, all clean); runs on a physical iPhone via `npx expo run:ios --device`
+with **a free Apple ID** (no paid Developer Program). Full detail in
+[`reactnative/ARCHITECTURE.md`](reactnative/ARCHITECTURE.md).
+
+```bash
+cd reactnative
+npm install                 # Node 20 LTS
+npx expo run:ios --device   # build + install on a connected iPhone
+```
+
+### `flutter/` + `ios-native/` — stack comparison ports (built)
+
+Focused **comparison subsets** of the same locked design — built to compare native feel /
+animation performance / DX across stacks against `reactnative/`. Each has the navy/teal tokens,
+the 6 demo projects (verbatim) and the **hero screens**: Projects list, Report detail (animated
+count-up donut), and the **LiDAR point-cloud scan** (the perf showcase — Flutter `CustomPainter`
+vs SwiftUI `Canvas`/`TimelineView` vs RN `react-native-skia`). Reports/Settings are stubs; the
+other screens, search, persistence, BIM and live camera are intentionally out of scope.
+
+- **`flutter/`** — Flutter 3.41 (Material 3, dark). Validated: `fvm flutter analyze` clean + a
+  widget smoke test. Run: `cd flutter && fvm flutter run`.
+- **`ios-native/`** — SwiftUI (iOS 17+, Swift 6, xcodegen). Validated: `xcodebuild … -sdk
+  iphonesimulator` → **BUILD SUCCEEDED**. Open `AtharEyeCompare.xcodeproj` in Xcode, or
+  `xcodegen generate` to regenerate.
+
+The production direction (real ARKit LiDAR, IFC import, cloud analysis, PDF export) lands in
+whichever stack wins the comparison.
 
 ## Documentation
 
@@ -63,6 +93,7 @@ see [`native/README.md`](native/README.md).
 | [`SPEC.md`](SPEC.md) | Product / data / competitive / design **source of truth** + decision log (§15) |
 | [`CLAUDE_CODE_BUILD.md`](CLAUDE_CODE_BUILD.md) | Engineering brief + native-feel acceptance criteria (§4) |
 | [`pwa/ARCHITECTURE.md`](pwa/ARCHITECTURE.md) | ⭐ **Full engineering reference for the PWA codebase** — read this instead of scanning the project |
+| [`reactnative/ARCHITECTURE.md`](reactnative/ARCHITECTURE.md) | ⭐ **Full engineering reference for the React Native app** — the native 1:1 port |
 | [`design-source/`](design-source/) | Locked design export (visual reference — ported, not reinvented) |
 
 ## Working method

@@ -1,5 +1,4 @@
-// PushHeader.tsx — translucent back/push header bar + round trailing icon button.
-// Ported verbatim from design-source/app/app-nav.jsx.
+// Translucent back/push header bar and round trailing icon button.
 import type { ReactNode } from 'react';
 import { T } from '../theme';
 import { haptic } from '../lib/haptic';
@@ -86,7 +85,7 @@ export function RoundBtn({
     <button
       onClick={() => {
         haptic();
-        onClick && onClick();
+        onClick?.();
       }}
       aria-label={label ?? icon}
       style={{

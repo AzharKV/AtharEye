@@ -1,7 +1,6 @@
-// theme.ts — Athar Eye design tokens (SPEC §6.2/6.3, ported verbatim from
-// design-source/app/app-ui.jsx). Dark navy + teal, SF system font, 4-pt grid.
-// Discipline: ONE teal hero per screen; everything structural is grey; red only
-// for missing / critical.
+// Athar Eye design tokens (SPEC §6.2/6.3). Dark navy + teal, SF system font, 4-pt grid.
+// ONE teal hero per screen; structural elements grey; red only for missing/critical.
+import type { ProjectStatus, Severity } from './types';
 
 export const T = {
   bg: '#0C0F12',
@@ -26,16 +25,12 @@ export const T = {
   mono: 'ui-monospace, "SF Mono", Menlo, monospace',
 } as const;
 
-export type ProjectStatus = 'On Track' | 'Needs Review' | 'Complete';
-
 // Status: teal = positive, amber = the one caution accent (Needs Review only).
 export const STATUS: Record<ProjectStatus, { c: string; label: string }> = {
   'On Track': { c: T.accent, label: 'On track' },
   'Needs Review': { c: T.warning, label: 'Needs review' },
   Complete: { c: T.accent, label: 'Complete' },
 };
-
-export type Severity = 'high' | 'med' | 'low';
 
 export const SEV: Record<Severity, string> = {
   high: T.danger,

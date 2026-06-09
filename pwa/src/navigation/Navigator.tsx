@@ -1,5 +1,4 @@
-// Navigator.tsx — push/pop stack navigator (one per tab) animating iOS push/pop,
-// plus the Screen scroll wrapper. Ported verbatim from design-source/app/app-nav.jsx.
+// Push/pop stack navigator (one per tab) with iOS-style slide transitions, plus Screen wrapper.
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, MutableRefObject, ReactNode } from 'react';
 import { T } from '../theme';
@@ -170,7 +169,6 @@ export function Navigator({
   );
 }
 
-// ── Screen scroll wrapper
 export function Screen({
   children,
   // list/large-title screens: small base gap + the status-bar inset. In a

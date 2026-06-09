@@ -1,7 +1,7 @@
-// types.ts — typed domain model for the Athar Eye demo data (SPEC §10).
-import type { ProjectStatus, Severity } from './theme';
+// Typed domain model for the Athar Eye demo data (SPEC §10).
 
-export type { ProjectStatus, Severity };
+export type ProjectStatus = 'On Track' | 'Needs Review' | 'Complete';
+export type Severity = 'high' | 'med' | 'low';
 
 /** Coverage of one room/area, as a percentage against the BIM model. */
 export interface Room {

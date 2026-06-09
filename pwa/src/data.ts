@@ -1,5 +1,4 @@
-// data.ts — Demo content, SPEC §10 (authoritative, verbatim). UK/Scotland only.
-// Currency £. Units metric (m / m²). Ported from design-source/athar-data.jsx.
+// Demo content, SPEC §10 (authoritative). UK/Scotland only; currency £; units metric (m / m²).
 import type { BimModel, DemoData, PlanRoom, SubAddon, SubPlan } from './types';
 
 export const DATA: DemoData = {

@@ -1,5 +1,4 @@
-// ShareSheet.tsx — iOS-style share action sheet + auto-hiding Toast. Shared by
-// Report detail & Scan result. Ported verbatim from design-source/app/app-share.jsx.
+// iOS-style share action sheet + auto-hiding Toast.
 import { useEffect, useState } from 'react';
 import { T } from '../theme';
 import { haptic } from '../lib/haptic';
