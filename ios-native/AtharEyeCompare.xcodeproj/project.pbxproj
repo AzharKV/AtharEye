@@ -20,7 +20,7 @@
 		34F27754DE30D46F6D92C210 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		567F03F39DC1960747A6BBB3 /* ScanActiveScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanActiveScreen.swift; sourceTree = "<group>"; };
 		58355FCEBDBDF203FCA03866 /* Data.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data.swift; sourceTree = "<group>"; };
-		688A441D44175CA0CB54E072 /* AtharEyeCompare.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = AtharEyeCompare.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		688A441D44175CA0CB54E072 /* AtharEyeCompare.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AtharEyeCompare.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		76A67AFCA34A13D28B057B42 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		95252C41F16829B6A07BC7E8 /* ReportDetailScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportDetailScreen.swift; sourceTree = "<group>"; };
 		B024F9754EB2421AE1ED7141 /* ProjectsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsScreen.swift; sourceTree = "<group>"; };
@@ -86,8 +86,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = 2931B0318C3210D2F6288109 /* Build configuration list for PBXProject "AtharEyeCompare" */;
 			developmentRegion = en;
@@ -270,6 +268,10 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.atharrobotics.athareyecompare;
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_STRICT_CONCURRENCY = complete;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -294,6 +296,10 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.atharrobotics.athareyecompare;
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_STRICT_CONCURRENCY = complete;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
