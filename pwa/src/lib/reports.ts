@@ -232,7 +232,8 @@ export function reportFor(project: Project, coverage?: number): ReportModel {
     closedCount: st.closedCount,
     spark: sparkAt(project, c),
     captures: st.captures,
-    summary: prose.summary,
+    // Keep the summary's leading "NN%" in sync with the rendered coverage (e.g. after a 62→66 scan).
+    summary: prose.summary.replace(/^(\d+)%/, `${c}%`),
     nextActions: prose.nextActions,
     footer: prose.footerExtra ? `${footerBase} · ${prose.footerExtra}` : footerBase,
     isCurrent,

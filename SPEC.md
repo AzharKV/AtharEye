@@ -293,9 +293,10 @@ athar-eye/
     reports); ✓(3) light tokens + primitives; ✓(4) in-memory store + portfolio (Projects/NewProject/
     ProjectDetail overview/Reports doc/Account/Settings); ✓(5) detail timeline scrubber + full CRUD
     (bottom-sheet editors; zone-coverage edits roll up overall %; View log + per-scan report);
-    (6) scan video + point-cloud flow; (7) reports history + per-scan + share/export; (8) issues + plans
-    + team + settings; (9) real logo + PWA icons + acceptance. Phases 2–5 verified in preview (incl. the
-    Leith 0→100 scrub with the snag list clearing at handover); build/tsc/lint clean.
+    ✓(6) scan video + point-cloud flow (writes a real scan to Morningside 62→66, opens as a report);
+    (7) reports history + per-scan + share/export; (8) issues + plans + team + settings; (9) real logo +
+    PWA icons + acceptance. Phases 2–6 verified in preview (the Leith 0→100 scrub clears the snags at
+    handover; the scan flow video + accreting point cloud → 62→66 → report); build/tsc/lint clean.
 - **v1.13 (3 Jun 2026) — stack comparison ports: Flutter (`flutter/`) + native iOS SwiftUI (`ios-native/`).**
   Optional follow-on to v1.12, to compare native feel / animation performance across stacks. Each is a
   **focused comparison subset** (not all 13 screens): the navy/teal tokens + the 6 demo projects (verbatim)

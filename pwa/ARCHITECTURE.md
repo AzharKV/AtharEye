@@ -14,12 +14,13 @@
 `feature/optisync-phase-1`). The PWA is being rebuilt from *Athar Eye* (dark) into **OptiSync** (light
 "Blueprint + teal") per the handoff bundle — see `../SPEC.md` §15 v1.14.
 
-**Done — phases 1–5:** rebrand shell; the OptiSync **data layer**; light **tokens + primitives**; the
-in-memory **store**; the **portfolio + report document**; and the **project-detail timeline scrubber
-(signature #1) + full CRUD**. Verified in preview: Leith scrubs 0→94→100 (the snag list shrinks to 0 at
-handover), the scan log shows per-scan deltas, and CRUD affordances gate on the latest scan.
-**Next:** phase 6 (scan video + point-cloud animation), phase 7 (reports history + per-scan + share/
-export sheet), phase 8 (issues + plans + team + settings), phase 9 (real logo + PWA icons + acceptance).
+**Done — phases 1–6:** rebrand shell; the OptiSync **data layer**; light **tokens + primitives**; the
+in-memory **store**; the **portfolio + report document**; the **timeline scrubber (signature #1) + full
+CRUD**; and the **scan flow (signature #2)** — a looping walkthrough video feed with an accreting canvas
+point cloud (Aim → Capturing → Processing → Result), timer-driven, that writes a real scan to Morningside
+(62→66). Verified in preview: both signature interactions and the new scan→report path.
+**Next:** phase 7 (reports history + per-scan + share/export sheet), phase 8 (issues + plans + team +
+settings), phase 9 (real logo + PWA icons + acceptance).
 
 ### OptiSync module map (current)
 - **`types.ts`** — domain model: `Project` (zones/issues/scans/bim/trades/team/captures), `Issue`
@@ -44,7 +45,8 @@ export sheet), phase 8 (issues + plans + team + settings), phase 9 (real logo + 
   ScanLog/ScanDetail. Zone-coverage edits roll up overall % via `update(id, recipe, {rollup})`.
 - **`screens/`** — `Projects` (list/search/filters/swipe-delete), `NewProject`, `ProjectDetail`
   (overview + interactive scan-history **scrubber** + View log + per-scan report + full CRUD),
-  `Reports` (history + report doc), `Account`, `Settings`, `scan/ScanFlow` (phase-6 stub).
+  `Reports` (history + report doc), `Account`, `Settings`, `scan/ScanFlow` (video feed + canvas point
+  cloud; beats timer-driven; writes the scan via the store; still-image fallback if the video fails).
 
 *Sections below still describe Athar-Eye internals; they are revised as the later phases land.*
 
