@@ -47,7 +47,7 @@ const projects: Project[] = [
       { name: 'Snagging', status: 'Not started' },
     ],
     zones: [
-      { id: 'st-z1', name: 'Living / Kitchen (open-plan)', area_m2: 24, coverage: 35, stage: 'Early', note: 'Stripped; first-fix electrical running' },
+      { id: 'st-z1', name: 'Living / Kitchen (open-plan)', area_m2: 24, coverage: 31, stage: 'Early', note: 'Stripped; first-fix electrical running' },
       { id: 'st-z2', name: 'Bathroom', area_m2: 6, coverage: 22, stage: 'Early', note: 'Stripped to brick; damp on external wall' },
       { id: 'st-z3', name: 'Bedroom 1', area_m2: 14, coverage: 30, stage: 'Early', note: 'First-fix wiring in' },
       { id: 'st-z4', name: 'Bedroom 2', area_m2: 11, coverage: 25, stage: 'Early', note: 'Stripped; ceiling repair complete' },
@@ -116,7 +116,7 @@ const projects: Project[] = [
       { id: 'mo-z3', name: 'Bedroom 2', area_m2: 15, coverage: 68, stage: 'Mid', note: 'Second-fix joinery underway' },
       { id: 'mo-z4', name: 'Living Room', area_m2: 28, coverage: 65, stage: 'Mid', note: 'Cornice repair complete' },
       { id: 'mo-z5', name: 'Bedroom 3', area_m2: 13, coverage: 60, stage: 'Mid', note: 'Plastered; awaiting decoration' },
-      { id: 'mo-z6', name: 'Hall / Stair / Landing', area_m2: 37, coverage: 58, stage: 'Mid', note: 'Spindles being refitted' },
+      { id: 'mo-z6', name: 'Hall / Stair / Landing', area_m2: 37, coverage: 52, stage: 'Mid', note: 'Spindles being refitted' },
       { id: 'mo-z7', name: 'Family Bathroom', area_m2: 7, coverage: 55, stage: 'Mid', note: 'First-fix done; wet-wall going up' },
       { id: 'mo-z8', name: 'En-suite', area_m2: 5, coverage: 48, stage: 'Mid', note: 'Tiling started — lippage flagged' },
     ],
@@ -297,7 +297,7 @@ const projects: Project[] = [
       { name: 'Snagging', status: 'In progress' },
     ],
     zones: [
-      { id: 'ma-z1', name: 'Open-plan office', area_m2: 180, coverage: 95, stage: 'Complete', note: 'Furniture in; commissioning' },
+      { id: 'ma-z1', name: 'Open-plan office', area_m2: 180, coverage: 94, stage: 'Complete', note: 'Furniture in; commissioning' },
       { id: 'ma-z2', name: 'Meeting Room A', area_m2: 24, coverage: 92, stage: 'Complete', note: 'AV second fix done' },
       { id: 'ma-z3', name: 'WC block', area_m2: 26, coverage: 90, stage: 'Complete', note: 'Signed off' },
       { id: 'ma-z4', name: 'Meeting Room B', area_m2: 22, coverage: 90, stage: 'Complete', note: 'Snagging' },
@@ -356,7 +356,7 @@ const projects: Project[] = [
       { name: 'Snagging', status: 'Not started' },
     ],
     zones: [
-      { id: 'cq-z1', name: 'Ground-floor open span', area_m2: 520, coverage: 86, stage: 'Complete', note: 'Slab + cladding done' },
+      { id: 'cq-z1', name: 'Ground-floor open span', area_m2: 520, coverage: 84, stage: 'Complete', note: 'Slab + cladding done' },
       { id: 'cq-z2', name: 'Loading bay', area_m2: 90, coverage: 84, stage: 'Complete', note: 'Roller doors installed' },
       { id: 'cq-z3', name: 'WC / welfare block', area_m2: 40, coverage: 80, stage: 'Mid', note: 'Second fix outstanding' },
       { id: 'cq-z4', name: 'Office pod', area_m2: 60, coverage: 79, stage: 'Mid', note: 'Partitions up; fit-out pending' },
@@ -376,6 +376,15 @@ const projects: Project[] = [
     captures: [],
   },
 ];
+
+if (import.meta.env.DEV) {
+  for (const p of projects) {
+    const totalArea = p.zones.reduce((s, z) => s + z.area_m2, 0);
+    const weighted = p.zones.reduce((s, z) => s + z.area_m2 * z.coverage, 0);
+    const computed = Math.max(0, Math.min(100, Math.round(weighted / totalArea)));
+    console.assert(computed === p.overall_coverage, `data.ts: ${p.name} rollup=${computed} !== headline=${p.overall_coverage}`);
+  }
+}
 
 export const SEED: AppData = {
   projects,

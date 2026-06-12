@@ -11,7 +11,7 @@ import { T } from '../../theme';
 import type { Project, Zone } from '../../types';
 import { fmtDateShort } from '../../lib/format';
 import { useStore } from '../../lib/store';
-import { SCAN_BG } from '../../lib/photos';
+import { SCAN_BG, SCAN_FEED } from '../../lib/photos';
 import { Button, Card, Ring, SectionLabel, StageChip, mono } from '../../components/primitives';
 import { Icon } from '../../components/Icon';
 
@@ -273,10 +273,14 @@ export function ScanFlow({
     <div style={{ position: 'absolute', inset: 0, zIndex: 500, background: '#0a0e14', overflow: 'hidden', animation: 'modalUp .3s cubic-bezier(.32,.72,0,1)' }}>
       {/* live feed (walkthrough still) */}
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-        <img
-          src={bgForZone(zoneName)}
-          alt=""
-          style={{ position: 'absolute', inset: '-4%', width: '108%', height: '108%', objectFit: 'cover', filter: step === 'process' ? 'brightness(.4) saturate(.6)' : step === 'result' ? 'brightness(.7)' : 'brightness(.86)', transition: 'filter .5s', animation: step === 'aim' || step === 'capture' ? 'feedpan 14s ease-in-out infinite alternate' : 'none' }}
+        <video
+          src={SCAN_FEED}
+          poster={bgForZone(zoneName)}
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{ position: 'absolute', inset: '-4%', width: '108%', height: '108%', objectFit: 'cover', filter: step === 'process' ? 'brightness(.4) saturate(.6)' : step === 'result' ? 'brightness(.7)' : 'brightness(.86)', transition: 'filter .5s' }}
         />
         {step === 'aim' && (
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.10) 1px,transparent 1px)', backgroundSize: '34px 34px', animation: 'gridfade 2s ease-in-out infinite alternate' }} />
