@@ -12,7 +12,6 @@ import type { IconName } from '../components/Icon';
 import { Settings } from './Settings';
 import { Plans } from './Plans';
 import { Team } from './Team';
-import { Issues } from './Issues';
 
 export function Account() {
   const { data } = useStore();
@@ -68,10 +67,9 @@ export function Account() {
           <Row k="Established" v={<span style={mono}>{data.company.established}</span>} last />
         </Card>
 
-        {/* Links */}
+        {/* Links — issues/snags live in the Reports tab (a portfolio-wide report concern), not here. */}
         <SectionLabel>Workspace</SectionLabel>
         <Card style={{ padding: '4px 8px' }}>
-          <NavRow icon="alert" label="Issues & snags" detail={`${stats.open} open`} onClick={() => nav.push(<Issues />)} />
           <NavRow icon="layers" label="Plan & billing" detail={`${data.subscription.plan} · ${data.subscription.price}${data.subscription.period}`} onClick={() => nav.push(<Plans />)} />
           <NavRow icon="team" label="Team & access" detail={`${data.team.length} members`} onClick={() => nav.push(<Team />)} />
           <NavRow icon="settings" label="Settings" onClick={() => nav.push(<Settings />)} last />

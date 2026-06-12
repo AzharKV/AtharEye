@@ -43,7 +43,9 @@ export function Settings() {
             <div style={{ fontSize: 13, color: T.muted, fontVariantNumeric: 'tabular-nums' }}>v1.0.0</div>
           </div>
           <div style={{ fontSize: 12, color: T.faint, marginTop: 8, lineHeight: 1.5 }}>
-            iPhone-LiDAR + BIM progress & coverage reporting · Cairn Refurbishment Ltd
+            iPhone-LiDAR + BIM progress &amp; coverage reporting.
+            <br />
+            Scan. Compare. Prove. · © 2026 Athar Robotics
           </div>
         </Card>
       </div>

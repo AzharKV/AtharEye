@@ -35,7 +35,7 @@ function Splash({ onDone }: { onDone: () => void }) {
         position: 'absolute',
         inset: 0,
         zIndex: 999,
-        background: T.canvas,
+        background: T.surface,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -88,6 +88,11 @@ function ScanFallback() {
 function AppRoot() {
   const [tab, setTab] = useState<TabName>('Projects');
   const [scan, setScan] = useState<{ projectId: string | null } | null>(null);
+  // Per-tab nav depth (1 = root). The tab bar shows only when the active tab is at its root —
+  // pushed screens (detail / report / issues …) are full-screen with their own back bar, matching
+  // the design (app.jsx: showTab only on the three root screens).
+  const [depths, setDepths] = useState<Record<TabName, number>>({ Projects: 1, Reports: 1, Account: 1 });
+  const setDepth = (name: TabName) => (d: number) => setDepths((prev) => (prev[name] === d ? prev : { ...prev, [name]: d }));
   const projNav = useRef<NavHandle | null>(null);
   const repNav = useRef<NavHandle | null>(null);
   const accNav = useRef<NavHandle | null>(null);
@@ -107,9 +112,11 @@ function AppRoot() {
 
   const tabPane = (name: TabName, navRef: React.MutableRefObject<NavHandle | null>, root: ReactNode) => (
     <div style={{ position: 'absolute', inset: 0, display: tab === name ? 'block' : 'none' }}>
-      <Navigator navRef={navRef} root={root} />
+      <Navigator navRef={navRef} root={root} onDepth={setDepth(name)} />
     </div>
   );
+
+  const atRoot = depths[tab] <= 1;
 
   return (
     <AppActionsCtx.Provider value={{ startScan, goToReports: () => setTab('Reports'), openReport }}>
@@ -117,8 +124,8 @@ function AppRoot() {
         {tabPane('Projects', projNav, <ProjectsList />)}
         {tabPane('Reports', repNav, <ReportsList />)}
         {tabPane('Account', accNav, <Account />)}
-        {!scan && <TabBar active={tab} onTab={setTab} onScan={() => startScan(null)} />}
-        {!scan && <InstallPrompt />}
+        {!scan && atRoot && <TabBar active={tab} onTab={setTab} onScan={() => startScan(null)} />}
+        {!scan && atRoot && <InstallPrompt />}
         {scan && (
           <Suspense fallback={<ScanFallback />}>
             <ScanFlow projectId={scan.projectId} onClose={closeScan} onViewReport={openReport} />

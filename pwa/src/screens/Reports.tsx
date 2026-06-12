@@ -10,6 +10,7 @@ import { useStore } from '../lib/store';
 import { Screen, useNav } from '../navigation/Navigator';
 import { PushHeader, RoundBtn } from '../navigation/PushHeader';
 import { ProjectDetail } from './ProjectDetail';
+import { Issues } from './Issues';
 import {
   Button,
   Card,
@@ -40,7 +41,18 @@ export function ReportsList() {
 
   return (
     <Screen padTop={0}>
-      <ScreenHeader title="Reports" sub={`${rows.length} reports · latest first`} />
+      <ScreenHeader
+        title="Reports"
+        sub={`${rows.length} reports · latest first`}
+        trailing={
+          <button
+            onClick={() => nav.push(<Issues />)}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 13px', borderRadius: 999, border: `1px solid ${T.hairline}`, background: T.surface, color: T.ink, fontWeight: 700, fontSize: 13, fontFamily: T.font, cursor: 'pointer' }}
+          >
+            <Icon name="alert" size={15} color={T.amber} /> Issues
+          </button>
+        }
+      />
       <div style={{ padding: '6px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {rows.map((p) => {
           const last = p.scans[p.scans.length - 1];
@@ -196,19 +208,16 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
         <div style={{ ...mono, fontSize: 11.5, color: T.muted, textAlign: 'center', padding: '20px 10px 6px', lineHeight: 1.5 }}>{r.footer}</div>
       </div>
 
-      {/* Footer actions */}
+      {/* Footer actions — float on a transparent→canvas gradient (design footer). */}
       <div
         style={{
           position: 'sticky',
           bottom: 0,
           display: 'flex',
           gap: 10,
-          padding: '12px 18px',
-          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
-          background: 'rgba(255,255,255,0.9)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          borderTop: `1px solid ${T.hairline}`,
+          padding: '14px 18px',
+          paddingBottom: 'max(14px, env(safe-area-inset-bottom))',
+          background: `linear-gradient(transparent, ${T.canvas} 26%)`,
           marginTop: 8,
         }}
       >

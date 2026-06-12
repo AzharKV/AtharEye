@@ -1,5 +1,5 @@
 # OptiSync — Master Specification & Build Brief
-**Version 1.14 · Single source of truth · Last updated: 12 June 2026**
+**Version 1.15 · Single source of truth · Last updated: 12 June 2026**
 
 > **Naming.** The product is now **OptiSync** (formerly *Athar Eye*, formerly *BuildScan*), by **Athar Robotics**. The **PWA in `pwa/`** is the OptiSync build (this redesign); the **`reactnative/` · `flutter/` · `ios-native/`** comparison ports were built against the prior *Athar Eye* dark design and are **frozen** pending a re-port. For the OptiSync PWA the authoritative product/data/design source is the **handoff bundle** (`OPTISYNC_*` docs) summarised in §15 v1.14, which supersedes the Athar-Eye-era §6.2 tokens, §8 screens, and §10 data below (kept as the frozen-ports reference). Mentions of "Athar Eye" elsewhere in this doc are historical.
 
@@ -252,6 +252,44 @@ athar-eye/
 ---
 
 ## 15. Change log
+- **v1.15 (12 Jun 2026) — OptiSync PWA: manual-test bug-fix + prototype-parity pass.** Nine issues found
+  in device testing, fixed against `design-source/` and verified in the browser preview (tsc + ESLint +
+  build clean). No data/product-fact changes — UI/navigation/flow fidelity only.
+  - **Tab bar scoped to root screens.** The bottom tab bar (and the install banner) now render **only on
+    the three tab roots** (Projects / Reports / Account), matching the design (`app.jsx`
+    `showTab = ['projects','reports','account']`). Pushed screens (project detail, report, issues,
+    settings, plans, team) are full-screen with their own back bar. Implemented via a per-tab nav-depth
+    signal: `Navigator` now reports `onDepth(stackLength)`; `AppRoot` hides the tab bar when the active
+    tab's depth > 1. This also fixes the **"floating action buttons"** — the detail/report footer CTAs no
+    longer sit *above* a visible tab bar (the double-bar read as floating).
+  - **Detail/report footers** changed from a translucent frosted bar to the design's transparent→canvas
+    **gradient fade** (`linear-gradient(transparent, canvas 26%)`), so body content fades out cleanly
+    under the pinned CTAs instead of bleeding through a blurred bar.
+  - **Launch splash status bar.** Static `#initial-splash`, the React `<Splash>`, and the manifest
+    `background_color` are now **white** (`#FFFFFF`) to match `theme-color` + the in-app white headers —
+    removes the status-bar seam on the splash (the in-app status bar was already correct).
+  - **Scan-history scrubber** rebuilt to the design `Timeline`: one continuous navy rail + progress fill
+    with absolutely-placed nodes, so the line no longer kinks/misaligns at the larger selected node.
+  - **Project edit affordances.** The detail header "edit" button uses a **pencil** icon (was the `user`
+    person glyph, which read as a profile link); zone-coverage rows show a small pencil next to the name
+    so they read as editable (was no affordance).
+  - **Project site captures** open a **full-screen lightbox** on tap (prev/next + counter), matching the
+    progress report's gallery (previously the project's captures were not tappable to full screen).
+  - **Scan flow re-ported to the prototype** (`screens-scan.jsx` + `ScanPicker`). Was a single dark list;
+    now: **light project picker** (mini-donut + stage chip + zones/last-scan) → **light area select**
+    (radio cards per zone with `coverage% · area m²`, "Start scan · {zone}") → **aim** (walkthrough still
+    feed + blueprint grid + teal reticle + "Begin capture") → **capture** (counter + vertical point-cloud
+    sweep + pts bar) → **process** ("Aligning to BIM…") → **result** ("Scan aligned to BIM", frozen
+    from→to delta tiles, Done / View report). The from→to delta is **frozen at capture start** and the
+    scan is written on the user's finish action (not on entering Result) so the result numbers don't
+    drift once the store mutates. The scan visual now uses zone-specific stills (`bgForZone`) per the
+    prototype rather than the prior `scan_feed.mp4` video.
+  - **Issues relocated.** "Issues & snags" moved **out of the Account workspace** into the **Reports tab**
+    (header shortcut), per the design (Issues is a portfolio/reporting concern, surfaced from
+    `ReportsHistory`, not the profile). The Account "Open issues" stat stays.
+  - **Settings → About** no longer appends the demo company ("Cairn Refurbishment Ltd"); it now credits the
+    maker — "iPhone-LiDAR + BIM progress & coverage reporting. Scan. Compare. Prove. · © 2026 Athar
+    Robotics".
 - **v1.14 (12 Jun 2026) — OptiSync redesign: the `pwa/` is rebuilt as OptiSync (in progress).** Major
   redesign of the production PWA from *Athar Eye* (dark) to **OptiSync** (light "Blueprint + teal"),
   same stack (Vite + React 18 + TS strict + vite-plugin-pwa + Netlify), same repo, branch

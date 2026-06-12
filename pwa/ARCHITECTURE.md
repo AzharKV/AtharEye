@@ -30,6 +30,19 @@ underline** (was a 32px large title); **tab bar → navy scan button + active `n
 FAB); the **Projects row → stage chip top-right + pin-location + status dot below**. Verified in preview
 against the design's `projects.png`.
 
+**Post-build bug-fix + parity pass (SPEC §15 v1.15, 12 Jun 2026):** nine manual-test issues fixed against
+`design-source/`, verified in the browser preview — (1) the **tab bar + install banner now render only on
+the three tab roots** (pushed screens are full-screen), via a new `Navigator` `onDepth` signal that
+`AppRoot` uses to hide the bar when the active tab's depth > 1; (2) detail/report **footers** use the
+design's transparent→canvas **gradient fade** (not a frosted bar); (3) the **launch splash + manifest
+`background_color` are white** to match `theme-color`/headers (status-bar seam fix); (4) the **scrubber**
+rebuilt to a continuous rail + absolute nodes (line no longer kinks at the selected node); (5) the detail
+**edit** button is a pencil icon + zone rows show a pencil affordance; (6) **project captures open a
+full-screen lightbox**; (7) the **scan flow re-ported to the prototype** (light project picker → light
+**area select** → aim/Begin capture → capture → process → result; frozen from→to delta written on finish;
+zone-specific stills, not the video); (8) **Issues moved from Account → the Reports tab header**; (9)
+**Settings → About** credits Athar Robotics instead of the demo company.
+
 **Remaining manual step:** deploy `pwa/dist/` (Netlify) + verify Add-to-Home-Screen / standalone launch +
 offline on a real iPhone.
 
@@ -47,8 +60,10 @@ offline on a real iPhone.
   re-seeds (the intended demo reset).
 - **`theme.ts`** — light Blueprint+teal `T` (superset incl. back-compat aliases) + `STATUS`/`SEV`/`STAGE`.
 - **`components/primitives.tsx`** — Donut/Ring, ZoneBars/Bar, Sparkline, SevDot, Status/Stage pills,
-  Card, Chips, Button, KeyVal, Gallery+Lightbox, ScreenHeader, mono.
-- **`navigation/`** — reused Navigator/backstack/Screen; `TabBar` (Projects·Reports·Scan·Account),
+  Card, Chips, Button, KeyVal, Gallery + **exported `Lightbox`** (reused by the project-detail captures),
+  ScreenHeader, mono.
+- **`navigation/`** — reused Navigator/backstack/Screen; `TabBar` (Projects·Reports·Scan·Account, shown
+  **only on tab roots** — `Navigator` reports `onDepth`, `AppRoot` hides the bar when depth > 1),
   `PushHeader` (white + 2px navy underline), `AppActions` (startScan/goToReports/openReport).
 - **`components/Sheet.tsx`** — bottom sheet (scrim + slide-up, owns one Back layer, **portals to
   `#app-card`** to clear the tab bar) + form fields (TextField/NumberField/SelectField).
@@ -58,9 +73,12 @@ offline on a real iPhone.
   ScanLog/ScanDetail. Zone-coverage edits roll up overall % via `update(id, recipe, {rollup})`.
 - **`screens/`** — `Projects` (list/search/filters/swipe-delete), `NewProject`, `ProjectDetail`
   (overview + interactive scan-history **scrubber** + View log + per-scan report + full CRUD),
-  `Reports` (history + report doc), `Account` (hub + Edit-profile sheet), `Issues`, `Plans`, `Team`,
-  `Settings`, `scan/ScanFlow` (video feed + canvas point cloud; beats timer-driven; writes the scan via
-  the store; still-image fallback if the video fails).
+  `Reports` (history + report doc + **Issues shortcut in the header**), `Account` (hub + Edit-profile
+  sheet; **no Issues link — it lives in Reports now**), `Issues`, `Plans`, `Team`, `Settings`,
+  `scan/ScanFlow` (prototype flow: light project picker → light **area select** → aim/Begin capture →
+  capture → process → result; zone-specific still feed + canvas point cloud (vertical sweep); beats
+  timer-driven; the from→to delta is frozen at capture start and the scan is written to the store on the
+  user's finish action).
 
 *Sections below still describe Athar-Eye internals; they are revised as the later phases land.*
 

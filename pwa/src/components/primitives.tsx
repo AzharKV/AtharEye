@@ -484,7 +484,7 @@ export function Gallery({ ids }: { ids: string[] }) {
   );
 }
 
-function Lightbox({ srcs, index, onIndex, onClose }: { srcs: string[]; index: number; onIndex: (i: number) => void; onClose: () => void }) {
+export function Lightbox({ srcs, index, onIndex, onClose }: { srcs: string[]; index: number; onIndex: (i: number) => void; onClose: () => void }) {
   const prev = () => onIndex((index - 1 + srcs.length) % srcs.length);
   const next = () => onIndex((index + 1) % srcs.length);
   return (

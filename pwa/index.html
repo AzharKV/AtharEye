@@ -169,6 +169,24 @@
         }
       }
 
+      /* scan-flow camera feed — subtle parallax pan + blueprint-grid breathe (screens-scan.jsx) */
+      @keyframes feedpan {
+        from {
+          transform: scale(1) translate(0, 0);
+        }
+        to {
+          transform: scale(1.08) translate(-2%, 1%);
+        }
+      }
+      @keyframes gridfade {
+        from {
+          opacity: 0.5;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
       /* misc */
       @keyframes spin {
         to {
@@ -244,7 +262,9 @@
         position: fixed;
         inset: 0;
         z-index: 9999;
-        background: #edf1f6;
+        /* White to match the status-bar theme-color (#FFFFFF) + the in-app white headers — no
+           seam under the status bar during the launch splash (was canvas grey). */
+        background: #ffffff;
         display: flex;
         align-items: center;
         justify-content: center;

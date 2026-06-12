@@ -102,6 +102,12 @@ const ICONS: Record<string, JSX.Element> = {
     </>
   ),
   close: <path d="M6 6l12 12M18 6L6 18" />,
+  edit: (
+    <>
+      <path d="M4 20h4L18.5 9.5a2 2 0 00-2.8-2.8L5 17z" />
+      <path d="M14 7l3 3" />
+    </>
+  ),
   scans: (
     <>
       <path d="M3 7l9-4 9 4-9 4-9-4zM3 7v6l9 4 9-4V7" />

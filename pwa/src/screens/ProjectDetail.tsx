@@ -10,12 +10,13 @@ import { fmtDate, fmtDateShort, roundM } from '../lib/format';
 import { stateAt, rungFor } from '../lib/reports';
 import { photoSrc } from '../lib/photos';
 import { useStore } from '../lib/store';
+import { useBackLayer } from '../hooks/useBackLayer';
 import { useAppActions } from '../navigation/AppActions';
 import { Screen, useNav } from '../navigation/Navigator';
 import { PushHeader, RoundBtn } from '../navigation/PushHeader';
 import { ReportDetail } from './Reports';
 import { EditProjectSheet, ZoneSheet, IssueSheet, TradeSheet, TeamSheet, BimSheet, ScanLogSheet } from './editors';
-import { Avatar, Bar, Button, Card, Donut, Gallery, KeyVal, SectionLabel, SevDot, StageChip, StatusPill, mono } from '../components/primitives';
+import { Avatar, Bar, Button, Card, Donut, Gallery, KeyVal, Lightbox, SectionLabel, SevDot, StageChip, StatusPill, mono } from '../components/primitives';
 import { Icon } from '../components/Icon';
 
 type SheetState =
@@ -77,7 +78,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
         title={p.name}
         trailing={
           <div style={{ display: 'flex', gap: 8 }}>
-            {isLatest && <RoundBtn icon="user" label="Edit" onClick={() => setSheet({ t: 'project' })} />}
+            {isLatest && <RoundBtn icon="edit" label="Edit" onClick={() => setSheet({ t: 'project' })} />}
             <RoundBtn icon="share" label="Report" onClick={() => nav.push(<ReportDetail projectId={p.id} />)} />
           </div>
         }
@@ -266,20 +267,18 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
         )}
       </div>
 
-      {/* Footer actions */}
+      {/* Footer actions — buttons float on a transparent→canvas gradient (design footer), so body
+          content fades out cleanly under them rather than showing through a frosted bar. */}
       <div
         style={{
           position: 'sticky',
           bottom: 0,
           display: 'flex',
           gap: 10,
-          padding: '12px 18px',
-          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
-          background: 'rgba(255,255,255,0.9)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          borderTop: `1px solid ${T.hairline}`,
-          marginTop: 16,
+          padding: '14px 18px',
+          paddingBottom: 'max(14px, env(safe-area-inset-bottom))',
+          background: `linear-gradient(transparent, ${T.canvas} 26%)`,
+          marginTop: 8,
         }}
       >
         <Button full icon="reports" onClick={() => openReportAt(cov)}>Report</Button>
@@ -303,18 +302,23 @@ function isLatestCoverage(p: Project, c: number): boolean {
 }
 const sevRank = (s: Issue['severity']) => (s === 'Critical' ? 0 : s === 'Major' ? 1 : 2);
 
-// ── Interactive scan-history scrubber
+// ── Interactive scan-history scrubber (continuous track + absolutely-placed nodes, per design
+//    Timeline). One straight rail with a navy progress fill; nodes sit on the rail so the line never
+//    kinks at the selected (larger) node.
 function Scrubber({ project, selected, onSelect }: { project: Project; selected: number; onSelect: (coverage: number) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const scans = project.scans;
+  const n = scans.length;
+  const sel = Math.max(0, scans.findIndex((s) => s.coverage === selected));
+  const pct = (i: number) => (n <= 1 ? 0 : (i / (n - 1)) * 100);
 
-  const pickNearest = (clientX: number) => {
+  const pick = (clientX: number) => {
     const el = ref.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    const t = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
-    const idx = Math.round(t * (scans.length - 1));
+    const t = Math.max(0, Math.min(1, (clientX - r.left - 14) / (r.width - 28)));
+    const idx = Math.round(t * (n - 1));
     const s = scans[idx];
     if (s && s.coverage !== selected) onSelect(s.coverage);
   };
@@ -325,36 +329,39 @@ function Scrubber({ project, selected, onSelect }: { project: Project; selected:
       onPointerDown={(e) => {
         setDragging(true);
         (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-        pickNearest(e.clientX);
+        pick(e.clientX);
       }}
-      onPointerMove={(e) => dragging && pickNearest(e.clientX)}
+      onPointerMove={(e) => dragging && pick(e.clientX)}
       onPointerUp={() => setDragging(false)}
       onPointerCancel={() => setDragging(false)}
-      style={{ display: 'flex', touchAction: 'pan-y', cursor: 'pointer', userSelect: 'none' }}
+      style={{ position: 'relative', height: 76, padding: '0 14px', touchAction: 'pan-y', cursor: 'pointer', userSelect: 'none' }}
     >
+      {/* rail + progress fill */}
+      <div style={{ position: 'absolute', left: 14, right: 14, top: 46, height: 4, borderRadius: 3, background: T.navyTint }} />
+      <div style={{ position: 'absolute', left: 14, top: 46, height: 4, borderRadius: 3, background: T.navy, width: `calc((100% - 28px) * ${pct(sel) / 100})`, transition: 'width .3s cubic-bezier(.4,0,.2,1)' }} />
       {scans.map((s, i) => {
-        const on = s.coverage === selected;
-        const isLast = i === scans.length - 1;
+        const active = i === sel;
         return (
-          <div key={s.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <div style={{ flex: 1, height: 2, background: i === 0 ? 'transparent' : T.hairline }} />
-              <div
-                style={{
-                  width: on ? 16 : 11,
-                  height: on ? 16 : 11,
-                  borderRadius: 999,
-                  background: isLast ? T.teal : T.navy,
-                  border: on ? `3px solid ${T.surface}` : 'none',
-                  boxShadow: on ? `0 0 0 2px ${isLast ? T.teal : T.navy}` : 'none',
-                  flexShrink: 0,
-                  transition: 'width .15s, height .15s',
-                }}
-              />
-              <div style={{ flex: 1, height: 2, background: isLast ? 'transparent' : T.hairline }} />
-            </div>
-            <div style={{ ...mono, fontSize: 13, fontWeight: 800, color: on ? (isLast ? T.teal : T.navy) : T.muted, marginTop: 7 }}>{s.coverage}%</div>
-            <div style={{ ...mono, fontSize: 9.5, color: T.faint, marginTop: 1 }}>{fmtDateShort(s.date)}</div>
+          <div key={s.id} style={{ position: 'absolute', left: `calc(14px + (100% - 28px) * ${pct(i) / 100})`, top: 0, transform: 'translateX(-50%)', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {active ? (
+              <div style={{ ...mono, fontSize: 13, fontWeight: 700, color: T.teal, marginTop: 4 }}>{s.coverage}%</div>
+            ) : (
+              <div style={{ height: 21 }} />
+            )}
+            <div
+              style={{
+                position: 'absolute',
+                top: 40,
+                width: active ? 18 : 11,
+                height: active ? 18 : 11,
+                borderRadius: '50%',
+                background: active ? T.teal : i < sel ? T.navy : T.surface,
+                border: active ? '4px solid #fff' : `2px solid ${i <= sel ? T.navy : T.hairline}`,
+                boxShadow: active ? `0 2px 8px rgba(24,131,126,.5), 0 0 0 1px ${T.teal}` : 'none',
+                transition: 'all .2s',
+              }}
+            />
+            <div style={{ ...mono, position: 'absolute', top: 62, fontSize: 9.5, color: active ? T.ink : T.muted, fontWeight: active ? 700 : 500, whiteSpace: 'nowrap' }}>{fmtDateShort(s.date)}</div>
           </div>
         );
       })}
@@ -368,9 +375,12 @@ function ZoneRow({ zone, editable, onEdit }: { zone: Zone; editable: boolean; on
       onClick={editable ? onEdit : undefined}
       style={{ width: '100%', display: 'block', border: 'none', background: 'none', padding: '6px 0', cursor: editable ? 'pointer' : 'default', textAlign: 'left' }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
-        <span style={{ fontSize: 13.5, fontWeight: 600, color: T.ink }}>{zone.name}</span>
-        <span style={{ ...mono, fontSize: 13, fontWeight: 700, color: T.muted }}>{zone.coverage}%</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 600, color: T.ink }}>
+          {zone.name}
+          {editable && <Icon name="edit" size={12} color={T.faint} />}
+        </span>
+        <span style={{ ...mono, fontSize: 13, fontWeight: 700, color: zone.coverage >= 100 ? T.teal : T.muted }}>{zone.coverage}%</span>
       </div>
       <Bar value={zone.coverage} color={zone.coverage >= 100 ? T.teal : zone.coverage < 40 ? T.blue : T.navy} />
     </button>
@@ -396,27 +406,36 @@ function IssueRow({ issue, closed, editable, onEdit }: { issue: Issue; closed?: 
 }
 
 function CaptureGrid({ ids, editing, onAdd, onRemove }: { ids: string[]; editing: boolean; onAdd: () => void; onRemove: (id: string) => void }) {
+  const [open, setOpen] = useState<number | null>(null);
+  // Resolve to real srcs (skip any unknown id) and keep the matching id for removal/lightbox.
+  const shots = ids.map((id) => ({ id, src: photoSrc(id) })).filter((s): s is { id: string; src: string } => !!s.src);
+  const srcs = shots.map((s) => s.src);
+  useBackLayer(open !== null, () => setOpen(null));
   return (
-    <div className="no-scrollbar" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
-      <button onClick={onAdd} style={{ flexShrink: 0, width: 118, height: 88, borderRadius: 12, border: `1px dashed ${T.hairline}`, background: T.surface, color: T.muted, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-        <Icon name="upload" size={20} color={T.navy} />
-        Add photo
-      </button>
-      {ids.map((id) => {
-        const src = photoSrc(id);
-        if (!src) return null;
-        return (
-          <div key={id} style={{ position: 'relative', flexShrink: 0 }}>
-            <img src={src} alt="" loading="lazy" style={{ width: 118, height: 88, objectFit: 'cover', borderRadius: 12, border: `1px solid ${T.hairline}`, display: 'block' }} />
+    <>
+      <div className="no-scrollbar" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+        <button onClick={onAdd} style={{ flexShrink: 0, width: 118, height: 88, borderRadius: 12, border: `1px dashed ${T.hairline}`, background: T.surface, color: T.muted, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+          <Icon name="upload" size={20} color={T.navy} />
+          Add photo
+        </button>
+        {shots.map((s, i) => (
+          <div key={s.id} style={{ position: 'relative', flexShrink: 0 }}>
+            <button
+              onClick={() => (editing ? undefined : setOpen(i))}
+              style={{ padding: 0, border: 'none', background: 'none', cursor: editing ? 'default' : 'zoom-in', display: 'block' }}
+            >
+              <img src={s.src} alt="" loading="lazy" style={{ width: 118, height: 88, objectFit: 'cover', borderRadius: 12, border: `1px solid ${T.hairline}`, display: 'block' }} />
+            </button>
             {editing && (
-              <button onClick={() => onRemove(id)} aria-label="Remove" style={{ position: 'absolute', top: -6, right: -6, width: 24, height: 24, borderRadius: 999, border: '2px solid #fff', background: T.red, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <button onClick={() => onRemove(s.id)} aria-label="Remove" style={{ position: 'absolute', top: -6, right: -6, width: 24, height: 24, borderRadius: 999, border: '2px solid #fff', background: T.red, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                 <Icon name="close" size={13} color="#fff" />
               </button>
             )}
           </div>
-        );
-      })}
-    </div>
+        ))}
+      </div>
+      {open !== null && <Lightbox srcs={srcs} index={open} onIndex={setOpen} onClose={() => setOpen(null)} />}
+    </>
   );
 }
 

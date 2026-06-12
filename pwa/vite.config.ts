@@ -37,7 +37,8 @@ export default defineConfig({
         display: 'standalone',
         display_override: ['standalone'],
         orientation: 'portrait',
-        background_color: '#EDF1F6',
+        // White so the OS launch splash + status bar match the in-app white headers (no seam).
+        background_color: '#FFFFFF',
         theme_color: '#FFFFFF',
         categories: ['business', 'productivity', 'utilities'],
         icons: [

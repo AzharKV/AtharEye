@@ -38,9 +38,12 @@ type Anim = { type: 'push' | 'pop' } | null;
 export function Navigator({
   root,
   navRef,
+  onDepth,
 }: {
   root: ReactNode;
   navRef?: MutableRefObject<NavHandle | null>;
+  /** Fires with the live stack depth (1 = root) so the host can hide the tab bar on pushed screens. */
+  onDepth?: (depth: number) => void;
 }) {
   const [stack, setStack] = useState<StackItem[]>(() => [{ id: uid(), el: root }]);
   const [anim, setAnim] = useState<Anim>(null);
@@ -104,6 +107,11 @@ export function Navigator({
   useEffect(() => {
     if (navRef) navRef.current = { push, pop, popToRoot, depth: stack.length };
   });
+
+  // Report stack depth to the host (tab bar shows only on a tab's root screen).
+  useEffect(() => {
+    onDepth?.(stack.length);
+  }, [stack.length, onDepth]);
 
   const top = stack.length - 1;
   const api: NavApi = { push, pop, popToRoot, canPop: stack.length > 1 };
