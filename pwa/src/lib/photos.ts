@@ -44,8 +44,10 @@ export const PHOTO: Record<string, string> = {
   p089: `${ROOT}/plans/floorplan_sketch_p089.jpeg`,
 };
 
-/** Resolve a p-index to its path (undefined if not a shipped asset). */
-export const photoSrc = (id: string): string | undefined => PHOTO[id];
+/** Resolve a p-index to its path. Uploaded captures are stored as blob:/data:/http(s):/ paths and
+ *  pass through unchanged (undefined only for an unknown p-index). */
+export const photoSrc = (id: string): string | undefined =>
+  PHOTO[id] ?? (/^(blob:|data:|https?:|\/)/.test(id) ? id : undefined);
 
 /** Stage band each gallery photo belongs to — drives the scrubber's stage-appropriate captures. */
 export const PHOTO_STAGE: Record<string, Stage> = {

@@ -1,36 +1,47 @@
-// Project detail — overview (donut + facts), scan history, zones, issues, captures, BIM, team, trades,
-// and the Report / New scan footer. The timeline scrubber + full CRUD layer on in phase 5.
-import { useState } from 'react';
+// Project detail — overview + the timeline scrubber (signature interaction #1) + full CRUD.
+// Tapping/dragging a scan point re-renders the donut, zone bars, open issues and captures at that
+// coverage (<200ms crossfade, via stateAt). At the latest point everything is CRUD-editable through
+// the bottom-sheet editors; scrubbed views are read-only time-travel. View log opens the scan log →
+// per-scan detail → that scan's report.
+import { useRef, useState } from 'react';
 import { T, SEV } from '../theme';
-import type { Issue, Project } from '../types';
+import type { Issue, Project, Zone } from '../types';
 import { fmtDate, fmtDateShort, roundM } from '../lib/format';
+import { stateAt, rungFor } from '../lib/reports';
+import { photoSrc } from '../lib/photos';
 import { useStore } from '../lib/store';
 import { useAppActions } from '../navigation/AppActions';
 import { Screen, useNav } from '../navigation/Navigator';
 import { PushHeader, RoundBtn } from '../navigation/PushHeader';
 import { ReportDetail } from './Reports';
-import {
-  Avatar,
-  Button,
-  Card,
-  Donut,
-  Gallery,
-  KeyVal,
-  SectionLabel,
-  SevDot,
-  StageChip,
-  StatusPill,
-  ZoneBars,
-  mono,
-} from '../components/primitives';
+import { EditProjectSheet, ZoneSheet, IssueSheet, TradeSheet, TeamSheet, BimSheet, ScanLogSheet } from './editors';
+import { Avatar, Bar, Button, Card, Donut, Gallery, KeyVal, SectionLabel, SevDot, StageChip, StatusPill, mono } from '../components/primitives';
 import { Icon } from '../components/Icon';
 
+type SheetState =
+  | { t: 'project' }
+  | { t: 'zone'; id: string | null }
+  | { t: 'issue'; id: string | null }
+  | { t: 'trade'; index: number | null }
+  | { t: 'team'; index: number | null }
+  | { t: 'bim' }
+  | { t: 'log' }
+  | null;
+
+const initials = (name: string) =>
+  name.split(/[\s.]+/).filter(Boolean).map((s) => s[0]).slice(0, 2).join('').toUpperCase();
+
 export function ProjectDetail({ projectId }: { projectId: string }) {
-  const { data } = useStore();
+  const { data, update } = useStore();
   const nav = useNav();
   const { startScan } = useAppActions();
   const p = data.projects.find((x) => x.id === projectId);
+
+  const [scrub, setScrub] = useState<number | null>(null);
+  const [sheet, setSheet] = useState<SheetState>(null);
   const [showClosed, setShowClosed] = useState(false);
+  const [editCaps, setEditCaps] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   if (!p) {
     return (
@@ -41,9 +52,24 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
     );
   }
 
-  const open = p.issues.filter((i) => i.status === 'Open');
-  const closed = p.issues.filter((i) => i.status === 'Closed');
-  const ringColor = p.status === 'Needs review' ? T.amber : p.overall_coverage >= 100 ? T.teal : T.navy;
+  const isLatest = scrub == null || scrub === p.overall_coverage;
+  const cov = isLatest ? p.overall_coverage : scrub!;
+  const view = stateAt(p, cov);
+  const ringColor = p.status === 'Needs review' && cov < 100 ? T.amber : cov >= 100 ? T.teal : T.navy;
+  const scrubScan = !isLatest ? p.scans.find((s) => s.coverage === cov) : undefined;
+  const openReportAt = (c: number) => {
+    setSheet(null);
+    nav.push(<ReportDetail projectId={p.id} coverage={isLatestCoverage(p, c) ? undefined : c} />);
+  };
+
+  const addCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    update(p.id, (d) => d.captures.unshift(url));
+    e.target.value = '';
+  };
+  const removeCapture = (id: string) => update(p.id, (d) => { d.captures = d.captures.filter((c) => c !== id); });
 
   return (
     <Screen padTop={0} padBottom={92}>
@@ -51,13 +77,14 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
         title={p.name}
         trailing={
           <div style={{ display: 'flex', gap: 8 }}>
-            <RoundBtn icon="share" label="Share" onClick={() => nav.push(<ReportDetail projectId={p.id} />)} />
+            {isLatest && <RoundBtn icon="user" label="Edit" onClick={() => setSheet({ t: 'project' })} />}
+            <RoundBtn icon="share" label="Report" onClick={() => nav.push(<ReportDetail projectId={p.id} />)} />
           </div>
         }
       />
 
       <div style={{ padding: '14px 18px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {p.reviewNote && (
+        {isLatest && p.reviewNote && (
           <div style={{ display: 'flex', gap: 10, padding: '12px 14px', background: T.amberTint, border: `1px solid ${T.amber}33`, borderRadius: 14 }}>
             <Icon name="alert" size={18} color={T.amber} style={{ flexShrink: 0, marginTop: 1 }} />
             <div style={{ fontSize: 13, color: T.ink, lineHeight: 1.5 }}>
@@ -65,18 +92,29 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
             </div>
           </div>
         )}
+        {!isLatest && scrubScan && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: T.navyTint, borderRadius: 12 }}>
+            <Icon name="clock" size={17} color={T.navy} />
+            <div style={{ flex: 1, fontSize: 13, color: T.navy, fontWeight: 600 }}>
+              Viewing scan · <span style={mono}>{fmtDate(scrubScan.date)}</span>
+            </div>
+            <button onClick={() => setScrub(null)} style={{ border: 'none', background: T.navy, color: '#fff', borderRadius: 999, padding: '5px 12px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+              Latest
+            </button>
+          </div>
+        )}
 
-        {/* Overview */}
+        {/* Overview — crossfades with the scrubber */}
         <Card style={{ padding: 18, display: 'flex', gap: 16, alignItems: 'center' }}>
-          <Donut value={p.overall_coverage} size={120} stroke={12} color={ringColor} />
+          <Donut value={view.coverage} size={118} stroke={12} color={ringColor} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-              <StageChip stage={p.stage} />
-              <StatusPill status={p.status} />
+              <StageChip stage={view.stage} />
+              {isLatest ? <StatusPill status={p.status} /> : <span style={{ fontSize: 12, fontWeight: 700, color: T.muted }}>{rungFor(cov)}</span>}
             </div>
             <div style={{ fontSize: 13, color: T.muted, lineHeight: 1.6 }}>
               <div>{p.type}</div>
-              <div style={{ ...mono }}>{p.location}</div>
+              <div style={mono}>{p.location}</div>
             </div>
           </div>
         </Card>
@@ -85,73 +123,102 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
         <Card style={{ padding: '6px 16px' }}>
           <KeyVal k="Client" v={p.client} />
           <KeyVal k="Floor area" v={<span style={mono}>{p.area_m2} m²</span>} />
-          <KeyVal k="Verified" v={<span style={mono}>{roundM(p.area_m2, p.overall_coverage)} m² of {p.area_m2} m²</span>} />
+          <KeyVal k="Verified" v={<span style={mono}>{roundM(p.area_m2, view.coverage)} m² of {p.area_m2} m²</span>} />
           <KeyVal k="Started" v={<span style={mono}>{fmtDate(p.start_date)}</span>} />
           <KeyVal k="Target handover" v={<span style={mono}>{p.target_handover ? fmtDate(p.target_handover) : '—'}</span>} />
         </Card>
 
-        {/* Scan history (static timeline — interactive scrubber in phase 5) */}
+        {/* Scan history scrubber */}
         {p.scans.length > 0 && (
           <div>
-            <SectionLabel right={<span style={{ fontSize: 12.5, fontWeight: 600, color: T.faint }}>{p.scans.length} scans</span>}>
-              Scan history
+            <SectionLabel right={<button onClick={() => setSheet({ t: 'log' })} style={{ border: 'none', background: 'none', color: T.navy, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}>View log →</button>}>
+              Scan history · tap to scrub
             </SectionLabel>
             <Card style={{ padding: 16 }}>
-              <ScanTimeline project={p} />
+              <Scrubber project={p} selected={cov} onSelect={(c) => setScrub(c === p.overall_coverage ? null : c)} />
             </Card>
           </div>
         )}
 
-        {/* Zones */}
+        {/* Zones (crossfade) */}
         {p.zones.length > 0 && (
-          <div>
-            <SectionLabel>Zone coverage</SectionLabel>
+          <div key={`z-${cov}`} style={{ animation: 'fadeIn .18s ease' }}>
+            <SectionLabel right={isLatest ? <AddBtn onClick={() => setSheet({ t: 'zone', id: null })} /> : undefined}>Zone coverage</SectionLabel>
             <Card style={{ padding: 16 }}>
-              <ZoneBars zones={p.zones} />
+              {[...view.zones].sort((a, b) => b.coverage - a.coverage).map((z) => (
+                <ZoneRow key={z.id} zone={z} editable={isLatest} onEdit={() => setSheet({ t: 'zone', id: z.id })} />
+              ))}
             </Card>
           </div>
         )}
 
-        {/* Issues */}
-        <div>
-          <SectionLabel right={<span style={{ ...mono, fontSize: 12.5, fontWeight: 700, color: open.some((i) => i.severity === 'Critical') ? T.red : T.muted }}>{open.length} open</span>}>
+        {/* Issues (crossfade) */}
+        <div key={`i-${cov}`} style={{ animation: 'fadeIn .18s ease' }}>
+          <SectionLabel
+            right={
+              isLatest ? (
+                <AddBtn onClick={() => setSheet({ t: 'issue', id: null })} />
+              ) : (
+                <span style={{ ...mono, fontSize: 12.5, fontWeight: 700, color: T.muted }}>{view.openIssues.length} open</span>
+              )
+            }
+          >
             Issues
           </SectionLabel>
-          <Card style={{ padding: open.length || closed.length ? '6px 16px' : 16 }}>
-            {open.length === 0 && closed.length === 0 && <div style={{ color: T.muted, fontSize: 13.5, padding: '6px 0' }}>No issues raised.</div>}
-            {open.map((i) => (
-              <IssueRow key={i.id} issue={i} />
-            ))}
-            {closed.length > 0 && (
+          <Card style={{ padding: view.openIssues.length || view.closedCount ? '6px 16px' : 16 }}>
+            {view.openIssues.length === 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: cov >= 100 ? T.teal : T.muted, fontSize: 13.5, padding: '6px 0' }}>
+                {cov >= 100 && <Icon name="checkCircle" size={17} color={T.teal} />}
+                {cov >= 100 ? 'Snag list cleared — 0 open at handover.' : 'No open issues at this stage.'}
+              </div>
+            )}
+            {[...view.openIssues]
+              .sort((a, b) => sevRank(a.severity) - sevRank(b.severity))
+              .map((i) => (
+                <IssueRow key={i.id} issue={i} editable={isLatest} onEdit={() => setSheet({ t: 'issue', id: i.id })} />
+              ))}
+            {isLatest && p.issues.some((i) => i.status === 'Closed') && (
               <>
-                <button
-                  onClick={() => setShowClosed((s) => !s)}
-                  style={{ width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', padding: '10px 0', display: 'flex', alignItems: 'center', gap: 6, color: T.muted, fontWeight: 600, fontSize: 13 }}
-                >
+                <button onClick={() => setShowClosed((s) => !s)} style={{ width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', padding: '10px 0', display: 'flex', alignItems: 'center', gap: 6, color: T.muted, fontWeight: 600, fontSize: 13 }}>
                   <Icon name={showClosed ? 'chevronDown' : 'chevron'} size={15} color={T.muted} />
-                  {closed.length} closed
+                  {p.issues.filter((i) => i.status === 'Closed').length} closed
                 </button>
-                {showClosed && closed.map((i) => <IssueRow key={i.id} issue={i} closed />)}
+                {showClosed && p.issues.filter((i) => i.status === 'Closed').map((i) => <IssueRow key={i.id} issue={i} closed editable onEdit={() => setSheet({ t: 'issue', id: i.id })} />)}
               </>
             )}
           </Card>
         </div>
 
         {/* Captures */}
-        <div>
-          <SectionLabel>Site captures</SectionLabel>
-          {p.captures.length > 0 ? (
-            <Gallery ids={p.captures} />
+        <div key={`c-${cov}`}>
+          <SectionLabel
+            right={
+              isLatest && p.captures.length > 0 ? (
+                <button onClick={() => setEditCaps((s) => !s)} style={{ border: 'none', background: 'none', color: T.navy, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}>{editCaps ? 'Done' : 'Edit'}</button>
+              ) : undefined
+            }
+          >
+            Site captures
+          </SectionLabel>
+          {isLatest ? (
+            p.captures.length > 0 || p.sector === 'Residential' ? (
+              <CaptureGrid ids={p.captures} editing={editCaps} onAdd={() => fileRef.current?.click()} onRemove={removeCapture} />
+            ) : (
+              <Card style={{ padding: 16, color: T.muted, fontSize: 13.5, display: 'flex', alignItems: 'center', gap: 9 }}>
+                <Icon name="info" size={17} color={T.faint} /> Site captures pending sync.
+              </Card>
+            )
+          ) : view.captures.length > 0 ? (
+            <Gallery ids={view.captures} />
           ) : (
-            <Card style={{ padding: 16, color: T.muted, fontSize: 13.5, display: 'flex', alignItems: 'center', gap: 9 }}>
-              <Icon name="info" size={17} color={T.faint} /> Site captures pending sync.
-            </Card>
+            <Card style={{ padding: 16, color: T.muted, fontSize: 13.5 }}>No captures at this stage.</Card>
           )}
+          <input ref={fileRef} type="file" accept="image/*" onChange={addCapture} style={{ display: 'none' }} />
         </div>
 
         {/* BIM */}
         <div>
-          <SectionLabel>BIM model</SectionLabel>
+          <SectionLabel right={isLatest ? <EditBtn onClick={() => setSheet({ t: 'bim' })} /> : undefined}>BIM model</SectionLabel>
           <Card style={{ padding: '6px 16px' }}>
             <KeyVal k="Model" v={<span style={mono}>{p.bim.file}</span>} />
             <KeyVal k="Software" v={p.bim.software} />
@@ -162,35 +229,37 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
         </div>
 
         {/* Team */}
-        {p.team.length > 0 && (
-          <div>
-            <SectionLabel>Site team</SectionLabel>
-            <Card style={{ padding: '6px 16px' }}>
-              {p.team.map((m, i) => {
-                const [nm, role] = m.split(' · ');
-                return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 0', borderBottom: i < p.team.length - 1 ? `1px solid ${T.hairline2}` : 'none' }}>
-                    <Avatar initials={nm.split(/[\s.]+/).filter(Boolean).map((s) => s[0]).slice(0, 2).join('').toUpperCase()} size={30} />
-                    <div style={{ fontSize: 13.5, color: T.ink, fontWeight: 600 }}>{nm}</div>
-                    <div style={{ flex: 1 }} />
-                    <div style={{ fontSize: 12.5, color: T.muted }}>{role}</div>
-                  </div>
-                );
-              })}
-            </Card>
-          </div>
-        )}
+        <div>
+          <SectionLabel right={isLatest ? <AddBtn onClick={() => setSheet({ t: 'team', index: null })} /> : undefined}>Site team</SectionLabel>
+          <Card style={{ padding: '6px 16px' }}>
+            {p.team.length === 0 && <div style={{ color: T.muted, fontSize: 13.5, padding: '6px 0' }}>No team members yet.</div>}
+            {p.team.map((m, i) => {
+              const [nm, role] = m.split(' · ');
+              return (
+                <button key={i} onClick={isLatest ? () => setSheet({ t: 'team', index: i }) : undefined} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '9px 0', borderBottom: i < p.team.length - 1 ? `1px solid ${T.hairline2}` : 'none', border: 'none', background: 'none', cursor: isLatest ? 'pointer' : 'default', textAlign: 'left' }}>
+                  <Avatar initials={initials(nm)} size={30} />
+                  <div style={{ fontSize: 13.5, color: T.ink, fontWeight: 600 }}>{nm}</div>
+                  <div style={{ flex: 1 }} />
+                  <div style={{ fontSize: 12.5, color: T.muted }}>{role}</div>
+                  {isLatest && <Icon name="chevron" size={15} color={T.faint} />}
+                </button>
+              );
+            })}
+          </Card>
+        </div>
 
         {/* Trades */}
-        {p.trades.length > 0 && (
+        {(p.trades.length > 0 || isLatest) && (
           <div>
-            <SectionLabel>Trade progress</SectionLabel>
+            <SectionLabel right={isLatest ? <AddBtn onClick={() => setSheet({ t: 'trade', index: null })} /> : undefined}>Trade progress</SectionLabel>
             <Card style={{ padding: '6px 16px' }}>
+              {p.trades.length === 0 && <div style={{ color: T.muted, fontSize: 13.5, padding: '6px 0' }}>No trades tracked yet.</div>}
               {p.trades.map((t, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < p.trades.length - 1 ? `1px solid ${T.hairline2}` : 'none' }}>
+                <button key={i} onClick={isLatest ? () => setSheet({ t: 'trade', index: i }) : undefined} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < p.trades.length - 1 ? `1px solid ${T.hairline2}` : 'none', border: 'none', background: 'none', cursor: isLatest ? 'pointer' : 'default', textAlign: 'left' }}>
                   <span style={{ flex: 1, fontSize: 13.5, color: T.ink }}>{t.name}</span>
                   <TradeTag status={t.status} />
-                </div>
+                  {isLatest && <Icon name="chevron" size={15} color={T.faint} />}
+                </button>
               ))}
             </Card>
           </div>
@@ -213,47 +282,140 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
           marginTop: 16,
         }}
       >
-        <Button full icon="reports" onClick={() => nav.push(<ReportDetail projectId={p.id} />)}>
-          Report
-        </Button>
-        <Button full primary icon="scan" onClick={() => startScan(p.id)}>
-          New scan
-        </Button>
+        <Button full icon="reports" onClick={() => openReportAt(cov)}>Report</Button>
+        <Button full primary icon="scan" onClick={() => startScan(p.id)}>New scan</Button>
       </div>
+
+      {/* CRUD sheets */}
+      {sheet?.t === 'project' && <EditProjectSheet project={p} onClose={() => setSheet(null)} />}
+      {sheet?.t === 'zone' && <ZoneSheet project={p} zoneId={sheet.id} onClose={() => setSheet(null)} />}
+      {sheet?.t === 'issue' && <IssueSheet project={p} issueId={sheet.id} onClose={() => setSheet(null)} />}
+      {sheet?.t === 'trade' && <TradeSheet project={p} index={sheet.index} onClose={() => setSheet(null)} />}
+      {sheet?.t === 'team' && <TeamSheet project={p} index={sheet.index} onClose={() => setSheet(null)} />}
+      {sheet?.t === 'bim' && <BimSheet project={p} onClose={() => setSheet(null)} />}
+      {sheet?.t === 'log' && <ScanLogSheet project={p} onOpenReport={openReportAt} onClose={() => setSheet(null)} />}
     </Screen>
   );
 }
 
-function ScanTimeline({ project }: { project: Project }) {
+function isLatestCoverage(p: Project, c: number): boolean {
+  return c === p.overall_coverage;
+}
+const sevRank = (s: Issue['severity']) => (s === 'Critical' ? 0 : s === 'Major' ? 1 : 2);
+
+// ── Interactive scan-history scrubber
+function Scrubber({ project, selected, onSelect }: { project: Project; selected: number; onSelect: (coverage: number) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const scans = project.scans;
+
+  const pickNearest = (clientX: number) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const t = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+    const idx = Math.round(t * (scans.length - 1));
+    const s = scans[idx];
+    if (s && s.coverage !== selected) onSelect(s.coverage);
+  };
+
   return (
-    <div className="no-scrollbar" style={{ display: 'flex', gap: 0, overflowX: 'auto' }}>
-      {project.scans.map((s, i) => (
-        <div key={s.id} style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 64 }}>
-          <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-            <div style={{ flex: 1, height: 2, background: i === 0 ? 'transparent' : T.hairline }} />
-            <div style={{ width: 11, height: 11, borderRadius: 11, background: i === project.scans.length - 1 ? T.teal : T.navy, flexShrink: 0 }} />
-            <div style={{ flex: 1, height: 2, background: i === project.scans.length - 1 ? 'transparent' : T.hairline }} />
+    <div
+      ref={ref}
+      onPointerDown={(e) => {
+        setDragging(true);
+        (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+        pickNearest(e.clientX);
+      }}
+      onPointerMove={(e) => dragging && pickNearest(e.clientX)}
+      onPointerUp={() => setDragging(false)}
+      onPointerCancel={() => setDragging(false)}
+      style={{ display: 'flex', touchAction: 'pan-y', cursor: 'pointer', userSelect: 'none' }}
+    >
+      {scans.map((s, i) => {
+        const on = s.coverage === selected;
+        const isLast = i === scans.length - 1;
+        return (
+          <div key={s.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+              <div style={{ flex: 1, height: 2, background: i === 0 ? 'transparent' : T.hairline }} />
+              <div
+                style={{
+                  width: on ? 16 : 11,
+                  height: on ? 16 : 11,
+                  borderRadius: 999,
+                  background: isLast ? T.teal : T.navy,
+                  border: on ? `3px solid ${T.surface}` : 'none',
+                  boxShadow: on ? `0 0 0 2px ${isLast ? T.teal : T.navy}` : 'none',
+                  flexShrink: 0,
+                  transition: 'width .15s, height .15s',
+                }}
+              />
+              <div style={{ flex: 1, height: 2, background: isLast ? 'transparent' : T.hairline }} />
+            </div>
+            <div style={{ ...mono, fontSize: 13, fontWeight: 800, color: on ? (isLast ? T.teal : T.navy) : T.muted, marginTop: 7 }}>{s.coverage}%</div>
+            <div style={{ ...mono, fontSize: 9.5, color: T.faint, marginTop: 1 }}>{fmtDateShort(s.date)}</div>
           </div>
-          <div style={{ ...mono, fontSize: 13, fontWeight: 800, color: T.ink, marginTop: 7 }}>{s.coverage}%</div>
-          <div style={{ ...mono, fontSize: 10, color: T.faint, marginTop: 1 }}>{fmtDateShort(s.date)}</div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
-function IssueRow({ issue, closed }: { issue: Issue; closed?: boolean }) {
+function ZoneRow({ zone, editable, onEdit }: { zone: Zone; editable: boolean; onEdit: () => void }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 0', borderBottom: `1px solid ${T.hairline2}`, opacity: closed ? 0.6 : 1 }}>
+    <button
+      onClick={editable ? onEdit : undefined}
+      style={{ width: '100%', display: 'block', border: 'none', background: 'none', padding: '6px 0', cursor: editable ? 'pointer' : 'default', textAlign: 'left' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+        <span style={{ fontSize: 13.5, fontWeight: 600, color: T.ink }}>{zone.name}</span>
+        <span style={{ ...mono, fontSize: 13, fontWeight: 700, color: T.muted }}>{zone.coverage}%</span>
+      </div>
+      <Bar value={zone.coverage} color={zone.coverage >= 100 ? T.teal : zone.coverage < 40 ? T.blue : T.navy} />
+    </button>
+  );
+}
+
+function IssueRow({ issue, closed, editable, onEdit }: { issue: Issue; closed?: boolean; editable: boolean; onEdit: () => void }) {
+  return (
+    <button
+      onClick={editable ? onEdit : undefined}
+      style={{ width: '100%', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 0', border: 'none', borderBottom: `1px solid ${T.hairline2}`, opacity: closed ? 0.6 : 1, background: 'none', cursor: editable ? 'pointer' : 'default', textAlign: 'left' }}
+    >
       <div style={{ marginTop: 4 }}>
         <SevDot sev={issue.severity} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13.5, color: T.ink, fontWeight: 600, textDecoration: closed ? 'line-through' : 'none' }}>{issue.title}</div>
-        <div style={{ ...mono, fontSize: 11.5, color: T.muted, marginTop: 2 }}>
-          {issue.id} · {issue.zone} · {SEV[issue.severity].label}
-        </div>
+        <div style={{ ...mono, fontSize: 11.5, color: T.muted, marginTop: 2 }}>{issue.id} · {issue.zone} · {SEV[issue.severity].label}</div>
       </div>
+      {editable && <Icon name="chevron" size={15} color={T.faint} style={{ marginTop: 3 }} />}
+    </button>
+  );
+}
+
+function CaptureGrid({ ids, editing, onAdd, onRemove }: { ids: string[]; editing: boolean; onAdd: () => void; onRemove: (id: string) => void }) {
+  return (
+    <div className="no-scrollbar" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+      <button onClick={onAdd} style={{ flexShrink: 0, width: 118, height: 88, borderRadius: 12, border: `1px dashed ${T.hairline}`, background: T.surface, color: T.muted, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+        <Icon name="upload" size={20} color={T.navy} />
+        Add photo
+      </button>
+      {ids.map((id) => {
+        const src = photoSrc(id);
+        if (!src) return null;
+        return (
+          <div key={id} style={{ position: 'relative', flexShrink: 0 }}>
+            <img src={src} alt="" loading="lazy" style={{ width: 118, height: 88, objectFit: 'cover', borderRadius: 12, border: `1px solid ${T.hairline}`, display: 'block' }} />
+            {editing && (
+              <button onClick={() => onRemove(id)} aria-label="Remove" style={{ position: 'absolute', top: -6, right: -6, width: 24, height: 24, borderRadius: 999, border: '2px solid #fff', background: T.red, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <Icon name="close" size={13} color="#fff" />
+              </button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -266,5 +428,18 @@ function TradeTag({ status }: { status: Project['trades'][number]['status'] }) {
       <span style={{ width: 7, height: 7, borderRadius: 7, background: c }} />
       {status}
     </span>
+  );
+}
+
+function AddBtn({ onClick }: { onClick: () => void }) {
+  return (
+    <button onClick={onClick} style={{ border: 'none', background: 'none', color: T.navy, fontWeight: 700, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
+      <Icon name="plus" size={15} color={T.navy} /> Add
+    </button>
+  );
+}
+function EditBtn({ onClick }: { onClick: () => void }) {
+  return (
+    <button onClick={onClick} style={{ border: 'none', background: 'none', color: T.navy, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}>Edit</button>
   );
 }
