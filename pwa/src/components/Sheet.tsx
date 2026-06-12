@@ -1,6 +1,7 @@
 // Sheet.tsx — bottom sheet (scrim + slide-up) + reusable form fields for the CRUD editors.
 // Owns one system-Back layer (closes the sheet). Used by screens/editors.tsx.
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { T } from '../theme';
 import { haptic } from '../lib/haptic';
 import { useBackLayer } from '../hooks/useBackLayer';
@@ -18,7 +19,10 @@ export function Sheet({
   footer?: ReactNode;
 }) {
   useBackLayer(true, onClose);
-  return (
+  // Portal to the app card so the sheet stacks above the bottom tab bar (the Navigator's per-screen
+  // z-index would otherwise trap it below the tab bar's stacking context).
+  const target = typeof document !== 'undefined' ? document.getElementById('app-card') : null;
+  const node = (
     <div style={{ position: 'absolute', inset: 0, zIndex: 300, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,35,0.45)', animation: 'scrimIn .2s ease' }} />
       <div
@@ -51,6 +55,7 @@ export function Sheet({
       </div>
     </div>
   );
+  return target ? createPortal(node, target) : node;
 }
 
 const labelStyle: React.CSSProperties = { fontSize: 12.5, fontWeight: 700, color: T.muted, marginBottom: 7, letterSpacing: 0.2, display: 'block' };

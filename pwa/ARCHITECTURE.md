@@ -14,13 +14,13 @@
 `feature/optisync-phase-1`). The PWA is being rebuilt from *Athar Eye* (dark) into **OptiSync** (light
 "Blueprint + teal") per the handoff bundle — see `../SPEC.md` §15 v1.14.
 
-**Done — phases 1–6:** rebrand shell; the OptiSync **data layer**; light **tokens + primitives**; the
-in-memory **store**; the **portfolio + report document**; the **timeline scrubber (signature #1) + full
-CRUD**; and the **scan flow (signature #2)** — a looping walkthrough video feed with an accreting canvas
-point cloud (Aim → Capturing → Processing → Result), timer-driven, that writes a real scan to Morningside
-(62→66). Verified in preview: both signature interactions and the new scan→report path.
-**Next:** phase 7 (reports history + per-scan + share/export sheet), phase 8 (issues + plans + team +
-settings), phase 9 (real logo + PWA icons + acceptance).
+**Done — phases 1–7:** rebrand shell; **data layer**; light **tokens + primitives**; in-memory **store**;
+**portfolio + report document**; **timeline scrubber (signature #1) + full CRUD**; **scan flow
+(signature #2)**; and **reports** — history, per-scan reports, deep vs light/commercial variants (no
+gallery), Report→Project nav, and the **share/export sheet** (report-type pick → Save as PDF with an
+export-progress → success, Copy link, Email). Verified in preview, incl. the Marischal commercial report
+and the export flow. (Sheets now portal to `#app-card` so they stack above the tab bar.)
+**Next:** phase 8 (issues + plans + team + settings), phase 9 (real logo + PWA icons + acceptance).
 
 ### OptiSync module map (current)
 - **`types.ts`** — domain model: `Project` (zones/issues/scans/bim/trades/team/captures), `Issue`
@@ -39,8 +39,10 @@ settings), phase 9 (real logo + PWA icons + acceptance).
   Card, Chips, Button, KeyVal, Gallery+Lightbox, ScreenHeader, mono.
 - **`navigation/`** — reused Navigator/backstack/Screen; `TabBar` (Projects·Reports·Scan·Account),
   `PushHeader` (white + 2px navy underline), `AppActions` (startScan/goToReports/openReport).
-- **`components/Sheet.tsx`** — bottom sheet (scrim + slide-up, owns one Back layer) + form fields
-  (TextField/NumberField/SelectField) for the CRUD editors.
+- **`components/Sheet.tsx`** — bottom sheet (scrim + slide-up, owns one Back layer, **portals to
+  `#app-card`** to clear the tab bar) + form fields (TextField/NumberField/SelectField).
+- **`components/ShareSheet.tsx`** — share/export (screen 13): report-type pick → Save as PDF (progress
+  → success), Copy link, Email to client.
 - **`screens/editors.tsx`** — bottom-sheet CRUD editors (EditProject/Zone/Issue/Trade/Team/Bim) +
   ScanLog/ScanDetail. Zone-coverage edits roll up overall % via `update(id, recipe, {rollup})`.
 - **`screens/`** — `Projects` (list/search/filters/swipe-delete), `NewProject`, `ProjectDetail`

@@ -155,6 +155,7 @@ export function App() {
       }}
     >
       <div
+        id="app-card"
         style={{
           position: 'relative',
           overflow: 'hidden',

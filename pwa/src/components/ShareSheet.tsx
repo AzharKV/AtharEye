@@ -1,319 +1,120 @@
-// iOS-style share action sheet + auto-hiding Toast.
-import { useEffect, useState } from 'react';
+// ShareSheet — share / export a report (screen 13). Pick a report type, then Save as PDF (with an
+// export progress bar → success), Copy link, or Email to client. Light, Sheet-based.
+import { useState } from 'react';
 import { T } from '../theme';
 import { haptic } from '../lib/haptic';
-import { useBackLayer } from '../hooks/useBackLayer';
+import { Sheet } from './Sheet';
+import { Button } from './primitives';
 import { Icon } from './Icon';
 import type { IconName } from './Icon';
 
-interface ShareTarget {
-  id: string;
-  label: string;
-  icon: IconName;
-}
-interface ReportType {
-  id: string;
-  label: string;
-  sub: string;
-  icon: IconName;
-}
-
-const SHARE_TARGETS: ShareTarget[] = [
-  { id: 'msg', label: 'Messages', icon: 'message' },
-  { id: 'mail', label: 'Mail', icon: 'mail' },
-  { id: 'wa', label: 'WhatsApp', icon: 'message' },
-  { id: 'air', label: 'AirDrop', icon: 'airdrop' },
-  { id: 'teams', label: 'Teams', icon: 'team' },
-  { id: 'copy', label: 'Copy link', icon: 'copy' },
-];
-const REPORT_TYPES: ReportType[] = [
-  { id: 'client', label: 'Client Progress Summary', sub: 'One-page, visual — for the client', icon: 'reports' },
-  { id: 'detailed', label: 'Detailed Site Report', sub: 'Full coverage, rooms & issues', icon: 'layers' },
-  { id: 'snapshot', label: 'Coverage Snapshot', sub: 'Just the numbers & donut', icon: 'target' },
-  { id: 'issues', label: 'Issues List', sub: 'For the subcontractor', icon: 'alert' },
+const REPORT_TYPES: { id: string; label: string; sub: string; icon: IconName }[] = [
+  { id: 'client', label: 'Client progress summary', sub: 'One-page, visual — for the client', icon: 'reports' },
+  { id: 'detailed', label: 'Detailed site report', sub: 'Full coverage, zones & issues', icon: 'layers' },
+  { id: 'snapshot', label: 'Coverage snapshot', sub: 'Just the numbers & donut', icon: 'target' },
+  { id: 'issues', label: 'Issues list', sub: 'For the subcontractor', icon: 'alert' },
 ];
 
-// ── Toast (auto-hides after ~2.2s)
-export function Toast({
-  msg,
-  onDone,
-  icon = 'check',
-}: {
-  msg: string | null;
-  onDone: () => void;
-  icon?: IconName;
-}) {
-  useEffect(() => {
-    if (!msg) return;
-    const t = setTimeout(onDone, 2200);
-    return () => clearTimeout(t);
-  }, [msg, onDone]);
-  if (!msg) return null;
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 108,
-        zIndex: 400,
-        display: 'flex',
-        justifyContent: 'center',
-        pointerEvents: 'none',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          background: 'rgba(28,34,40,0.96)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          border: `1px solid ${T.hairline}`,
-          borderRadius: 14,
-          padding: '12px 16px',
-          maxWidth: '86%',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
-          animation: 'toastUp .26s cubic-bezier(.32,.72,0,1)',
-        }}
-      >
-        <div
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: 22,
-            background: T.accent,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <Icon name={icon} size={14} color={T.onAccent} stroke={3} />
-        </div>
-        <span style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{msg}</span>
-      </div>
-    </div>
-  );
-}
-
-// ── Share sheet
-export function ShareSheet({
-  open,
-  projectName,
-  onClose,
-  onShared,
-}: {
-  open: boolean;
-  projectName: string;
-  onClose: () => void;
-  onShared: (msg: string) => void;
-}) {
+export function ShareSheet({ projectName, onClose }: { projectName: string; onClose: () => void }) {
   const [sel, setSel] = useState('client');
-  useEffect(() => {
-    if (open) setSel('client');
-  }, [open]);
-  useBackLayer(open, onClose); // system Back closes the sheet
-  if (!open) return null;
-  const typeLabel = REPORT_TYPES.find((t) => t.id === sel)!.label;
-  const pick = (tg: ShareTarget) => {
+  const [phase, setPhase] = useState<'pick' | 'exporting' | 'done'>('pick');
+  const [prog, setProg] = useState(0);
+  const [doneMsg, setDoneMsg] = useState('Report exported · saved to Files');
+
+  const runExport = (msg: string) => {
     haptic();
-    const msg = tg.id === 'copy' ? 'Report link copied' : `${typeLabel} · sent via ${tg.label}`;
-    onShared(msg);
+    setDoneMsg(msg);
+    setPhase('exporting');
+    const start = Date.now();
+    const id = setInterval(() => {
+      const p = Math.min(100, Math.round(((Date.now() - start) / 1100) * 100));
+      setProg(p);
+      if (p >= 100) {
+        clearInterval(id);
+        setPhase('done');
+      }
+    }, 40);
   };
+
+  const copyLink = () => {
+    const url = `https://app.optisync.co/r/${projectName.toLowerCase().replace(/[^a-z]+/g, '-')}`;
+    navigator.clipboard?.writeText(url).catch(() => {});
+    runExport('Report link copied');
+  };
+
+  if (phase !== 'pick') {
+    return (
+      <Sheet title="Export report" onClose={onClose} footer={phase === 'done' ? <Button primary full icon="check" onClick={onClose}>Done</Button> : undefined}>
+        <div style={{ padding: '24px 6px 12px', textAlign: 'center' }}>
+          {phase === 'exporting' ? (
+            <>
+              <div style={{ fontSize: 15, fontWeight: 700, color: T.ink, marginBottom: 16 }}>Preparing report…</div>
+              <div style={{ height: 8, borderRadius: 8, background: T.track, overflow: 'hidden' }}>
+                <div style={{ width: `${prog}%`, height: '100%', background: T.navy, borderRadius: 8, transition: 'width .04s linear' }} />
+              </div>
+              <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 13, color: T.muted, marginTop: 8 }}>{prog}%</div>
+            </>
+          ) : (
+            <>
+              <div style={{ display: 'inline-flex', padding: 14, borderRadius: 999, background: T.tealTint, marginBottom: 12 }}>
+                <Icon name="checkCircle" size={30} color={T.teal} />
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: T.ink }}>{doneMsg}</div>
+              <div style={{ fontSize: 13, color: T.muted, marginTop: 4 }}>{projectName}</div>
+            </>
+          )}
+        </div>
+      </Sheet>
+    );
+  }
+
   return (
-    <div
-      style={{
-        position: 'absolute',
-        inset: 0,
-        zIndex: 350,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'flex-end',
-      }}
+    <Sheet
+      title="Share report"
+      onClose={onClose}
+      footer={
+        <>
+          <Button onClick={copyLink} icon="copy">Copy link</Button>
+          <Button primary full icon="pdf" onClick={() => runExport('Report exported · saved to Files')}>Save as PDF</Button>
+        </>
+      }
     >
-      <div
-        onClick={onClose}
-        style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', animation: 'scrimIn .3s ease' }}
-      />
-      <div
-        className="no-scrollbar"
-        style={{
-          position: 'relative',
-          background: '#13181D',
-          borderRadius: '22px 22px 0 0',
-          border: `1px solid ${T.hairline}`,
-          padding: '10px 16px 30px',
-          paddingBottom: 'max(30px, env(safe-area-inset-bottom))',
-          maxHeight: '88%',
-          overflowY: 'auto',
-          animation: 'sheetUp .34s cubic-bezier(.32,.72,0,1)',
-        }}
-      >
-        <div
-          style={{
-            width: 40,
-            height: 5,
-            borderRadius: 5,
-            background: 'rgba(255,255,255,0.18)',
-            margin: '0 auto 14px',
-          }}
-        />
-        <div style={{ textAlign: 'center', marginBottom: 14 }}>
-          <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.3 }}>Share report</div>
-          <div style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>{projectName}</div>
-        </div>
-
-        {/* report type */}
-        <div
-          style={{
-            fontSize: 12.5,
-            fontWeight: 700,
-            color: T.muted,
-            textTransform: 'uppercase',
-            letterSpacing: 0.4,
-            margin: '4px 4px 8px',
-          }}
-        >
-          Report type
-        </div>
-        <div
-          style={{
-            background: '#181E24',
-            borderRadius: 16,
-            border: `1px solid ${T.hairline}`,
-            overflow: 'hidden',
-            marginBottom: 18,
-          }}
-        >
-          {REPORT_TYPES.map((rt, i) => {
-            const on = sel === rt.id;
-            return (
-              <div
-                key={rt.id}
-                onClick={() => {
-                  haptic();
-                  setSel(rt.id);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '13px 14px',
-                  cursor: 'pointer',
-                  borderBottom: i < REPORT_TYPES.length - 1 ? `1px solid ${T.hairline2}` : 'none',
-                  background: on ? 'rgba(20,184,192,0.08)' : 'transparent',
-                }}
-              >
-                <div
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 9,
-                    background: on ? 'rgba(20,184,192,0.16)' : 'rgba(255,255,255,0.05)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Icon name={rt.icon} size={18} color={on ? T.accent : T.muted} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: T.text }}>{rt.label}</div>
-                  <div style={{ fontSize: 12, color: T.muted, marginTop: 1 }}>{rt.sub}</div>
-                </div>
-                <div
-                  style={{
-                    width: 21,
-                    height: 21,
-                    borderRadius: 21,
-                    border: `2px solid ${on ? T.accent : T.faint}`,
-                    background: on ? T.accent : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  {on && <Icon name="check" size={12} color={T.onAccent} stroke={3.4} />}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* targets */}
-        <div
-          style={{
-            fontSize: 12.5,
-            fontWeight: 700,
-            color: T.muted,
-            textTransform: 'uppercase',
-            letterSpacing: 0.4,
-            margin: '4px 4px 10px',
-          }}
-        >
-          Send to
-        </div>
-        <div
-          className="no-scrollbar"
-          style={{ display: 'flex', gap: 16, overflowX: 'auto', padding: '0 2px 8px', marginBottom: 14 }}
-        >
-          {SHARE_TARGETS.map((tg) => (
+      <div style={{ fontSize: 12.5, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: 0.4, margin: '0 2px 8px' }}>Report type</div>
+      <div style={{ background: T.surface, borderRadius: 14, border: `1px solid ${T.hairline}`, overflow: 'hidden', marginBottom: 16 }}>
+        {REPORT_TYPES.map((rt, i) => {
+          const on = sel === rt.id;
+          return (
             <button
-              key={tg.id}
-              onClick={() => pick(tg)}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 7,
-                flexShrink: 0,
-                width: 62,
+              key={rt.id}
+              onClick={() => {
+                haptic();
+                setSel(rt.id);
               }}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', cursor: 'pointer', border: 'none', borderBottom: i < REPORT_TYPES.length - 1 ? `1px solid ${T.hairline2}` : 'none', background: on ? T.navyTint : T.surface, textAlign: 'left' }}
             >
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 16,
-                  background: '#1C232A',
-                  border: `1px solid ${T.hairline}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Icon name={tg.icon} size={24} color={T.text} stroke={1.9} />
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: on ? T.navy : T.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Icon name={rt.icon} size={18} color={on ? '#fff' : T.muted} />
               </div>
-              <span style={{ fontSize: 11, color: T.muted, fontWeight: 500 }}>{tg.label}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14.5, fontWeight: 600, color: T.ink }}>{rt.label}</div>
+                <div style={{ fontSize: 12, color: T.muted, marginTop: 1 }}>{rt.sub}</div>
+              </div>
+              <div style={{ width: 21, height: 21, borderRadius: 21, border: `2px solid ${on ? T.navy : T.faint}`, background: on ? T.navy : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {on && <Icon name="check" size={12} color="#fff" stroke={3.4} />}
+              </div>
             </button>
-          ))}
-        </div>
-
-        <button
-          onClick={onClose}
-          style={{
-            width: '100%',
-            height: 50,
-            borderRadius: 14,
-            border: 'none',
-            background: '#1C232A',
-            color: T.text,
-            fontSize: 16,
-            fontWeight: 700,
-            fontFamily: T.font,
-            cursor: 'pointer',
-          }}
-        >
-          Cancel
-        </button>
+          );
+        })}
       </div>
-    </div>
+
+      <button
+        onClick={() => runExport('Emailed to client')}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '13px 14px', borderRadius: 12, border: `1px solid ${T.hairline}`, background: T.surface, cursor: 'pointer', textAlign: 'left' }}
+      >
+        <Icon name="mail" size={19} color={T.navy} />
+        <span style={{ flex: 1, fontSize: 14.5, fontWeight: 600, color: T.ink }}>Email to client</span>
+        <Icon name="chevron" size={16} color={T.faint} />
+      </button>
+    </Sheet>
   );
 }

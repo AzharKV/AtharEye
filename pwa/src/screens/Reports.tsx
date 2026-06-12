@@ -26,6 +26,7 @@ import {
   mono,
 } from '../components/primitives';
 import { Wordmark } from '../components/Brand';
+import { ShareSheet } from '../components/ShareSheet';
 import { Icon } from '../components/Icon';
 
 export function ReportsList() {
@@ -66,7 +67,7 @@ export function ReportsList() {
 export function ReportDetail({ projectId, coverage }: { projectId: string; coverage?: number }) {
   const { data } = useStore();
   const nav = useNav();
-  const [toast, setToast] = useState<string | null>(null);
+  const [share, setShare] = useState(false);
   const p = data.projects.find((x) => x.id === projectId);
   if (!p) {
     return (
@@ -80,15 +81,9 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
   const deep = p.depth === 'deep';
   const ringColor = p.status === 'Needs review' && r.coverage < 100 ? T.amber : r.coverage >= 100 ? T.teal : T.navy;
 
-  const exportPdf = () => {
-    setToast('Preparing PDF…');
-    setTimeout(() => setToast('Report exported · saved to Files'), 900);
-    setTimeout(() => setToast(null), 2400);
-  };
-
   return (
     <Screen padTop={0} padBottom={92}>
-      <PushHeader title="Progress report" trailing={<RoundBtn icon="share" label="Share" onClick={exportPdf} />} />
+      <PushHeader title="Progress report" trailing={<RoundBtn icon="share" label="Share" onClick={() => setShare(true)} />} />
 
       <div style={{ padding: '14px 16px 0' }}>
         <Card style={{ padding: 18 }}>
@@ -220,32 +215,12 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
         <Button full icon="projects" onClick={() => nav.push(<ProjectDetail projectId={p.id} />)}>
           Project
         </Button>
-        <Button full primary icon="share" onClick={exportPdf}>
+        <Button full primary icon="share" onClick={() => setShare(true)}>
           Export PDF
         </Button>
       </div>
 
-      {toast && (
-        <div
-          style={{
-            position: 'fixed',
-            left: '50%',
-            bottom: 'calc(env(safe-area-inset-bottom) + 88px)',
-            transform: 'translateX(-50%)',
-            background: T.ink,
-            color: '#fff',
-            padding: '11px 18px',
-            borderRadius: 12,
-            fontSize: 13.5,
-            fontWeight: 600,
-            zIndex: 400,
-            animation: 'toastUp .25s ease',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-          }}
-        >
-          {toast}
-        </div>
-      )}
+      {share && <ShareSheet projectName={p.name} onClose={() => setShare(false)} />}
     </Screen>
   );
 }
