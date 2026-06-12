@@ -1,9 +1,9 @@
 {
-  "name": "athar-eye",
+  "name": "optisync",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Athar Eye — production PWA prototype. iPhone-LiDAR + BIM construction progress reporting.",
+  "description": "OptiSync — production PWA. iPhone-LiDAR + BIM construction progress & coverage reporting. Scan. Compare. Prove.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

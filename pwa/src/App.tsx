@@ -60,8 +60,8 @@ function Splash({ onDone }: { onDone: () => void }) {
           }}
         >
           <Wordmark size={28} />
-          <div style={{ fontSize: 13, color: T.muted, fontWeight: 600, letterSpacing: 0.6, marginTop: 6 }}>
-            See progress · Prove progress
+          <div style={{ fontSize: 13, color: T.muted, fontWeight: 600, letterSpacing: 0.4, marginTop: 6 }}>
+            Scan. Compare. Prove.
           </div>
         </div>
       </div>

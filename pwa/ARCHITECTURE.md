@@ -1,4 +1,4 @@
-# Athar Eye PWA — Architecture & Engineering Reference
+# OptiSync PWA — Architecture & Engineering Reference
 
 > **Living document — the single source of truth for the PWA codebase.**
 > Read this to get the full picture without scanning the project. **Keep it
@@ -10,18 +10,27 @@
 > - [`../design-source/`](../design-source/) — the locked Claude Design export (visual reference; **ported, not reinvented**).
 > - [`../CLAUDE.md`](../CLAUDE.md) — how an AI/dev session should work in this repo.
 
-**Last updated:** 2026-06-03 · **Status:** Phase A complete (production PWA, verified). Includes:
-responsive web (no device-frame/fake status bar) · localStorage persistence (create/delete/scan) ·
-working search · system Back button · install prompt · SW auto-update · live-camera scan + room
-wireframe · OS-matched splash. ~6k LOC in `src/`.
+**Last updated:** 2026-06-12 · **Status:** **OptiSync redesign in progress** (branch
+`feature/optisync-phase-1`). The PWA is being rebuilt from *Athar Eye* (dark) into **OptiSync** (light
+"Blueprint + teal") per the handoff bundle — see `../SPEC.md` §15 v1.14. The reusable nav shell
+(Navigator/backstack/Screen/PushHeader/TabBar/responsive card/splash/PWA scaffolding) is retained; the
+theme, data model, store (→ in-memory, refresh-resets), primitives, and all screens are being rewritten,
+and the 12-screen OptiSync set + full CRUD + the two signature interactions (timeline scrubber, video+
+point-cloud scan) added. **Phase 1 done:** rebrand shell (package/manifest/index.html → OptiSync, Inter
+self-hosted, light theme-color, placeholder OptiSync mark) + SPEC alignment. Sections below still
+describe Athar-Eye internals and are updated phase-by-phase as code lands.
+
+*(Prior status — Phase A Athar Eye, verified: responsive web, localStorage persistence, search, system
+Back, install prompt, SW auto-update, live-camera scan + room wireframe, OS-matched splash. ~6k LOC.)*
 
 ---
 
 ## 1. What this is
 
 An installable, offline-capable PWA that looks and feels like a native iOS app. It's a
-**functionally simulated** pitch artifact for **Athar Eye** (iPhone-LiDAR + BIM construction
-progress reporting). Navigation, screens, data and the scan→report→share *flow* are real;
+**functionally simulated** product artifact for **OptiSync** (iPhone-LiDAR + BIM construction
+progress & coverage reporting; tagline *Scan. Compare. Prove.*). Navigation, screens, data and the
+scan→report→share *flow* are real;
 the LiDAR scan, BIM upload, coverage maths, auth, payments and networking are faked. See
 `SPEC.md` §4 for the real-vs-faked boundary.
 

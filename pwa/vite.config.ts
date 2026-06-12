@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// Athar Eye — Vite + React 18 + TypeScript + vite-plugin-pwa (Workbox).
+// OptiSync — Vite + React 18 + TypeScript + vite-plugin-pwa (Workbox).
 // Static output → dist/, deployable free to Netlify / Vercel / Cloudflare Pages.
 // Target ES2020 / Safari 15+ per CLAUDE_CODE_BUILD.md §1.
 export default defineConfig({
@@ -20,24 +20,23 @@ export default defineConfig({
         'icon-512.png',
         'icon-maskable-512.png',
       ],
-      // Manifest mirrors design-source/manifest.json (name "Athar Eye",
-      // theme #0C0F12, standalone, portrait) with production icon paths.
+      // Manifest: OptiSync, light Blueprint+teal theme, standalone, portrait.
       manifest: {
         // Absolute id/start_url/scope + 192/512 (any) and a maskable icon are
         // what Android needs to build a standalone WebAPK (not a browser
         // shortcut). Assumes a root deploy (Netlify/Vercel/Cloudflare).
         id: '/',
-        name: 'Athar Eye',
-        short_name: 'AtharEye',
+        name: 'OptiSync',
+        short_name: 'OptiSync',
         description:
-          'Turn an iPhone LiDAR scan + a BIM model into an instant construction progress report.',
+          'Scan a site with iPhone LiDAR, align to BIM, and prove progress & coverage. Scan. Compare. Prove.',
         start_url: '/',
         scope: '/',
         display: 'standalone',
         display_override: ['standalone'],
         orientation: 'portrait',
-        background_color: '#0C0F12',
-        theme_color: '#0C0F12',
+        background_color: '#EDF1F6',
+        theme_color: '#FFFFFF',
         categories: ['business', 'productivity', 'utilities'],
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

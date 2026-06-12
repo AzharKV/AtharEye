@@ -1,5 +1,7 @@
-# Athar Eye — Master Specification & Build Brief
-**Version 1.1 · Single source of truth · Last updated: 2 June 2026**
+# OptiSync — Master Specification & Build Brief
+**Version 1.14 · Single source of truth · Last updated: 12 June 2026**
+
+> **Naming.** The product is now **OptiSync** (formerly *Athar Eye*, formerly *BuildScan*), by **Athar Robotics**. The **PWA in `pwa/`** is the OptiSync build (this redesign); the **`reactnative/` · `flutter/` · `ios-native/`** comparison ports were built against the prior *Athar Eye* dark design and are **frozen** pending a re-port. For the OptiSync PWA the authoritative product/data/design source is the **handoff bundle** (`OPTISYNC_*` docs) summarised in §15 v1.14, which supersedes the Athar-Eye-era §6.2 tokens, §8 screens, and §10 data below (kept as the frozen-ports reference). Mentions of "Athar Eye" elsewhere in this doc are historical.
 
 > **Purpose of this document.** This is the authoritative brief for the *Athar Eye* construction-progress app. It exists so that any chat, agent, or tool (Claude Code, a design agent, a fresh conversation, a human collaborator) can pick up the work **without losing a single detail** and without re-deriving decisions. If you are an AI agent reading this: treat every section as binding context. Do not invent product facts, pricing, screens, or data that are not here — if something is missing, flag it under §14 *Open Decisions* rather than guessing.
 
@@ -18,7 +20,7 @@
 
 ## 1. Company & product context
 - **Company:** Athar Robotics.
-- **Product:** Athar Eye (working name; formerly "BuildScan" — renamed due to an existing trademark; may change again post-funding).
+- **Product:** OptiSync (formerly "Athar Eye", earlier "BuildScan" — renamed; may change again post-funding). Tagline: *Scan. Compare. Prove.*
 - **One-liner:** Turn an iPhone LiDAR scan + a BIM model into an instant construction progress/coverage report — affordable, visual, easy to share.
 - **Mission:** Make site-progress checking affordable, visual and easy to share.
 - **Target customer:** Small and medium UK construction companies, refurbishment/fit-out contractors, surveyors, BIM consultants. Initial geography: **Scotland / UK**.
@@ -90,24 +92,30 @@ v1 was rejected for looking unprofessional. These rules are mandatory.
 - **Performance:** must feel instant. No heavy webview lag. Lazy-render; 60fps animations using transform/opacity only.
 
 ### 6.2 Brand & color tokens
-Dark, professional, navy + teal (from the AtharEye mockups). Tokens (refine in design step):
+**OptiSync — "Blueprint + teal", LIGHT (locked).** This replaces the prior Athar-Eye dark
+navy+green palette (retained only by the frozen `reactnative/`/`flutter/`/`ios-native/` ports).
 ```
---bg            #0B1622   /* app background, deep navy */
---surface       #11212F   /* cards */
---surface-2     #16293A   /* raised cards / sheets */
---hairline      rgba(255,255,255,0.08)
---text          #F1F5F8
---text-muted    #93A6B6
---accent        #14B8C0   /* teal — primary actions, brand */
---accent-press  #0F949B
---success       #2FBF71   /* on-track / covered */
---warning       #E8A33D   /* needs review */
---danger        #E5484D   /* missing / high issue */
+--canvas        #EDF1F6   /* app background */
+--surface       #FFFFFF   /* cards, headers */
+--hairline      #D8E1EC   /* borders */
+--ink           #1B2A3D   /* primary text */
+--muted         #64748B   /* secondary text */
+--navy          #1E3A66   /* primary, nav, buttons, structure */
+--blue          #2D6FB0   /* in-progress */
+--teal          #18837E   /* verified / complete / positive (brand accent) */
+--amber         #B5781A   /* behind / needs review */
+--red           #C0492F   /* critical */
 ```
-Light mode: out of scope for prototype (ship dark only).
+Coverage = donut + horizontal bars. Issues = severity dots (red Critical / amber Major / grey Minor).
+Status pills: On track (teal) · Needs review (amber) · Behind (red) · Complete (teal). Header = white
+with a **2px navy underline**. Cards = white surface, hairline border, soft radius.
 
 ### 6.3 Typography
-- **Native iOS / PWA:** use the **system font (SF Pro via `-apple-system`)**. This is the correct, professional, HIG-native choice — it renders identically to shipping iOS apps. Do not import decorative web fonts for this product.
+- **OptiSync:** **Inter** throughout (matches the Notion text style the client supplied; replaced an
+  earlier IBM Plex pairing). Self-hosted variable woff2 (`pwa/public/fonts/`, precached by the SW — no
+  CDN, offline-safe), stack `'Inter', -apple-system, system-ui, sans-serif`. **All figures** (every %,
+  coverage, date, count) use a `.mono` class = Inter with `tnum` + `lnum` features (tabular + lining).
+  *(The frozen comparison ports still use the system font per the prior Athar-Eye spec.)*
 - Type scale (pt): Large title 32/800 · Title 22/700 · Headline 17/600 · Body 16/450 · Subhead 14/500 · Caption 12.5/500. Generous line-height (1.4–1.5 body).
 
 ### 6.4 Spacing, radius, elevation
@@ -244,6 +252,46 @@ athar-eye/
 ---
 
 ## 15. Change log
+- **v1.14 (12 Jun 2026) — OptiSync redesign: the `pwa/` is rebuilt as OptiSync (in progress).** Major
+  redesign of the production PWA from *Athar Eye* (dark) to **OptiSync** (light "Blueprint + teal"),
+  same stack (Vite + React 18 + TS strict + vite-plugin-pwa + Netlify), same repo, branch
+  `feature/optisync-phase-1`. Driven by the validated Claude Design prototype + handoff bundle
+  (`OPTISYNC_HANDOFF`: `OPTISYNC_CODE_PROMPT.md`, `OptiSync - Full Handoff & Build Documentation.md`,
+  `OPTISYNC_DATA_SPEC.md`, `OPTISYNC_DEEP_REPORTS.md`, `OPTISYNC_PHOTO_MAP.md`,
+  `OPTISYNC_VISUALS_PRESENTATION.md`). **Those docs are authoritative for the OptiSync PWA**; they
+  supersede §6.2 (now updated to the locked light tokens), §8 screens, and §10 data here (kept as the
+  frozen-ports reference). Locked decisions:
+  - **Design system** — light Blueprint+teal (canvas `#EDF1F6` · surface `#FFFFFF` · hairline `#D8E1EC`
+    · ink `#1B2A3D` · muted `#64748B` · navy `#1E3A66` · blue `#2D6FB0` · teal `#18837E` · amber
+    `#B5781A` · red `#C0492F`); **Inter** type (self-hosted variable woff2, `.mono` tnum/lnum);
+    white header with a 2px navy underline; donut + zone bars + severity dots + sparkline.
+  - **Product** — iPhone-first BIM **progress & coverage tracker** for UK SME contractors. In-app
+    contractor account = **Cairn Refurbishment Ltd** (report "Prepared by" footer too); "OptiSync" is
+    the product/app name only. *(Resolves the `OPTISYNC_DATA_SPEC`/`DEEP_REPORTS` "Optisync Ltd"
+    pre-rename drift — handoff doc decision #13 wins.)*
+  - **Data** — 6 UK projects (verbatim from `OPTISYNC_DATA_SPEC`): Stirling (Early 28%), Morningside
+    (Mid 62%, hero), Leith (Complete 100%), Hyndland (Mid 74%, Needs review — 220 mm partition
+    deviation), Marischal (Aberdeen office 91%, commercial, no photos), City Quay (Dundee warehouse
+    82%, commercial, no photos). Rich model: zones (area + coverage + roll-up), issues (severity +
+    appear/clear thresholds), scan history, BIM, trades, team, captures. **State is in-memory, seeded
+    from the typed data module — refresh = reset** (no localStorage for core state).
+  - **12 screens + bottom nav** (Projects · Reports · Scan-centre · Account): Splash, Projects, New
+    project, Project detail, Scan flow, Progress report, Reports history, Issues/snags, Plans/billing,
+    Account/profile, Team & access, Settings, Share/export sheet. **Full CRUD** across projects, zones,
+    issues, trades, captures, team, BIM, profile (single mutation path `api.update(id, fn, rollup?)`).
+  - **Two signature interactions** — (1) **timeline scrubber** on Project detail: tap/drag a scan
+    point → <200 ms crossfade of donut + zone bars + issues-open-at-date + stage captures (Leith scrubs
+    0→22→48→71→94→100, snags → 0 at handover); (2) **scan animation** on Scan flow: a looping room
+    walkthrough video (`scan_feed.mp4`, `<video … playsinline>`) with a canvas point-cloud overlay
+    accreting on top (Aim → Capturing → Processing → Result), writing a real new scan to Morningside
+    (62 → 66%). Deterministic, offline; honest scope = simulation of a LiDAR capture (real ARKit+LiDAR
+    is the native-app roadmap).
+  - **Gaps noted** — the bundle shipped no prototype HTML / Design source exports (building to the
+    written spec) and no logo file (placeholder OptiSync SVG mark in use; real logo + PWA icons
+    180/192/512 wired at the brand phase). No board/visa wording anywhere.
+  - **Build phases (commit per unit):** (1) rebrand shell + SPEC ← *this entry*; (2) data layer;
+    (3) tokens + primitives; (4) in-memory store + portfolio; (5) detail + scrubber; (6) scan flow;
+    (7) reports; (8) issues + account cluster; (9) brand + PWA + acceptance.
 - **v1.13 (3 Jun 2026) — stack comparison ports: Flutter (`flutter/`) + native iOS SwiftUI (`ios-native/`).**
   Optional follow-on to v1.12, to compare native feel / animation performance across stacks. Each is a
   **focused comparison subset** (not all 13 screens): the navy/teal tokens + the 6 demo projects (verbatim)
