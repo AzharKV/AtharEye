@@ -252,6 +252,23 @@ athar-eye/
 ---
 
 ## 15. Change log
+- **v1.16 (12 Jun 2026) — OptiSync PWA: zone-coverage rollup fix + scan feed video.**
+  Two correctness fixes found in a post-deploy test pass.
+  - **Zone coverage reconciliation.** Four projects had `overall_coverage` headlines that did not equal
+    the area-weighted rollup of their own zones (`Σ(area·coverage)/Σarea`), causing the headline to
+    visibly jump on the first scan or zone edit. The locked headline numbers are the marketing/roster
+    anchors; the minimal single-zone edit per project was applied to reconcile them: `st-z1` 35→31,
+    `mo-z6` 58→52, `ma-z1` 95→94, `cq-z1` 86→84. A DEV-mode `console.assert` loop in `data.ts`
+    now fires on module load if any seed project's rollup diverges from its headline, so this can't
+    silently drift again.
+  - **Scan feed switched to looping video.** The locked v0.9 decision was *scan = moving walkthrough
+    footage + canvas overlay*. `ScanFlow.tsx` was still rendering the feed as a `<img>` with a CSS
+    pan (`feedpan` keyframe); `SCAN_FEED` / `SCAN_FEED_2` (exported from `photos.ts`) were unused.
+    The `<img>` is replaced with `<video src={SCAN_FEED} poster={bgForZone(zoneName)} autoPlay loop
+    muted playsInline>`. The `poster` paints the per-zone still instantly before the video decodes.
+    The `feedpan` keyframe is removed from `index.html`. The mp4 is served runtime CacheFirst
+    (Workbox `optisync-media` rule, `rangeRequests: true`) — already present in `vite.config.ts`,
+    not precached (too large). Airplane-mode works after one online load.
 - **v1.15 (12 Jun 2026) — OptiSync PWA: manual-test bug-fix + prototype-parity pass.** Nine issues found
   in device testing, fixed against `design-source/` and verified in the browser preview (tsc + ESLint +
   build clean). No data/product-fact changes — UI/navigation/flow fidelity only.

@@ -12,7 +12,7 @@
 
 **Last updated:** 2026-06-12 · **Status:** **OptiSync redesign in progress** (branch
 `feature/optisync-phase-1`). The PWA is being rebuilt from *Athar Eye* (dark) into **OptiSync** (light
-"Blueprint + teal") per the handoff bundle — see `../SPEC.md` §15 v1.14.
+"Blueprint + teal") per the handoff bundle — see `../SPEC.md` §15 v1.16.
 
 **Done — all 9 phases.** rebrand shell; **data layer**; light **tokens + primitives**; in-memory
 **store**; **portfolio + report document**; **timeline scrubber (signature #1) + full CRUD**; **scan flow
@@ -224,7 +224,7 @@ pwa/
 - **`Projects.tsx`** — `ProjectsList` (portfolio summary ring + counts, filter chips, **search** (`SearchBar` → live filter by name/location/type/client), skeleton list, cards → `ProjectDetail`), `ProjectDetail` (scroll-aware floating header, parallax `BannerBlueprint`, progress `Ring` card, BIM model card + `BimUploadSheet`, coverage-by-area `Bar`s, team `Avatar`s, CTAs → `actions.startScan` / push `ReportDetail`, and **Delete project** → `DeleteConfirm` action sheet → `actions.deleteProject` (persisted)), `NewProject` (form + `Field`s + BIM attach → builds a `Project` and `actions.addProject`). Local: `DeleteConfirm`, `BimUploadSheet` (faked upload→align), `Field`, `BIM_SAMPLES`, `PTYPES`.
 - **`Reports.tsx`** — `ReportsList` (filter chips, **search**, skeleton, cards → `ReportDetail`), `ReportDetail` (branded sticky header, **count-up `Donut`**, Covered/Missing m², `IsoMassing`, meta table, coverage-by-room, open-issues with severity badges, `ShareSheet` + PDF `Toast`).
 - **`Settings.tsx`** — `Settings` (profile row → `Profile`, subscription card + usage `Bar` → `Plans`, scanning/app `Row`s + `Toggle`s, footer lockup), `Profile` (avatar, stats, details), `Plans` (tier cards, add-ons, switch `Toast`). Local: `Toggle`, `Row`.
-- **`scan/ScanFlow.tsx`** (lazy chunk) — controller stepping `select → home → active → processing → result`. `ActiveScan` shows the **live rear camera** (`CameraBG`, dimmed + vignette, gradient fallback) under a faint **perspective room wireframe** + the point cloud drawn on a **single `requestAnimationFrame` loop** (DPR capped at 2, cancelled on unmount, time-based progress over `DUR=7000`); bottom controls (stats · progress · stop) are a single safe-area-aware **column** (no overlap). `Processing` spinner uses **CSS `spin`** (no per-frame React); on completion it calls `onScanComplete(project)` (persists the scan). `ScanResult` count-up donut + stats; CTAs → `onViewReport` / share / done. Complete projects are excluded from `ScanSelect`.
+- **`scan/ScanFlow.tsx`** (lazy chunk) — prototype flow: light **project picker** → light **area select** → aim → capture → process → result. Feed element is a `<video src={SCAN_FEED} poster={bgForZone(zoneName)} autoPlay loop muted playsInline>` (`scan_feed.mp4`, runtime CacheFirst). The `poster` paints instantly before the video decodes. Per-step filter: `process` → dim+desaturate; `result` → brightness `.7`; default → `.86`. Grid overlay (aim step) + point-cloud `<canvas>` (rAF sweep on capture, jitter-settle on process) layer on top. Delta frozen at capture start; scan written to store on user's finish action (not on entering Result) so from→to numbers stay stable.
 
 ---
 
@@ -335,7 +335,7 @@ Authoritative list lives in **`SPEC.md` §15** (v1.2 – v1.9). Summary of code-
 - **Deterministic SVG pattern IDs** (no `Math.random`) in `BlueprintTile`/`IsoMassing`.
 - **System Back button integrated** (`backstack.ts`) with the in-memory nav via the History API — Android/browser Back pops screens / closes the scan & sheets instead of leaving the app. Not in the design-source.
 - **Persisted to localStorage** (`lib/store.ts`) seeded from `data.ts` — created projects + recorded scans survive reload; no backend. (Firebase/etc. is the future multi-device path.)
-- **Scan visual:** the **live rear camera** (`CameraBG` → `getUserMedia({ facingMode: 'environment' })`, 55% opacity + vignette) behind a perspective **room wireframe** (alpha `0.18 + 0.32 × p`, 1.5 px lines) + the point cloud — reads as a real LiDAR scan. Falls back to a dark gradient if the camera is denied/unavailable (needs HTTPS + a one-time permission prompt).
+- **Scan visual:** looping walkthrough **video** (`scan_feed.mp4`, `SCAN_FEED`, `autoPlay loop muted playsInline`) as the live feed — per the locked v0.9 decision. Zone-specific still (`bgForZone`) as the `poster` for instant paint. Grid overlay + point-cloud canvas layered on top. Runtime CacheFirst in Workbox (`optisync-media`) so Airplane-mode works after first load. `data.ts` zone coverages are area-weighted to match each project's `overall_coverage` (enforced by a DEV-mode `console.assert` loop on module load).
 - **Splash matches the OS splash:** the static HTML splash, the React `<Splash>`, and the manifest `background_color` all use solid `#0C0F12` with the icon centered, so the Android/iOS native launch splash hands off to the web splash with no icon jump/shrink.
 - ESLint relaxed for the design's idiomatic `cond && fn()` statements; Fast-Refresh co-location hint off.
 
