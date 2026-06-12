@@ -267,18 +267,21 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
         )}
       </div>
 
-      {/* Footer actions — buttons float on a transparent→canvas gradient (design footer), so body
-          content fades out cleanly under them rather than showing through a frosted bar. */}
+      {/* Footer actions — pinned to the screen frame (design uses position:absolute, not sticky, so it
+          stays fixed at the bottom in both the fullscreen-phone and the centered desktop-card layouts).
+          The buttons sit on a transparent→canvas gradient so body content fades cleanly under them. */}
       <div
         style={{
-          position: 'sticky',
+          position: 'absolute',
+          left: 0,
+          right: 0,
           bottom: 0,
+          zIndex: 30,
           display: 'flex',
           gap: 10,
           padding: '14px 18px',
           paddingBottom: 'max(14px, env(safe-area-inset-bottom))',
           background: `linear-gradient(transparent, ${T.canvas} 26%)`,
-          marginTop: 8,
         }}
       >
         <Button full icon="reports" onClick={() => openReportAt(cov)}>Report</Button>

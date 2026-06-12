@@ -264,7 +264,10 @@ athar-eye/
     longer sit *above* a visible tab bar (the double-bar read as floating).
   - **Detail/report footers** changed from a translucent frosted bar to the design's transparent→canvas
     **gradient fade** (`linear-gradient(transparent, canvas 26%)`), so body content fades out cleanly
-    under the pinned CTAs instead of bleeding through a blurred bar.
+    under the pinned CTAs instead of bleeding through a blurred bar. They are pinned with
+    **`position: absolute; bottom: 0`** (the design's approach), **not `sticky`** — `sticky` left the bar
+    floating mid-content in the centered desktop-card layout; `absolute` keeps it fixed to the screen
+    frame in both the fullscreen-phone and the centered-card layouts.
   - **Launch splash status bar.** Static `#initial-splash`, the React `<Splash>`, and the manifest
     `background_color` are now **white** (`#FFFFFF`) to match `theme-color` + the in-app white headers —
     removes the status-bar seam on the splash (the in-app status bar was already correct).

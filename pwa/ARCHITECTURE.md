@@ -34,7 +34,8 @@ against the design's `projects.png`.
 `design-source/`, verified in the browser preview — (1) the **tab bar + install banner now render only on
 the three tab roots** (pushed screens are full-screen), via a new `Navigator` `onDepth` signal that
 `AppRoot` uses to hide the bar when the active tab's depth > 1; (2) detail/report **footers** use the
-design's transparent→canvas **gradient fade** (not a frosted bar); (3) the **launch splash + manifest
+design's transparent→canvas **gradient fade** and are pinned with **`position: absolute; bottom: 0`** (not
+`sticky`, which floated mid-content in the centered desktop-card layout); (3) the **launch splash + manifest
 `background_color` are white** to match `theme-color`/headers (status-bar seam fix); (4) the **scrubber**
 rebuilt to a continuous rail + absolute nodes (line no longer kinks at the selected node); (5) the detail
 **edit** button is a pencil icon + zone rows show a pencil affordance; (6) **project captures open a

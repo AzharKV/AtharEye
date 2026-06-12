@@ -208,17 +208,20 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
         <div style={{ ...mono, fontSize: 11.5, color: T.muted, textAlign: 'center', padding: '20px 10px 6px', lineHeight: 1.5 }}>{r.footer}</div>
       </div>
 
-      {/* Footer actions — float on a transparent→canvas gradient (design footer). */}
+      {/* Footer actions — pinned to the screen frame (design uses position:absolute, not sticky), on a
+          transparent→canvas gradient so the report fades cleanly under it. */}
       <div
         style={{
-          position: 'sticky',
+          position: 'absolute',
+          left: 0,
+          right: 0,
           bottom: 0,
+          zIndex: 30,
           display: 'flex',
           gap: 10,
           padding: '14px 18px',
           paddingBottom: 'max(14px, env(safe-area-inset-bottom))',
           background: `linear-gradient(transparent, ${T.canvas} 26%)`,
-          marginTop: 8,
         }}
       >
         <Button full icon="projects" onClick={() => nav.push(<ProjectDetail projectId={p.id} />)}>
