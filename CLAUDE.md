@@ -84,4 +84,5 @@ on a real iPhone.
 
 **Frozen legacy ports** — `reactnative/` (Expo SDK 56), `flutter/` (3.41), `ios-native/` (SwiftUI) were
 built against the **previous Athar Eye** dark design and have **not** been re-ported to OptiSync. They
-remain for reference only.
+remain for reference only. To migrate them later, follow **`OPTISYNC_PORTING_GUIDE.md`** (the Athar
+Eye → OptiSync delta, with the PWA as the reference implementation).

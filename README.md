@@ -73,6 +73,7 @@ them as current OptiSync. If a native OptiSync app is built later, it ports from
 | [`SPEC.md`](SPEC.md) | Product / data / competitive / design **source of truth** + decision log (§15) |
 | [`pwa/ARCHITECTURE.md`](pwa/ARCHITECTURE.md) | ⭐ **Full engineering reference for the OptiSync PWA** — read this instead of scanning the project |
 | [`design-source/`](design-source/) | Locked OptiSync Claude Design export (visual reference — ported, not reinvented) |
+| [`OPTISYNC_PORTING_GUIDE.md`](OPTISYNC_PORTING_GUIDE.md) | How to migrate the frozen RN/Flutter/iOS ports from Athar Eye → OptiSync (the redesign delta) |
 | [`CLAUDE_CODE_BUILD.md`](CLAUDE_CODE_BUILD.md) | Original Athar-Eye engineering brief — superseded for the PWA by the OptiSync handoff, but the native-feel §4 criteria still apply |
 
 ## Working method
