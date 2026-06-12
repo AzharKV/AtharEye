@@ -295,10 +295,11 @@ athar-eye/
     (bottom-sheet editors; zone-coverage edits roll up overall %; View log + per-scan report);
     ✓(6) scan video + point-cloud flow (writes a real scan to Morningside 62→66, opens as a report);
     ✓(7) reports history + per-scan + deep/light/commercial variants + share/export sheet (Save PDF /
-    copy link / email, with progress→success) + Report→Project nav; (8) issues + plans + team + settings;
-    (9) real logo + PWA icons + acceptance. Phases 2–7 verified in preview (Leith 0→100 scrub clears the
-    snags; scan flow → 62→66 → report; commercial report has no gallery; export flow). Sheets portal
-    above the tab bar. build/tsc/lint clean.
+    copy link / email, with progress→success) + Report→Project nav; ✓(8) account cluster — Account hub
+    (CR monogram/stats/company/Edit profile), Issues & snags (portfolio aggregate + counts + filters +
+    CRUD), Plans/billing (tier ladder + switch + add-ons), Team & access (roles, invite/edit/remove),
+    Settings; (9) real logo + PWA icons + acceptance. Phases 2–8 verified in preview. Sheets portal above
+    the tab bar. build/tsc/lint clean. **Phase 9 waits on the user's logo file.**
 - **v1.13 (3 Jun 2026) — stack comparison ports: Flutter (`flutter/`) + native iOS SwiftUI (`ios-native/`).**
   Optional follow-on to v1.12, to compare native feel / animation performance across stacks. Each is a
   **focused comparison subset** (not all 13 screens): the navy/teal tokens + the 6 demo projects (verbatim)

@@ -14,13 +14,15 @@
 `feature/optisync-phase-1`). The PWA is being rebuilt from *Athar Eye* (dark) into **OptiSync** (light
 "Blueprint + teal") per the handoff bundle — see `../SPEC.md` §15 v1.14.
 
-**Done — phases 1–7:** rebrand shell; **data layer**; light **tokens + primitives**; in-memory **store**;
+**Done — phases 1–8:** rebrand shell; **data layer**; light **tokens + primitives**; in-memory **store**;
 **portfolio + report document**; **timeline scrubber (signature #1) + full CRUD**; **scan flow
-(signature #2)**; and **reports** — history, per-scan reports, deep vs light/commercial variants (no
-gallery), Report→Project nav, and the **share/export sheet** (report-type pick → Save as PDF with an
-export-progress → success, Copy link, Email). Verified in preview, incl. the Marischal commercial report
-and the export flow. (Sheets now portal to `#app-card` so they stack above the tab bar.)
-**Next:** phase 8 (issues + plans + team + settings), phase 9 (real logo + PWA icons + acceptance).
+(signature #2)**; **reports** (history/per-scan/variants/share-export); and the **account cluster** —
+Account hub (CR monogram, computed stats, company card, Edit profile), **Issues & snags** (portfolio
+aggregate, open/critical/closed counts, severity + status filters, add/edit/close/re-open/delete via the
+project-scoped editor), **Plans/billing** (current plan + usage, the £0/£19/£49/£99/£149 tier ladder with
+switch, add-ons), **Team & access** (org roster, Owner/Admin/Editor/Viewer, invite/edit/remove). Verified
+the Account hub + Issues in preview.
+**Next:** phase 9 (real logo + PWA icons + golden-path acceptance) — **waiting on the logo file**.
 
 ### OptiSync module map (current)
 - **`types.ts`** — domain model: `Project` (zones/issues/scans/bim/trades/team/captures), `Issue`
@@ -47,8 +49,9 @@ and the export flow. (Sheets now portal to `#app-card` so they stack above the t
   ScanLog/ScanDetail. Zone-coverage edits roll up overall % via `update(id, recipe, {rollup})`.
 - **`screens/`** — `Projects` (list/search/filters/swipe-delete), `NewProject`, `ProjectDetail`
   (overview + interactive scan-history **scrubber** + View log + per-scan report + full CRUD),
-  `Reports` (history + report doc), `Account`, `Settings`, `scan/ScanFlow` (video feed + canvas point
-  cloud; beats timer-driven; writes the scan via the store; still-image fallback if the video fails).
+  `Reports` (history + report doc), `Account` (hub + Edit-profile sheet), `Issues`, `Plans`, `Team`,
+  `Settings`, `scan/ScanFlow` (video feed + canvas point cloud; beats timer-driven; writes the scan via
+  the store; still-image fallback if the video fails).
 
 *Sections below still describe Athar-Eye internals; they are revised as the later phases land.*
 

@@ -1,18 +1,23 @@
-// Account / profile — identity, company card, portfolio stats, and links to Plan / Team / Settings.
-// Plan & Team screens are built in phase 8; this is the account hub + computed stats.
+// Account / profile — identity, company card, portfolio stats, Edit profile, and links to
+// Issues / Plan / Team / Settings.
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { T } from '../theme';
 import { useStore } from '../lib/store';
 import { Screen, useNav } from '../navigation/Navigator';
-import { PushHeader } from '../navigation/PushHeader';
-import { Avatar, Card, ScreenHeader, SectionLabel, mono } from '../components/primitives';
+import { Avatar, Button, Card, ScreenHeader, SectionLabel, mono } from '../components/primitives';
+import { Sheet, TextField } from '../components/Sheet';
 import { Icon } from '../components/Icon';
 import type { IconName } from '../components/Icon';
 import { Settings } from './Settings';
+import { Plans } from './Plans';
+import { Team } from './Team';
+import { Issues } from './Issues';
 
 export function Account() {
   const { data } = useStore();
   const nav = useNav();
+  const [editing, setEditing] = useState(false);
   const ps = data.projects;
   const stats = {
     projects: ps.length,
@@ -26,7 +31,10 @@ export function Account() {
 
   return (
     <Screen>
-      <ScreenHeader title="Account" />
+      <ScreenHeader
+        title="Account"
+        trailing={<button onClick={() => setEditing(true)} style={{ border: 'none', background: 'none', color: T.navy, fontWeight: 700, fontSize: 14.5, cursor: 'pointer' }}>Edit</button>}
+      />
       <div style={{ padding: '6px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
         {/* Identity */}
         <Card style={{ padding: 18, display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -63,14 +71,42 @@ export function Account() {
         {/* Links */}
         <SectionLabel>Workspace</SectionLabel>
         <Card style={{ padding: '4px 8px' }}>
-          <NavRow icon="layers" label="Plan & billing" detail={`${data.subscription.plan} · ${data.subscription.price}${data.subscription.period}`} onClick={() => nav.push(<ComingSoon title="Plan & billing" />)} />
-          <NavRow icon="team" label="Team & access" detail={`${data.team.length} members`} onClick={() => nav.push(<ComingSoon title="Team & access" />)} />
+          <NavRow icon="alert" label="Issues & snags" detail={`${stats.open} open`} onClick={() => nav.push(<Issues />)} />
+          <NavRow icon="layers" label="Plan & billing" detail={`${data.subscription.plan} · ${data.subscription.price}${data.subscription.period}`} onClick={() => nav.push(<Plans />)} />
+          <NavRow icon="team" label="Team & access" detail={`${data.team.length} members`} onClick={() => nav.push(<Team />)} />
           <NavRow icon="settings" label="Settings" onClick={() => nav.push(<Settings />)} last />
         </Card>
 
         <div style={{ ...mono, textAlign: 'center', color: T.faint, fontSize: 11.5, padding: '8px 0 4px' }}>OptiSync v1.0.0</div>
       </div>
+
+      {editing && <ProfileSheet onClose={() => setEditing(false)} />}
     </Screen>
+  );
+}
+
+function ProfileSheet({ onClose }: { onClose: () => void }) {
+  const { data, patch } = useStore();
+  const [name, setName] = useState(data.user.name);
+  const [role, setRole] = useState(data.user.role);
+  const [email, setEmail] = useState(data.user.email);
+  const [company, setCompany] = useState(data.company.name);
+  const [office, setOffice] = useState(data.company.registeredOffice);
+  const save = () => {
+    patch({
+      user: { ...data.user, name: name.trim() || data.user.name, role: role.trim() || data.user.role, email: email.trim() || data.user.email, initials: (name.trim() || data.user.name).split(/[\s.]+/).filter(Boolean).map((s) => s[0]).slice(0, 2).join('').toUpperCase() },
+      company: { ...data.company, name: company.trim() || data.company.name, registeredOffice: office.trim() || data.company.registeredOffice },
+    });
+    onClose();
+  };
+  return (
+    <Sheet title="Edit profile" onClose={onClose} footer={<Button primary full onClick={save}>Save</Button>}>
+      <TextField label="Name" value={name} onChange={setName} />
+      <TextField label="Role" value={role} onChange={setRole} />
+      <TextField label="Email" value={email} onChange={setEmail} />
+      <TextField label="Company" value={company} onChange={setCompany} />
+      <TextField label="Registered office" value={office} onChange={setOffice} multiline />
+    </Sheet>
   );
 }
 
@@ -105,19 +141,5 @@ function NavRow({ icon, label, detail, onClick, last }: { icon: IconName; label:
       {detail && <span style={{ fontSize: 12.5, color: T.muted }}>{detail}</span>}
       <Icon name="chevron" size={16} color={T.faint} />
     </button>
-  );
-}
-
-// Temporary placeholder for the phase-8 screens (Plan & billing, Team & access).
-function ComingSoon({ title }: { title: string }) {
-  return (
-    <Screen padTop={0}>
-      <PushHeader title={title} />
-      <div style={{ padding: '60px 30px', textAlign: 'center', color: T.muted }}>
-        <Icon name="clock" size={28} color={T.faint} />
-        <div style={{ marginTop: 12, fontSize: 15, fontWeight: 600, color: T.ink }}>{title}</div>
-        <div style={{ fontSize: 13.5, marginTop: 4 }}>Coming in the next build phase.</div>
-      </div>
-    </Screen>
   );
 }
