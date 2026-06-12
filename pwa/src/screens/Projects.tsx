@@ -1,1121 +1,244 @@
-import { useState, useEffect, useRef } from 'react';
-import { T } from '../theme';
-import type { Project, BimModel } from '../types';
-import { DATA, bimFor } from '../data';
+// Projects (home) — portfolio list of 6 projects: mini coverage donut, stage chip, status pill;
+// search; stage filter pills (All · Needs review · Early · Mid · Complete); + New; swipe-to-delete.
+import { useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import { T, STATUS } from '../theme';
+import type { Project } from '../types';
 import { haptic } from '../lib/haptic';
-import { teamName } from '../lib/format';
-import { useCountUp } from '../hooks/useCountUp';
-import { useReady } from '../hooks/useReady';
-import { useBackLayer } from '../hooks/useBackLayer';
-import { Icon } from '../components/Icon';
-import type { IconName } from '../components/Icon';
-import {
-  Ring,
-  Bar,
-  StatusBadge,
-  BannerBlueprint,
-  Avatar,
-  Chips,
-  Button,
-  Card,
-  SectionLabel,
-  ScreenHeader,
-} from '../components/primitives';
-import { Toast } from '../components/ShareSheet';
-import { SkeletonList } from '../components/Skeleton';
-import { SearchBar } from '../components/SearchBar';
+import { useStore } from '../lib/store';
 import { Screen, useNav } from '../navigation/Navigator';
-import { PushHeader, RoundBtn } from '../navigation/PushHeader';
-import { useAppActions } from '../navigation/AppActions';
-import { ReportDetail } from './Reports';
+import { Chips, ScreenHeader, Ring, StageChip, StatusPill, EmptyState, mono } from '../components/primitives';
+import { Icon } from '../components/Icon';
+import { ProjectDetail } from './ProjectDetail';
+import { NewProject } from './NewProject';
+
+const FILTERS = ['All', 'Needs review', 'Early stage', 'Mid-build', 'Complete'] as const;
+type Filter = (typeof FILTERS)[number];
+
+function matchesFilter(p: Project, f: Filter): boolean {
+  switch (f) {
+    case 'All':
+      return true;
+    case 'Needs review':
+      return p.status === 'Needs review';
+    case 'Early stage':
+      return p.stage === 'Early';
+    case 'Mid-build':
+      return p.stage === 'Mid';
+    case 'Complete':
+      return p.stage === 'Complete';
+  }
+}
+
+const ringColor = (p: Project): string =>
+  p.status === 'Needs review' ? T.amber : p.overall_coverage >= 100 ? T.teal : T.navy;
 
 export function ProjectsList() {
+  const { data, deleteProject } = useStore();
   const nav = useNav();
-  const actions = useAppActions();
-  const projects = actions.projects || DATA.projects;
-  const ready = useReady('projects');
-  const [filter, setFilter] = useState('All');
-  const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const closeSearch = () => {
-    setSearchOpen(false);
-    setQuery('');
-  };
-  useBackLayer(searchOpen, closeSearch);
+  const [filter, setFilter] = useState<Filter>('All');
 
-  const portfolio = projects.length
-    ? Math.round(projects.reduce((s, p) => s + p.pct, 0) / projects.length)
-    : 0;
-  const counts = {
-    on: projects.filter((p) => p.status === 'On Track').length,
-    rev: projects.filter((p) => p.status === 'Needs Review').length,
-    done: projects.filter((p) => p.status === 'Complete').length,
-  };
-  const list = projects.filter((p) =>
-    filter === 'All'
-      ? true
-      : filter === 'On site'
-        ? p.status !== 'Complete'
-        : filter === 'Needs review'
-          ? p.status === 'Needs Review'
-          : p.status === 'Complete',
-  );
   const q = query.trim().toLowerCase();
-  const searchList = q
-    ? projects.filter((p) =>
-        [p.name, p.location, p.type, p.client].some((s) => (s || '').toLowerCase().includes(q)),
-      )
-    : projects;
-
-  const renderCards = (arr: Project[], empty: string) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '4px 20px 8px' }}>
-      {arr.map((p) => (
-        <Card
-          key={p.id}
-          pressable
-          onClick={() => nav.push(<ProjectDetail project={p} />)}
-          style={{ padding: 13, display: 'flex', gap: 14, alignItems: 'center' }}
-        >
-          <Ring value={p.pct} size={54} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: 16,
-                fontWeight: 700,
-                letterSpacing: -0.3,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {p.name}
-            </div>
-            <div style={{ fontSize: 12.5, color: T.muted, marginTop: 3 }}>
-              {p.location} · {p.area} m² · {p.scans} scans
-            </div>
-            <div style={{ marginTop: 8 }}>
-              <StatusBadge status={p.status} small />
-            </div>
-          </div>
-          <Icon name="chevron" size={18} color="rgba(255,255,255,0.22)" />
-        </Card>
-      ))}
-      {arr.length === 0 && (
-        <div style={{ textAlign: 'center', color: T.faint, fontSize: 14, padding: '40px 0' }}>
-          {empty}
-        </div>
-      )}
-    </div>
+  const list = data.projects.filter(
+    (p) =>
+      matchesFilter(p, filter) &&
+      (q === '' || `${p.name} ${p.location} ${p.client}`.toLowerCase().includes(q)),
   );
 
   return (
     <Screen>
       <ScreenHeader
         title="Projects"
-        sub={`${projects.length} projects · Scotland`}
+        sub={`${data.projects.length} active · ${data.company.name}`}
         trailing={
-          <div style={{ display: 'flex', gap: 8 }}>
-            <RoundBtn icon="search" label="Search" onClick={() => setSearchOpen(true)} />
-            <RoundBtn
-              icon="plus"
-              label="New project"
-              onClick={() => nav.push(<NewProject onCreate={actions.addProject} />)}
-            />
-          </div>
+          <button
+            onClick={() => {
+              haptic();
+              nav.push(<NewProject />);
+            }}
+            aria-label="New project"
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 13,
+              border: 'none',
+              background: T.navy,
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <Icon name="plus" size={22} color="#fff" />
+          </button>
         }
       />
-      {searchOpen ? (
-        <>
-          <SearchBar
+
+      {/* Search */}
+      <div style={{ padding: '4px 20px 10px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 9,
+            background: T.surface,
+            border: `1px solid ${T.hairline}`,
+            borderRadius: 12,
+            padding: '10px 13px',
+          }}
+        >
+          <Icon name="search" size={18} color={T.faint} />
+          <input
             value={query}
-            onChange={setQuery}
-            onCancel={closeSearch}
-            placeholder="Search projects"
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search projects, locations, clients"
+            style={{
+              flex: 1,
+              border: 'none',
+              outline: 'none',
+              background: 'none',
+              fontFamily: T.font,
+              fontSize: 15,
+              color: T.ink,
+            }}
           />
-          {renderCards(searchList, q ? `No projects match “${query.trim()}”` : 'Type to search projects.')}
-        </>
-      ) : (
-        <>
-          {/* summary strip — teal hero */}
-          <div style={{ padding: '2px 20px 8px' }}>
-            <Card style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
-              <Ring value={portfolio} size={66} stroke={6} accent label="AVG" />
-              <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between' }}>
-                {(
-                  [
-                    ['On track', counts.on, T.accent],
-                    ['Review', counts.rev, T.warning],
-                    ['Complete', counts.done, T.muted],
-                  ] as [string, number, string][]
-                ).map(([l, n, c]) => (
-                  <div key={l}>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: c }}>{n}</div>
-                    <div style={{ fontSize: 11.5, color: T.muted, fontWeight: 600 }}>{l}</div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-          <Chips
-            items={['All', 'On site', 'Needs review', 'Complete']}
-            active={filter}
-            onPick={setFilter}
-          />
-          {!ready ? <SkeletonList count={5} /> : renderCards(list, 'No projects in this filter.')}
-        </>
-      )}
+          {query && (
+            <button onClick={() => setQuery('')} style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex' }}>
+              <Icon name="close" size={16} color={T.faint} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <Chips items={[...FILTERS]} active={filter} onPick={(f) => setFilter(f as Filter)} tones={{ 'Needs review': T.amber }} />
+
+      <div style={{ padding: '2px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {list.length === 0 ? (
+          <EmptyState icon="projects" title="No projects" sub="No projects match this search or filter." />
+        ) : (
+          list.map((p) => (
+            <SwipeRow key={p.id} onDelete={() => deleteProject(p.id)}>
+              <ProjectRow project={p} onOpen={() => nav.push(<ProjectDetail projectId={p.id} />)} />
+            </SwipeRow>
+          ))
+        )}
+      </div>
     </Screen>
   );
 }
 
-export function ProjectDetail({ project: p }: { project: Project }) {
-  const nav = useNav();
-  const actions = useAppActions();
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  const [scrolled, setScrolled] = useState(false);
-  const pct = useCountUp(p.pct, 900);
-  const open = p.issues.length;
-  const [bim, setBim] = useState<BimModel>(() => p.bim || bimFor(p.id));
-  const [bimSheet, setBimSheet] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-  const [confirmDel, setConfirmDel] = useState(false);
+function ProjectRow({ project: p, onOpen }: { project: Project; onOpen: () => void }) {
+  return (
+    <div
+      onClick={() => {
+        haptic();
+        onOpen();
+      }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        padding: '14px 15px',
+        background: T.surface,
+        border: `1px solid ${T.hairline}`,
+        borderRadius: 16,
+        boxShadow: '0 1px 2px rgba(27,42,61,0.04), 0 6px 16px rgba(27,42,61,0.05)',
+        cursor: 'pointer',
+      }}
+    >
+      <Ring value={p.overall_coverage} size={50} stroke={5} color={ringColor(p)} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 15.5, fontWeight: 700, color: T.ink, letterSpacing: -0.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {p.name}
+        </div>
+        <div style={{ ...mono, fontSize: 12.5, color: T.muted, margin: '2px 0 7px' }}>
+          {p.location.split(',')[0]} · {p.sector} · {p.scans.length} scans
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <StageChip stage={p.stage} />
+          <StatusPill status={p.status} />
+        </div>
+      </div>
+      <Icon name="chevron" size={18} color={STATUS[p.status].c === T.amber ? T.amber : T.faint} />
+    </div>
+  );
+}
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const on = () => setScrolled(el.scrollTop > 96);
-    el.addEventListener('scroll', on);
-    return () => el.removeEventListener('scroll', on);
-  }, []);
+// ── Swipe-to-delete row (iOS-style reveal). touch-action pan-y keeps vertical scroll working.
+function SwipeRow({ children, onDelete }: { children: ReactNode; onDelete: () => void }) {
+  const [dx, setDx] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const startX = useRef(0);
+  const startY = useRef(0);
+  const axis = useRef<'x' | 'y' | null>(null);
+  const REVEAL = 84;
 
   return (
-    <div style={{ height: '100%', position: 'relative' }}>
-      {/* floating back header that gains a bg on scroll */}
-      <div
+    <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden' }}>
+      <button
+        onClick={() => {
+          haptic();
+          onDelete();
+        }}
         style={{
           position: 'absolute',
           top: 0,
-          left: 0,
+          bottom: 0,
           right: 0,
-          zIndex: 30,
-          paddingTop: 50,
+          width: REVEAL,
+          border: 'none',
+          background: T.red,
+          color: '#fff',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
-          gap: 8,
-          padding: 'calc(env(safe-area-inset-top) + 12px) 14px 10px',
-          background: scrolled ? 'rgba(12,15,18,0.8)' : 'transparent',
-          backdropFilter: scrolled ? 'blur(18px) saturate(160%)' : 'none',
-          WebkitBackdropFilter: scrolled ? 'blur(18px)' : 'none',
-          borderBottom: scrolled ? `1px solid ${T.hairline}` : 'none',
-          transition: 'background .25s, border-color .25s',
-        }}
-      >
-        <button
-          onClick={() => nav.pop()}
-          aria-label="Back"
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: 12,
-            border: `1px solid ${T.hairline}`,
-            background: 'rgba(8,12,16,0.55)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            flexShrink: 0,
-          }}
-        >
-          <Icon name="chevronL" size={20} color={T.text} />
-        </button>
-        <div
-          style={{
-            flex: 1,
-            fontSize: 16,
-            fontWeight: 700,
-            textAlign: 'center',
-            opacity: scrolled ? 1 : 0,
-            transition: 'opacity .2s',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {p.name}
-        </div>
-        <div style={{ width: 38 }} />
-      </div>
-
-      <Screen scrollRef={scrollRef} padTop={0}>
-        {/* banner */}
-        <div style={{ position: 'relative', height: 184 }}>
-          <BannerBlueprint type={p.type} />
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(to top, #0C0F12 6%, rgba(12,15,18,0.1) 70%)',
-            }}
-          />
-          <div style={{ position: 'absolute', left: 20, right: 20, bottom: 14 }}>
-            <div style={{ marginBottom: 9 }}>
-              <StatusBadge status={p.status} small />
-            </div>
-            <div style={{ fontSize: 25, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.1 }}>{p.name}</div>
-            <div
-              style={{
-                fontSize: 13.5,
-                color: T.muted,
-                marginTop: 4,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-              }}
-            >
-              <Icon name="pin" size={14} color={T.muted} />
-              {p.location} · {p.type}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ padding: '8px 20px 8px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* progress summary */}
-          <Card style={{ padding: 18, display: 'flex', alignItems: 'center', gap: 18 }}>
-            <Ring value={pct} size={92} stroke={9} accent label="COVERED" />
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {(
-                [
-                  ['scans', p.scans, 'scans'],
-                  ['area', `${p.area}`, 'm² floor area'],
-                  ['alert', open, open === 1 ? 'open issue' : 'open issues'],
-                ] as [IconName, string | number, string][]
-              ).map(([ic, n, l]) => (
-                <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <Icon name={ic} size={18} color={ic === 'alert' && open ? T.danger : T.muted} />
-                  <span style={{ fontSize: 16, fontWeight: 800, color: ic === 'alert' && open ? T.danger : T.text }}>
-                    {n}
-                  </span>
-                  <span style={{ fontSize: 13.5, color: T.muted }}>{l}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* BIM model — the reference the scan is compared against */}
-          <div>
-            <SectionLabel
-              right={
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    fontSize: 12,
-                    color: T.accent,
-                    fontWeight: 700,
-                  }}
-                >
-                  <Icon name="check" size={13} color={T.accent} stroke={3} />
-                  Aligned
-                </span>
-              }
-            >
-              BIM model
-            </SectionLabel>
-            <Card style={{ padding: 14, display: 'flex', alignItems: 'center', gap: 13 }}>
-              <div
-                style={{
-                  width: 46,
-                  height: 46,
-                  borderRadius: 12,
-                  background: 'rgba(20,184,192,0.12)',
-                  border: `1px solid ${T.accent}33`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <Icon name="cube" size={24} color={T.accent} stroke={1.9} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 700,
-                    fontFamily: T.mono,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {bim.file}
-                </div>
-                <div style={{ fontSize: 12.5, color: T.muted, marginTop: 2 }}>
-                  {bim.ver} · {bim.size} · {bim.elements} elements
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  haptic();
-                  setBimSheet(true);
-                }}
-                style={{
-                  flexShrink: 0,
-                  padding: '8px 13px',
-                  borderRadius: 11,
-                  border: `1px solid ${T.hairline}`,
-                  background: 'rgba(255,255,255,0.05)',
-                  color: T.text,
-                  fontSize: 13.5,
-                  fontWeight: 700,
-                  fontFamily: T.font,
-                  cursor: 'pointer',
-                }}
-              >
-                Replace
-              </button>
-            </Card>
-            <div style={{ fontSize: 12, color: T.faint, margin: '8px 4px 0', lineHeight: 1.45 }}>
-              Scans are aligned to this model to compute coverage. Uploaded {bim.uploaded}.
-            </div>
-          </div>
-
-          {/* coverage by area */}
-          <div>
-            <SectionLabel>Coverage by area</SectionLabel>
-            {p.rooms.length === 0 ? (
-              <Card
-                style={{
-                  padding: '26px 18px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 10,
-                  textAlign: 'center',
-                }}
-              >
-                <Icon name="scan" size={28} color={T.accent} stroke={1.8} />
-                <div style={{ fontSize: 15, fontWeight: 700 }}>No scans yet</div>
-                <div style={{ fontSize: 13, color: T.muted, maxWidth: 240, lineHeight: 1.45 }}>
-                  Run your first scan to measure coverage against the BIM model.
-                </div>
-              </Card>
-            ) : (
-              <Card style={{ padding: '4px 16px' }}>
-                {p.rooms.map((r, i) => {
-                  const behind = r.pct < 45;
-                  return (
-                    <div
-                      key={r.name}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 12,
-                        padding: '11px 0',
-                        borderBottom: i < p.rooms.length - 1 ? `1px solid ${T.hairline2}` : 'none',
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 104,
-                          fontSize: 14.5,
-                          fontWeight: 600,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                      >
-                        {r.name}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <Bar value={r.pct} color={behind ? T.danger : T.bar} />
-                      </div>
-                      <div
-                        style={{
-                          width: 40,
-                          textAlign: 'right',
-                          fontSize: 13.5,
-                          fontWeight: 700,
-                          color: behind ? T.danger : T.text,
-                        }}
-                      >
-                        {r.pct}%
-                      </div>
-                    </div>
-                  );
-                })}
-              </Card>
-            )}
-          </div>
-
-          {/* team */}
-          <div>
-            <SectionLabel>Site team</SectionLabel>
-            <Card style={{ padding: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ display: 'flex' }}>
-                {p.team.map((t, i) => (
-                  <div key={t} style={{ marginLeft: i ? -10 : 0 }}>
-                    <Avatar initials={t} size={36} ring />
-                  </div>
-                ))}
-              </div>
-              <div style={{ flex: 1, fontSize: 13.5, color: T.muted }}>
-                {p.team.map(teamName).slice(0, 2).join(', ')}
-                {p.team.length > 2 ? ` +${p.team.length - 2}` : ''}
-              </div>
-              <span style={{ fontSize: 12.5, color: T.faint }}>{p.last}</span>
-            </Card>
-          </div>
-
-          {/* CTAs */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 2 }}>
-            <Button primary icon="scan" onClick={() => actions.startScan(p)}>
-              New scan
-            </Button>
-            <Button icon="reports" onClick={() => nav.push(<ReportDetail project={p} />)}>
-              View latest report
-            </Button>
-            <button
-              onClick={() => {
-                haptic();
-                setConfirmDel(true);
-              }}
-              style={{
-                height: 48,
-                borderRadius: 14,
-                border: `1px solid ${T.danger}33`,
-                background: 'transparent',
-                color: T.danger,
-                fontSize: 15.5,
-                fontWeight: 700,
-                fontFamily: T.font,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                marginTop: 4,
-              }}
-            >
-              <Icon name="trash" size={18} color={T.danger} />
-              Delete project
-            </button>
-          </div>
-        </div>
-      </Screen>
-      <BimUploadSheet
-        open={bimSheet}
-        current={bim}
-        onClose={() => setBimSheet(false)}
-        onConnected={(f) => {
-          setBim((b) => ({ ...b, file: f.file, size: f.size, ver: f.ver, uploaded: 'Just now', elements: f.elements }));
-          setBimSheet(false);
-          setToast('BIM model connected · re-aligned');
-        }}
-      />
-      <Toast msg={toast} onDone={() => setToast(null)} />
-      <DeleteConfirm
-        open={confirmDel}
-        name={p.name}
-        onCancel={() => setConfirmDel(false)}
-        onDelete={() => {
-          actions.deleteProject(p.id);
-          nav.pop();
-        }}
-      />
-    </div>
-  );
-}
-
-// ── Destructive confirm (iOS action sheet) for deleting a project
-function DeleteConfirm({
-  open,
-  name,
-  onCancel,
-  onDelete,
-}: {
-  open: boolean;
-  name: string;
-  onCancel: () => void;
-  onDelete: () => void;
-}) {
-  useBackLayer(open, onCancel); // system Back dismisses the confirm
-  if (!open) return null;
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        inset: 0,
-        zIndex: 360,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'flex-end',
-      }}
-    >
-      <div
-        onClick={onCancel}
-        style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', animation: 'scrimIn .3s ease' }}
-      />
-      <div
-        style={{
-          position: 'relative',
-          padding: '0 10px',
-          paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
-          animation: 'sheetUp .34s cubic-bezier(.32,.72,0,1)',
-        }}
-      >
-        <div
-          style={{
-            background: '#1C232A',
-            borderRadius: 16,
-            overflow: 'hidden',
-            marginBottom: 8,
-            border: `1px solid ${T.hairline}`,
-          }}
-        >
-          <div style={{ padding: '18px 16px 14px', textAlign: 'center' }}>
-            <div style={{ fontSize: 16, fontWeight: 800 }}>Delete project?</div>
-            <div style={{ fontSize: 13, color: T.muted, marginTop: 5, lineHeight: 1.45 }}>
-              “{name}” and its reports will be removed. This can’t be undone.
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              haptic();
-              onDelete();
-            }}
-            style={{
-              width: '100%',
-              height: 54,
-              border: 'none',
-              borderTop: `1px solid ${T.hairline}`,
-              background: 'transparent',
-              color: T.danger,
-              fontSize: 17,
-              fontWeight: 700,
-              fontFamily: T.font,
-              cursor: 'pointer',
-            }}
-          >
-            Delete project
-          </button>
-        </div>
-        <button
-          onClick={() => {
-            haptic();
-            onCancel();
-          }}
-          style={{
-            width: '100%',
-            height: 54,
-            borderRadius: 16,
-            border: `1px solid ${T.hairline}`,
-            background: '#1C232A',
-            color: T.accent,
-            fontSize: 17,
-            fontWeight: 700,
-            fontFamily: T.font,
-            cursor: 'pointer',
-          }}
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── BIM upload sheet (faked import + alignment)
-interface BimSample {
-  file: string;
-  size: string;
-  ver: string;
-  elements: string;
-}
-const BIM_SAMPLES: BimSample[] = [
-  { file: 'Revit_export_v4.ifc', size: '22.1 MB', ver: 'IFC4 · v4', elements: '2,410' },
-  { file: 'Architect_issue_C.ifc', size: '15.6 MB', ver: 'IFC4 · v3', elements: '1,980' },
-  { file: 'Structural_only.ifc', size: '8.3 MB', ver: 'IFC2x3 · v1', elements: '720' },
-];
-function BimUploadSheet({
-  open,
-  current: _current,
-  onClose,
-  onConnected,
-}: {
-  open: boolean;
-  current: BimModel | Record<string, never>;
-  onClose: () => void;
-  onConnected: (f: BimSample) => void;
-}) {
-  const [phase, setPhase] = useState<'pick' | 'uploading' | 'aligning'>('pick'); // pick | uploading | aligning
-  const [prog, setProg] = useState(0);
-  const [chosen, setChosen] = useState<BimSample | null>(null);
-  useEffect(() => {
-    if (open) {
-      setPhase('pick');
-      setProg(0);
-      setChosen(null);
-    }
-  }, [open]);
-  useEffect(() => {
-    if (phase !== 'uploading') return;
-    const start = Date.now();
-    const id = setInterval(() => {
-      const p = Math.min(100, ((Date.now() - start) / 1400) * 100);
-      setProg(p);
-      if (p >= 100) {
-        clearInterval(id);
-        setPhase('aligning');
-        setTimeout(() => chosen && onConnected(chosen), 900);
-      }
-    }, 40);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
-  useBackLayer(open, onClose); // system Back closes the sheet
-  if (!open) return null;
-  const choose = (f: BimSample) => {
-    haptic();
-    setChosen(f);
-    setPhase('uploading');
-  };
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        inset: 0,
-        zIndex: 350,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'flex-end',
-      }}
-    >
-      <div
-        onClick={phase === 'pick' ? onClose : undefined}
-        style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)' }}
-      />
-      <div
-        style={{
-          position: 'relative',
-          background: '#13181D',
-          borderRadius: '22px 22px 0 0',
-          border: `1px solid ${T.hairline}`,
-          padding: '10px 16px 30px',
-          maxHeight: '88%',
-          overflowY: 'auto',
-        }}
-        className="no-scrollbar"
-      >
-        <div
-          style={{
-            width: 40,
-            height: 5,
-            borderRadius: 5,
-            background: 'rgba(255,255,255,0.18)',
-            margin: '0 auto 14px',
-          }}
-        />
-        <div style={{ textAlign: 'center', marginBottom: 16 }}>
-          <div style={{ fontSize: 18, fontWeight: 800 }}>
-            {phase === 'pick' ? 'Replace BIM model' : phase === 'uploading' ? 'Uploading model…' : 'Aligning to scan…'}
-          </div>
-          <div style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>
-            {phase === 'pick' ? 'IFC · Revit (.rvt) · IFC2x3 / IFC4' : chosen && chosen.file}
-          </div>
-        </div>
-
-        {phase === 'pick' && (
-          <>
-            <button
-              onClick={() => choose(BIM_SAMPLES[0])}
-              style={{
-                width: '100%',
-                border: `1.5px dashed ${T.accent}66`,
-                background: 'rgba(20,184,192,0.06)',
-                borderRadius: 16,
-                padding: '22px 14px',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 8,
-                marginBottom: 16,
-              }}
-            >
-              <Icon name="upload" size={28} color={T.accent} />
-              <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>Browse files</span>
-              <span style={{ fontSize: 12.5, color: T.muted }}>Drag a .ifc / .rvt here, or tap to pick</span>
-            </button>
-            <div
-              style={{
-                fontSize: 12.5,
-                fontWeight: 700,
-                color: T.muted,
-                textTransform: 'uppercase',
-                letterSpacing: 0.4,
-                margin: '4px 4px 8px',
-              }}
-            >
-              Recent exports
-            </div>
-            <div
-              style={{
-                background: '#181E24',
-                borderRadius: 16,
-                border: `1px solid ${T.hairline}`,
-                overflow: 'hidden',
-                marginBottom: 16,
-              }}
-            >
-              {BIM_SAMPLES.map((f, i) => (
-                <div
-                  key={f.file}
-                  onClick={() => choose(f)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '13px 14px',
-                    cursor: 'pointer',
-                    borderBottom: i < BIM_SAMPLES.length - 1 ? `1px solid ${T.hairline2}` : 'none',
-                  }}
-                >
-                  <Icon name="cube" size={20} color={T.muted} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14.5, fontWeight: 600, fontFamily: T.mono }}>{f.file}</div>
-                    <div style={{ fontSize: 12, color: T.muted, marginTop: 1 }}>
-                      {f.ver} · {f.size}
-                    </div>
-                  </div>
-                  <Icon name="chevron" size={16} color="rgba(255,255,255,0.25)" />
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={onClose}
-              style={{
-                width: '100%',
-                height: 50,
-                borderRadius: 14,
-                border: 'none',
-                background: '#1C232A',
-                color: T.text,
-                fontSize: 16,
-                fontWeight: 700,
-                fontFamily: T.font,
-                cursor: 'pointer',
-              }}
-            >
-              Cancel
-            </button>
-          </>
-        )}
-
-        {phase === 'uploading' && (
-          <div style={{ padding: '8px 4px 16px' }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: 12.5,
-                color: T.muted,
-                marginBottom: 8,
-              }}
-            >
-              <span>{chosen && chosen.size}</span>
-              <span style={{ color: T.text, fontWeight: 700 }}>{Math.round(prog)}%</span>
-            </div>
-            <Bar value={prog} color={T.accent} height={8} />
-          </div>
-        )}
-        {phase === 'aligning' && (
-          <div
-            style={{ padding: '18px 4px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}
-          >
-            <Icon name="layers" size={22} color={T.accent} />
-            <span style={{ fontSize: 14.5, color: T.text, fontWeight: 600 }}>Registering point cloud to BIM…</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── New project flow (create + attach BIM)
-const PTYPES = ['Shop refit', 'Residential', 'Commercial', 'Industrial', 'Hospitality', 'Other'];
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-  suffix,
-  numeric,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  suffix?: string;
-  numeric?: boolean;
-}) {
-  return (
-    <div>
-      <div
-        style={{
-          fontSize: 12.5,
+          justifyContent: 'center',
+          gap: 3,
+          cursor: 'pointer',
+          fontSize: 12,
           fontWeight: 700,
-          color: T.muted,
-          textTransform: 'uppercase',
-          letterSpacing: 0.4,
-          marginBottom: 7,
         }}
       >
-        {label}
-      </div>
+        <Icon name="trash" size={20} color="#fff" />
+        Delete
+      </button>
       <div
+        onPointerDown={(e) => {
+          startX.current = e.clientX;
+          startY.current = e.clientY;
+          axis.current = null;
+          setDragging(true);
+        }}
+        onPointerMove={(e) => {
+          if (!dragging) return;
+          const ddx = e.clientX - startX.current;
+          const ddy = e.clientY - startY.current;
+          if (axis.current === null && Math.abs(ddx) + Math.abs(ddy) > 6) {
+            axis.current = Math.abs(ddx) > Math.abs(ddy) ? 'x' : 'y';
+          }
+          if (axis.current === 'x') {
+            const base = dx <= -REVEAL ? -REVEAL : 0;
+            setDx(Math.max(-REVEAL, Math.min(0, base + ddx)));
+          }
+        }}
+        onPointerUp={() => {
+          setDragging(false);
+          if (axis.current === 'x') setDx(dx < -REVEAL / 2 ? -REVEAL : 0);
+        }}
+        onPointerCancel={() => {
+          setDragging(false);
+          setDx(dx < -REVEAL / 2 ? -REVEAL : 0);
+        }}
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          background: T.surface,
-          border: `1px solid ${T.hairline}`,
-          borderRadius: 13,
-          padding: '0 14px',
+          transform: `translateX(${dx}px)`,
+          transition: dragging ? 'none' : 'transform .2s cubic-bezier(.32,.72,0,1)',
+          touchAction: 'pan-y',
         }}
       >
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          inputMode={numeric ? 'decimal' : 'text'}
-          style={{
-            flex: 1,
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            color: T.text,
-            fontSize: 16,
-            fontWeight: 500,
-            fontFamily: T.font,
-            padding: '14px 0',
-          }}
-        />
-        {suffix && <span style={{ fontSize: 14, color: T.muted, marginLeft: 6 }}>{suffix}</span>}
+        {children}
       </div>
-    </div>
-  );
-}
-export function NewProject({ onCreate }: { onCreate: (p: Project) => void }) {
-  const nav = useNav();
-  const [name, setName] = useState('');
-  const [type, setType] = useState('Shop refit');
-  const [loc, setLoc] = useState('');
-  const [client, setClient] = useState('');
-  const [area, setArea] = useState('');
-  const [bim, setBim] = useState<BimModel | null>(null);
-  const [bimSheet, setBimSheet] = useState(false);
-  const ready = name.trim() && bim;
-
-  const create = () => {
-    haptic();
-    if (!bim) return;
-    const p: Project = {
-      id: 'p' + Date.now(),
-      name: name.trim(),
-      type,
-      location: loc.trim() || 'Scotland',
-      pct: 0,
-      status: 'On Track',
-      area: Number(area) || 0,
-      client: client.trim() || '—',
-      scans: 0,
-      team: ['JM'],
-      last: 'Just created',
-      rooms: [],
-      issues: [],
-      bim,
-    };
-    onCreate(p);
-    nav.pop();
-  };
-
-  return (
-    <div style={{ height: '100%' }}>
-      <PushHeader title="New project" />
-      <Screen padTop={0}>
-        <div style={{ padding: '12px 20px 8px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <Field label="Project name" value={name} onChange={setName} placeholder="e.g. Govan Workshop Fit-Out" />
-          <div>
-            <div
-              style={{
-                fontSize: 12.5,
-                fontWeight: 700,
-                color: T.muted,
-                textTransform: 'uppercase',
-                letterSpacing: 0.4,
-                marginBottom: 8,
-              }}
-            >
-              Type
-            </div>
-            <div className="no-scrollbar" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {PTYPES.map((t) => {
-                const on = t === type;
-                return (
-                  <button
-                    key={t}
-                    onClick={() => {
-                      haptic();
-                      setType(t);
-                    }}
-                    style={{
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '9px 14px',
-                      borderRadius: 11,
-                      fontFamily: T.font,
-                      fontSize: 14,
-                      fontWeight: 600,
-                      background: on ? T.accent : T.surface2,
-                      color: on ? T.onAccent : T.muted,
-                    }}
-                  >
-                    {t}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <div style={{ flex: 1.4 }}>
-              <Field label="Location" value={loc} onChange={setLoc} placeholder="Glasgow" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <Field label="Area" value={area} onChange={setArea} placeholder="0" suffix="m²" numeric />
-            </div>
-          </div>
-          <Field label="Client" value={client} onChange={setClient} placeholder="Client / owner" />
-
-          {/* BIM attach */}
-          <div>
-            <div
-              style={{
-                fontSize: 12.5,
-                fontWeight: 700,
-                color: T.muted,
-                textTransform: 'uppercase',
-                letterSpacing: 0.4,
-                marginBottom: 8,
-              }}
-            >
-              BIM model
-            </div>
-            {bim ? (
-              <Card style={{ padding: 13, display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div
-                  style={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: 11,
-                    background: 'rgba(20,184,192,0.12)',
-                    border: `1px solid ${T.accent}33`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Icon name="cube" size={20} color={T.accent} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 14.5,
-                      fontWeight: 700,
-                      fontFamily: T.mono,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {bim.file}
-                  </div>
-                  <div style={{ fontSize: 12, color: T.muted, marginTop: 1 }}>
-                    {bim.ver} · {bim.size}
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    haptic();
-                    setBimSheet(true);
-                  }}
-                  style={{
-                    padding: '7px 12px',
-                    borderRadius: 10,
-                    border: `1px solid ${T.hairline}`,
-                    background: 'rgba(255,255,255,0.05)',
-                    color: T.text,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    fontFamily: T.font,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Change
-                </button>
-              </Card>
-            ) : (
-              <button
-                onClick={() => {
-                  haptic();
-                  setBimSheet(true);
-                }}
-                style={{
-                  width: '100%',
-                  border: `1.5px dashed ${T.accent}66`,
-                  background: 'rgba(20,184,192,0.06)',
-                  borderRadius: 14,
-                  padding: '20px 14px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 7,
-                }}
-              >
-                <Icon name="upload" size={26} color={T.accent} />
-                <span style={{ fontSize: 14.5, fontWeight: 700, color: T.text }}>Upload BIM model</span>
-                <span style={{ fontSize: 12.5, color: T.muted }}>
-                  IFC · Revit (.rvt) — required to compute coverage
-                </span>
-              </button>
-            )}
-          </div>
-
-          <Button
-            primary
-            icon="check"
-            onClick={create}
-            style={{ width: '100%', marginTop: 4, opacity: ready ? 1 : 0.4, pointerEvents: ready ? 'auto' : 'none' }}
-          >
-            Create project
-          </Button>
-          <div style={{ fontSize: 12, color: T.faint, textAlign: 'center', lineHeight: 1.45, marginTop: -4 }}>
-            Then run your first scan to measure coverage against the BIM.
-          </div>
-        </div>
-      </Screen>
-      <BimUploadSheet
-        open={bimSheet}
-        current={bim || {}}
-        onClose={() => setBimSheet(false)}
-        onConnected={(f) => {
-          setBim({ file: f.file, size: f.size, ver: f.ver, uploaded: 'Just now', elements: f.elements });
-          setBimSheet(false);
-        }}
-      />
     </div>
   );
 }

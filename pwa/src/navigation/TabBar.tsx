@@ -1,10 +1,10 @@
-// Bottom tab bar: Projects · Reports · [Scan] · Settings. Center Scan is the teal hero action.
+// Bottom tab bar: Projects · Reports · [Scan] · Account. Centre Scan is the teal hero action.
 import { T } from '../theme';
 import { haptic } from '../lib/haptic';
 import { Icon } from '../components/Icon';
 import type { IconName } from '../components/Icon';
 
-export type TabName = 'Projects' | 'Reports' | 'Settings';
+export type TabName = 'Projects' | 'Reports' | 'Account';
 
 export function TabBar({
   active,
@@ -33,10 +33,10 @@ export function TabBar({
           alignItems: 'center',
           gap: 3,
           padding: '9px 0 0',
-          color: on ? T.accent : T.muted,
+          color: on ? T.navy : T.muted,
         }}
       >
-        <Icon name={icon} size={25} stroke={on ? 2.3 : 2} />
+        <Icon name={icon} size={24} stroke={on ? 2.3 : 2} />
         <span style={{ fontSize: 10.5, fontWeight: on ? 700 : 600, letterSpacing: -0.1 }}>{name}</span>
       </button>
     );
@@ -51,9 +51,9 @@ export function TabBar({
         zIndex: 100,
         display: 'flex',
         alignItems: 'flex-start',
-        padding: '0 6px 24px',
-        paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
-        background: 'rgba(12,15,18,0.82)',
+        padding: '0 6px 20px',
+        paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
+        background: 'rgba(255,255,255,0.86)',
         backdropFilter: 'blur(22px) saturate(160%)',
         WebkitBackdropFilter: 'blur(22px) saturate(160%)',
         borderTop: `1px solid ${T.hairline}`,
@@ -70,23 +70,23 @@ export function TabBar({
           aria-label="New scan"
           style={{
             marginTop: -16,
-            width: 58,
-            height: 58,
-            borderRadius: 19,
+            width: 56,
+            height: 56,
+            borderRadius: 18,
             border: 'none',
             cursor: 'pointer',
-            background: `linear-gradient(160deg, ${T.accent2}, ${T.accentPress})`,
-            boxShadow: '0 6px 20px rgba(20,184,192,0.5), inset 0 1px 0 rgba(255,255,255,0.35)',
+            background: `linear-gradient(160deg, ${T.accent2}, ${T.teal})`,
+            boxShadow: '0 8px 20px rgba(24,131,126,0.40), inset 0 1px 0 rgba(255,255,255,0.30)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: T.onAccent,
+            color: '#fff',
           }}
         >
-          <Icon name="scan" size={27} stroke={2.4} color={T.onAccent} />
+          <Icon name="scan" size={26} stroke={2.4} color="#fff" />
         </button>
       </div>
-      {item('Settings', 'settings')}
+      {item('Account', 'user')}
     </div>
   );
 }

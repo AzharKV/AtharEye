@@ -37,6 +37,11 @@
         overflow: hidden;
         overscroll-behavior: none;
       }
+      /* Figures use Inter's tabular + lining numerals so coverage %, dates and counts align. */
+      .mono {
+        font-variant-numeric: tabular-nums lining-nums;
+        font-feature-settings: 'tnum', 'lnum';
+      }
       #root {
         height: 100vh;
         height: 100dvh;

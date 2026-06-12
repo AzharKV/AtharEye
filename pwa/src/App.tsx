@@ -1,12 +1,12 @@
-// Root: splash, responsive shell (phone-width card on desktop), per-tab navigators, and lazy scan modal.
+// Root: splash, responsive shell (phone-width card on desktop), per-tab navigators, lazy scan modal.
+// State lives in the in-memory store (lib/store) — refresh re-seeds (the intended demo reset).
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { T } from './theme';
-import type { Project } from './types';
-import { loadProjects, saveProjects } from './lib/store';
 import { Mark, Wordmark } from './components/Brand';
 import { InstallPrompt } from './components/InstallPrompt';
 import { useBackLayer } from './hooks/useBackLayer';
+import { StoreProvider } from './lib/store';
 import { Navigator } from './navigation/Navigator';
 import type { NavHandle } from './navigation/Navigator';
 import { TabBar } from './navigation/TabBar';
@@ -14,12 +14,10 @@ import type { TabName } from './navigation/TabBar';
 import { AppActionsCtx } from './navigation/AppActions';
 import { ProjectsList } from './screens/Projects';
 import { ReportsList, ReportDetail } from './screens/Reports';
-import { Settings } from './screens/Settings';
+import { Account } from './screens/Account';
 
-// Scan flow is heavy + rare → code-split (§4.1 / §4.10).
-const ScanFlow = lazy(() =>
-  import('./screens/scan/ScanFlow').then((m) => ({ default: m.ScanFlow })),
-);
+// Scan flow is heavy + rare → code-split.
+const ScanFlow = lazy(() => import('./screens/scan/ScanFlow').then((m) => ({ default: m.ScanFlow })));
 
 function Splash({ onDone }: { onDone: () => void }) {
   const [exiting, setExiting] = useState(false);
@@ -32,14 +30,12 @@ function Splash({ onDone }: { onDone: () => void }) {
     };
   }, [onDone]);
   return (
-    // Solid bg + centered icon match the OS splash and the static HTML splash, so
-    // the icon never moves across OS → HTML → React → app (no glitch).
     <div
       style={{
         position: 'absolute',
         inset: 0,
         zIndex: 999,
-        background: T.bg,
+        background: T.canvas,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -69,7 +65,6 @@ function Splash({ onDone }: { onDone: () => void }) {
   );
 }
 
-// Suspense fallback while the scan chunk loads — branded, never blank (§4.3).
 function ScanFallback() {
   return (
     <div
@@ -77,7 +72,7 @@ function ScanFallback() {
         position: 'absolute',
         inset: 0,
         zIndex: 500,
-        background: T.bg,
+        background: T.canvas,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -92,93 +87,41 @@ function ScanFallback() {
 
 function AppRoot() {
   const [tab, setTab] = useState<TabName>('Projects');
-  const [scan, setScan] = useState<{ project: Project | null } | null>(null);
-  const [projects, setProjects] = useState<Project[]>(() => loadProjects());
+  const [scan, setScan] = useState<{ projectId: string | null } | null>(null);
   const projNav = useRef<NavHandle | null>(null);
   const repNav = useRef<NavHandle | null>(null);
-  const setNav = useRef<NavHandle | null>(null);
+  const accNav = useRef<NavHandle | null>(null);
 
-  const startScan = (project?: Project | null) => setScan({ project: project || null });
+  const startScan = (projectId?: string | null) => setScan({ projectId: projectId ?? null });
   const closeScan = () => setScan(null);
   useBackLayer(scan !== null, closeScan);
-  const addProject = (p: Project) => setProjects((list) => [p, ...list]);
-  const deleteProject = (id: string) => setProjects((list) => list.filter((p) => p.id !== id));
-  // record a completed scan: bump scan count + "last scan"; a fresh (0%) project
-  // gets a plausible starter coverage so the scan produces a real-looking report.
-  const onScanComplete = (project: Project) => {
-    setProjects((list) =>
-      list.map((p) => {
-        if (p.id !== project.id) return p;
-        const scans = p.scans + 1;
-        if (p.pct === 0 && p.rooms.length === 0) {
-          const rooms = [
-            { name: 'Main Area', pct: 58 },
-            { name: 'Entrance', pct: 47 },
-            { name: 'Rear', pct: 39 },
-          ];
-          const pct = Math.round(rooms.reduce((s, r) => s + r.pct, 0) / rooms.length);
-          return { ...p, scans, last: 'Just now', pct, rooms };
-        }
-        return { ...p, scans, last: 'Just now' };
-      }),
-    );
-  };
-  useEffect(() => {
-    saveProjects(projects);
-  }, [projects]);
-  const viewReport = (p: Project) => {
+
+  const openReport = (projectId: string, coverage?: number) => {
     setScan(null);
     setTab('Reports');
     setTimeout(() => {
       repNav.current?.popToRoot();
-      repNav.current?.push(<ReportDetail project={p} />);
+      repNav.current?.push(<ReportDetail projectId={projectId} coverage={coverage} />);
     }, 60);
   };
 
-  const tabPane = (
-    name: TabName,
-    navRef: React.MutableRefObject<NavHandle | null>,
-    root: ReactNode,
-  ) => (
+  const tabPane = (name: TabName, navRef: React.MutableRefObject<NavHandle | null>, root: ReactNode) => (
     <div style={{ position: 'absolute', inset: 0, display: tab === name ? 'block' : 'none' }}>
       <Navigator navRef={navRef} root={root} />
     </div>
   );
 
   return (
-    <AppActionsCtx.Provider
-      value={{
-        startScan,
-        addProject,
-        deleteProject,
-        onScanComplete,
-        projects,
-        goToReports: () => setTab('Reports'),
-      }}
-    >
-      <div
-        style={{
-          height: '100%',
-          position: 'relative',
-          background: T.bg,
-          color: T.text,
-          overflow: 'hidden',
-        }}
-      >
+    <AppActionsCtx.Provider value={{ startScan, goToReports: () => setTab('Reports'), openReport }}>
+      <div style={{ height: '100%', position: 'relative', background: T.canvas, color: T.ink, overflow: 'hidden' }}>
         {tabPane('Projects', projNav, <ProjectsList />)}
         {tabPane('Reports', repNav, <ReportsList />)}
-        {tabPane('Settings', setNav, <Settings />)}
+        {tabPane('Account', accNav, <Account />)}
         {!scan && <TabBar active={tab} onTab={setTab} onScan={() => startScan(null)} />}
         {!scan && <InstallPrompt />}
         {scan && (
           <Suspense fallback={<ScanFallback />}>
-            <ScanFlow
-              project={scan.project}
-              projects={projects}
-              onClose={closeScan}
-              onViewReport={viewReport}
-              onScanComplete={onScanComplete}
-            />
+            <ScanFlow projectId={scan.projectId} onClose={closeScan} onViewReport={openReport} />
           </Suspense>
         )}
       </div>
@@ -188,9 +131,8 @@ function AppRoot() {
 
 export function App() {
   const [splash, setSplash] = useState(true);
-  // Pure web, responsive: on a phone the app fills the screen; on desktop /
-  // large tablets it floats as a centered phone-width card. No fake device
-  // bezel, no hardcoded status bar (SPEC §6.1) — the OS / browser draws its own.
+  // Responsive: fills the screen on a phone; floats as a centered phone-width card on desktop /
+  // large tablets. No fake device bezel, no hardcoded status bar (SPEC §6.1).
   const [floating, setFloating] = useState(false);
 
   useEffect(() => {
@@ -205,7 +147,7 @@ export function App() {
       style={{
         position: 'fixed',
         inset: 0,
-        background: floating ? 'radial-gradient(120% 120% at 50% 0%, #12161B, #06080A)' : T.bg,
+        background: floating ? 'radial-gradient(120% 120% at 50% 0%, #DCE4EE, #C3CFDD)' : T.canvas,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -216,16 +158,18 @@ export function App() {
         style={{
           position: 'relative',
           overflow: 'hidden',
-          background: T.bg,
-          color: T.text,
+          background: T.canvas,
+          color: T.ink,
           width: floating ? 'min(100%, 440px)' : '100%',
           height: floating ? 'min(100%, 924px)' : '100%',
           borderRadius: floating ? 30 : 0,
-          border: floating ? '1px solid rgba(255,255,255,0.08)' : 'none',
-          boxShadow: floating ? '0 40px 90px rgba(0,0,0,0.55)' : 'none',
+          border: floating ? '1px solid rgba(27,42,61,0.10)' : 'none',
+          boxShadow: floating ? '0 40px 90px rgba(27,42,61,0.30)' : 'none',
         }}
       >
-        <AppRoot />
+        <StoreProvider>
+          <AppRoot />
+        </StoreProvider>
         {splash && <Splash onDone={() => setSplash(false)} />}
       </div>
     </div>

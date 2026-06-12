@@ -28,10 +28,11 @@ export function PushHeader({
         alignItems: 'center',
         gap: 8,
         padding: 'calc(env(safe-area-inset-top) + 12px) 14px 10px',
-        background: transparent ? 'transparent' : 'rgba(12,15,18,0.78)',
+        background: transparent ? 'transparent' : 'rgba(255,255,255,0.92)',
         backdropFilter: transparent ? 'none' : 'blur(18px) saturate(160%)',
         WebkitBackdropFilter: transparent ? 'none' : 'blur(18px) saturate(160%)',
-        borderBottom: transparent ? 'none' : `1px solid ${T.hairline}`,
+        // White header with a 2px navy underline (SPEC §6.2).
+        borderBottom: transparent ? 'none' : `2px solid ${T.navy}`,
       }}
     >
       <button
@@ -42,7 +43,7 @@ export function PushHeader({
           height: 38,
           borderRadius: 12,
           border: `1px solid ${T.hairline}`,
-          background: 'rgba(255,255,255,0.06)',
+          background: T.surface,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -50,14 +51,14 @@ export function PushHeader({
           flexShrink: 0,
         }}
       >
-        <Icon name="chevronL" size={20} color={T.text} />
+        <Icon name="chevronL" size={20} color={T.ink} />
       </button>
       <div
         style={{
           flex: 1,
           fontSize: 17,
           fontWeight: 700,
-          color: T.text,
+          color: T.ink,
           letterSpacing: -0.3,
           textAlign: 'center',
           whiteSpace: 'nowrap',
@@ -93,7 +94,7 @@ export function RoundBtn({
         height: 38,
         borderRadius: 12,
         border: `1px solid ${T.hairline}`,
-        background: 'rgba(255,255,255,0.06)',
+        background: T.surface,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -101,7 +102,7 @@ export function RoundBtn({
         flexShrink: 0,
       }}
     >
-      <Icon name={icon} size={20} color={T.muted} />
+      <Icon name={icon} size={20} color={T.navy} />
     </button>
   );
 }

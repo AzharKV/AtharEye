@@ -1,39 +1,65 @@
-// Athar Eye design tokens (SPEC §6.2/6.3). Dark navy + teal, SF system font, 4-pt grid.
-// ONE teal hero per screen; structural elements grey; red only for missing/critical.
-import type { ProjectStatus, Severity } from './types';
+// OptiSync design tokens — "Blueprint + teal", LIGHT (SPEC §6.2, locked).
+// navy = structure/nav · blue = in-progress · teal = verified/complete (brand accent) ·
+// amber = needs review · red = critical. Inter type with tabular+lining numerals (.mono).
+// Back-compat aliases (bg/text/accent/…) keep the reused nav-shell components compiling.
+import type { Stage, Severity, Status } from './types';
 
 export const T = {
-  bg: '#0C0F12',
-  surface: '#15191E',
-  surface2: '#1B2026',
-  surfaceHi: '#20262E',
-  hairline: 'rgba(255,255,255,0.07)',
-  hairline2: 'rgba(255,255,255,0.04)',
-  text: '#F4F6F8',
-  muted: '#8A949E',
-  faint: '#5B646D',
-  accent: '#14B8C0',
-  accent2: '#45D6DD',
-  accentPress: '#0F949B',
-  onAccent: '#04222B',
-  bar: '#AEB8C2',
-  track: 'rgba(255,255,255,0.09)',
-  warning: '#E8A33D',
-  danger: '#E5484D',
-  glow: 'rgba(20,184,192,0.20)',
-  font: '-apple-system, system-ui, "SF Pro", sans-serif',
-  mono: 'ui-monospace, "SF Mono", Menlo, monospace',
+  // Palette (locked)
+  canvas: '#EDF1F6',
+  surface: '#FFFFFF',
+  surface2: '#F4F7FB',
+  surfaceHi: '#FFFFFF',
+  hairline: '#D8E1EC',
+  hairline2: '#E6ECF3',
+  ink: '#1B2A3D',
+  muted: '#64748B',
+  faint: '#94A3B8',
+  navy: '#1E3A66',
+  blue: '#2D6FB0',
+  teal: '#18837E',
+  amber: '#B5781A',
+  red: '#C0492F',
+  // Soft tints for pills / fills
+  navyTint: '#E7ECF4',
+  blueTint: '#E5EEF7',
+  tealTint: '#E2F1EF',
+  amberTint: '#F6EEDD',
+  redTint: '#F7E7E2',
+  track: '#E2E9F1',
+  // Semantic aliases (reused components + brand)
+  bg: '#EDF1F6',
+  text: '#1B2A3D',
+  accent: '#18837E',
+  accent2: '#2AA7A0',
+  accentPress: '#136B67',
+  onAccent: '#FFFFFF',
+  bar: '#1E3A66',
+  warning: '#B5781A',
+  danger: '#C0492F',
+  glow: 'rgba(24,131,126,0.18)',
+  font: "'Inter', -apple-system, system-ui, sans-serif",
+  mono: "'Inter', -apple-system, system-ui, sans-serif",
 } as const;
 
-// Status: teal = positive, amber = the one caution accent (Needs Review only).
-export const STATUS: Record<ProjectStatus, { c: string; label: string }> = {
-  'On Track': { c: T.accent, label: 'On track' },
-  'Needs Review': { c: T.warning, label: 'Needs review' },
-  Complete: { c: T.accent, label: 'Complete' },
+/** Status pill: On track / Complete = teal · Needs review = amber · Behind = red. */
+export const STATUS: Record<Status, { c: string; bg: string; label: string }> = {
+  'On track': { c: T.teal, bg: T.tealTint, label: 'On track' },
+  'Needs review': { c: T.amber, bg: T.amberTint, label: 'Needs review' },
+  Behind: { c: T.red, bg: T.redTint, label: 'Behind' },
+  Complete: { c: T.teal, bg: T.tealTint, label: 'Complete' },
 };
 
-export const SEV: Record<Severity, string> = {
-  high: T.danger,
-  med: T.warning,
-  low: T.faint,
+/** Issue severity dot: Critical = red · Major = amber · Minor = grey. */
+export const SEV: Record<Severity, { c: string; label: string }> = {
+  Critical: { c: T.red, label: 'Critical' },
+  Major: { c: T.amber, label: 'Major' },
+  Minor: { c: T.faint, label: 'Minor' },
+};
+
+/** Stage chip: Early stage (navy) → Mid-build (blue) → Complete (teal). */
+export const STAGE: Record<Stage, { c: string; bg: string; label: string; descriptor: string }> = {
+  Early: { c: T.navy, bg: T.navyTint, label: 'Early stage', descriptor: 'Strip-out & first fix' },
+  Mid: { c: T.blue, bg: T.blueTint, label: 'Mid-build', descriptor: 'Second fix & fit-out' },
+  Complete: { c: T.teal, bg: T.tealTint, label: 'Complete', descriptor: 'Handover-ready' },
 };

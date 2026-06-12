@@ -12,13 +12,38 @@
 
 **Last updated:** 2026-06-12 · **Status:** **OptiSync redesign in progress** (branch
 `feature/optisync-phase-1`). The PWA is being rebuilt from *Athar Eye* (dark) into **OptiSync** (light
-"Blueprint + teal") per the handoff bundle — see `../SPEC.md` §15 v1.14. The reusable nav shell
-(Navigator/backstack/Screen/PushHeader/TabBar/responsive card/splash/PWA scaffolding) is retained; the
-theme, data model, store (→ in-memory, refresh-resets), primitives, and all screens are being rewritten,
-and the 12-screen OptiSync set + full CRUD + the two signature interactions (timeline scrubber, video+
-point-cloud scan) added. **Phase 1 done:** rebrand shell (package/manifest/index.html → OptiSync, Inter
-self-hosted, light theme-color, placeholder OptiSync mark) + SPEC alignment. Sections below still
-describe Athar-Eye internals and are updated phase-by-phase as code lands.
+"Blueprint + teal") per the handoff bundle — see `../SPEC.md` §15 v1.14.
+
+**Done — phases 1–4:** rebrand shell (package/manifest/index.html → OptiSync, self-hosted Inter, light
+theme, placeholder OptiSync SVG mark); the OptiSync **data layer**; light **tokens + primitives**; the
+in-memory **store**; and the **portfolio + project-detail overview + report document**. Verified in the
+preview: portfolio → Morningside detail → progress report all render with the new design.
+**Next:** phase 5 (detail timeline scrubber + full CRUD), phase 6 (scan video + point-cloud animation),
+phase 7 (reports history + per-scan + share/export sheet), phase 8 (issues + plans + team + settings),
+phase 9 (real logo + PWA icons + acceptance).
+
+### OptiSync module map (current)
+- **`types.ts`** — domain model: `Project` (zones/issues/scans/bim/trades/team/captures), `Issue`
+  (with `appear`/`clear` coverage thresholds for the scrubber), `AppData` (company/user/team/sub/settings).
+- **`data.ts`** — `SEED: AppData`: the 6 UK projects verbatim (OPTISYNC_DATA_SPEC) + Cairn account.
+- **`lib/photos.ts`** — p-index → asset path (curated subset under `public/captures/design-assets`),
+  stage pools, plan/before-after assets, scan-bg stills + `scan_feed.mp4`/`scan_feed_2.mp4`.
+- **`lib/reports.ts`** — `rollup` (area-weighted), `stateAt(project, coverage)` (scrubber/per-scan
+  resolver: rescaled zones + issues-open-at-coverage + stage captures), `reportFor` (report view-model)
+  + faithful staged prose (Reports A–E).
+- **`lib/store.ts`** — in-memory `StoreProvider`/`useStore`; single mutation path
+  `update(id, recipe, {rollup})` + `addProject`/`deleteProject`/`patch`. **No localStorage** — refresh
+  re-seeds (the intended demo reset).
+- **`theme.ts`** — light Blueprint+teal `T` (superset incl. back-compat aliases) + `STATUS`/`SEV`/`STAGE`.
+- **`components/primitives.tsx`** — Donut/Ring, ZoneBars/Bar, Sparkline, SevDot, Status/Stage pills,
+  Card, Chips, Button, KeyVal, Gallery+Lightbox, ScreenHeader, mono.
+- **`navigation/`** — reused Navigator/backstack/Screen; `TabBar` (Projects·Reports·Scan·Account),
+  `PushHeader` (white + 2px navy underline), `AppActions` (startScan/goToReports/openReport).
+- **`screens/`** — `Projects` (list/search/filters/swipe-delete), `NewProject`, `ProjectDetail`
+  (overview; scrubber+CRUD in phase 5), `Reports` (history + report doc), `Account`, `Settings`,
+  `scan/ScanFlow` (phase-6 stub).
+
+*Sections below still describe Athar-Eye internals; they are revised as the later phases land.*
 
 *(Prior status — Phase A Athar Eye, verified: responsive web, localStorage persistence, search, system
 Back, install prompt, SW auto-update, live-camera scan + room wireframe, OS-matched splash. ~6k LOC.)*

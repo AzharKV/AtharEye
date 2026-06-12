@@ -289,9 +289,12 @@ athar-eye/
   - **Gaps noted** — the bundle shipped no prototype HTML / Design source exports (building to the
     written spec) and no logo file (placeholder OptiSync SVG mark in use; real logo + PWA icons
     180/192/512 wired at the brand phase). No board/visa wording anywhere.
-  - **Build phases (commit per unit):** (1) rebrand shell + SPEC ← *this entry*; (2) data layer;
-    (3) tokens + primitives; (4) in-memory store + portfolio; (5) detail + scrubber; (6) scan flow;
-    (7) reports; (8) issues + account cluster; (9) brand + PWA + acceptance.
+  - **Build phases (commit per unit):** ✓(1) rebrand shell + SPEC; ✓(2) data layer (types/data/photos/
+    reports); ✓(3) light tokens + primitives; ✓(4) in-memory store + portfolio (Projects/NewProject/
+    ProjectDetail overview/Reports doc/Account/Settings); (5) detail timeline scrubber + full CRUD;
+    (6) scan video + point-cloud flow; (7) reports history + per-scan + share/export; (8) issues + plans
+    + team + settings; (9) real logo + PWA icons + acceptance. Phases 2–4 verified in preview (portfolio
+    → detail → report render in the new design); build/tsc/lint clean.
 - **v1.13 (3 Jun 2026) — stack comparison ports: Flutter (`flutter/`) + native iOS SwiftUI (`ios-native/`).**
   Optional follow-on to v1.12, to compare native feel / animation performance across stacks. Each is a
   **focused comparison subset** (not all 13 screens): the navy/teal tokens + the 6 demo projects (verbatim)

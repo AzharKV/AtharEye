@@ -1,94 +1,118 @@
-// Typed domain model for the Athar Eye demo data (SPEC §10).
+// Typed domain model for OptiSync (handoff bundle: OPTISYNC_DATA_SPEC.md).
+// State is in-memory, seeded from data.ts; refresh = reset (no localStorage for core state).
 
-export type ProjectStatus = 'On Track' | 'Needs Review' | 'Complete';
-export type Severity = 'high' | 'med' | 'low';
+export type Sector = 'Residential' | 'Commercial';
+/** Stage band — drives the stage chip + report variant. UI label = Early / Mid / Complete. */
+export type Stage = 'Early' | 'Mid' | 'Complete';
+export type Status = 'On track' | 'Needs review' | 'Behind' | 'Complete';
+export type Severity = 'Critical' | 'Major' | 'Minor';
+export type TradeStatus = 'Done' | 'In progress' | 'Not started';
+export type Role = 'Owner' | 'Admin' | 'Editor' | 'Viewer';
 
-/** Coverage of one room/area, as a percentage against the BIM model. */
-export interface Room {
+/** A room/area: scanned-and-aligned floor area vs the BIM plan, 0–100. Rolls up (area-weighted). */
+export interface Zone {
+  id: string;
   name: string;
-  pct: number;
+  area_m2: number;
+  coverage: number;
+  stage: Stage;
+  note: string;
 }
 
-/** An open site issue surfaced by a scan. */
+export interface Trade {
+  name: string;
+  status: TradeStatus;
+}
+
+/**
+ * A site issue / snag.
+ * `appear` / `clear` are coverage thresholds (0–100) that drive the timeline scrubber:
+ * an issue is OPEN at a scrubbed coverage `c` when `appear <= c` and (`clear` is unset or `c < clear`).
+ * They are calibrated against the staged reports in OPTISYNC_DEEP_REPORTS.md.
+ */
 export interface Issue {
-  /** Short title. */
-  t: string;
-  /** Location (room · grid reference). */
-  loc: string;
-  sev: Severity;
+  id: string;
+  severity: Severity;
+  zone: string;
+  title: string;
+  status: 'Open' | 'Closed';
+  raised: string;
+  closed?: string;
+  appear: number;
+  clear?: number;
 }
 
-/** A linked BIM model — the reference a scan is aligned against. */
-export interface BimModel {
+export interface Scan {
+  id: string;
+  date: string;
+  coverage: number;
+  note: string;
+}
+
+export interface Bim {
+  software: string;
   file: string;
-  size: string;
-  ver: string;
-  uploaded: string;
-  elements: string;
+  lod: number;
+  disciplines: string[];
+  last_aligned: string;
 }
-
-/** Team member initials used across avatars (JM, AR, KD, PB…). */
-export type TeamInitials = string;
 
 export interface Project {
   id: string;
   name: string;
+  sector: Sector;
+  /** Free-text descriptor, e.g. "2-bed tenement flat, full refurbishment". */
   type: string;
   location: string;
-  /** Overall coverage %. */
-  pct: number;
-  status: ProjectStatus;
-  /** Floor area in m². */
-  area: number;
   client: string;
-  scans: number;
-  team: TeamInitials[];
-  /** Human "last scan" label, e.g. "2h ago". */
-  last: string;
-  rooms: Room[];
+  area_m2: number;
+  stage: Stage;
+  /** Overall coverage % — area-weighted roll-up of the zones. */
+  overall_coverage: number;
+  status: Status;
+  start_date: string;
+  target_handover: string;
+  /** `deep` = full photo-backed A-to-Z report; `light` = shorter summary card. */
+  depth: 'deep' | 'light';
+  /** Why a project is flagged Needs review (e.g. the Hyndland partition deviation). */
+  reviewNote?: string;
+  bim: Bim;
+  /** Project site team as "Name · Role" labels (incl. the external contractor). CRUD as text.
+   *  Distinct from AppData.team, which is the org roster (app roles) on the Team & access screen. */
+  team: string[];
+  trades: Trade[];
+  zones: Zone[];
   issues: Issue[];
-  /** Attached BIM model (present on user-created projects). */
-  bim?: BimModel;
+  scans: Scan[];
+  /** Curated photo p-indices (→ lib/photos). Commercial projects are empty (captures pending sync). */
+  captures: string[];
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  initials: string;
+  role: Role;
+  email: string;
+  trade?: string;
+}
+
+export interface Company {
+  name: string;
+  companyNo: string;
+  vat: string;
+  registeredOffice: string;
+  established: string;
 }
 
 export interface UserProfile {
   name: string;
   role: string;
-  company: string;
-  region: string;
-  since: string;
-  stats: { projects: number; scans: number; reports: number };
+  email: string;
+  initials: string;
 }
 
-export interface Subscription {
-  plan: string;
-  price: string;
-  period: string;
-  renews: string;
-  used: number;
-  limit: number;
-}
-
-export interface DemoData {
-  user: UserProfile;
-  subscription: Subscription;
-  projects: Project[];
-  teamColors: Record<string, string>;
-  teamNames: Record<string, string>;
-  scanStats: { points: string; alignment: string };
-}
-
-/** A room cell on the isometric floor-plan grid (massing diagram). */
-export interface PlanRoom {
-  name: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  pct: number;
-}
-
-export interface SubPlan {
+export interface PlanTier {
   id: string;
   name: string;
   price: string;
@@ -98,7 +122,45 @@ export interface SubPlan {
   features: string[];
 }
 
-export interface SubAddon {
+export interface Addon {
   label: string;
   price: string;
+}
+
+export interface Subscription {
+  plan: string;
+  price: string;
+  period: string;
+  renews: string;
+  used: number;
+  limit: number;
+  tiers: PlanTier[];
+  addons: Addon[];
+}
+
+export interface PortfolioStats {
+  projects: number;
+  residential: number;
+  commercial: number;
+  scans: number;
+  openIssues: number;
+  avgCoverage: number;
+}
+
+export interface Settings {
+  units: 'Metric (m²)' | 'Imperial (ft²)';
+  dateFormat: 'DD MMM YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
+  lidarQuality: 'Standard' | 'High' | 'Maximum';
+  autoAlign: boolean;
+  notifications: boolean;
+}
+
+/** The whole seeded app state tree. */
+export interface AppData {
+  projects: Project[];
+  company: Company;
+  user: UserProfile;
+  team: TeamMember[];
+  subscription: Subscription;
+  settings: Settings;
 }
