@@ -14,7 +14,7 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-const DISMISS_KEY = 'athar-install-dismissed';
+const DISMISS_KEY = 'optisync-install-dismissed';
 const DISMISS_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 const isStandalone = (): boolean =>
@@ -110,18 +110,16 @@ export function InstallPrompt() {
           display: 'flex',
           alignItems: 'center',
           gap: 12,
-          background: 'rgba(27,32,38,0.97)',
-          backdropFilter: 'blur(20px) saturate(160%)',
-          WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+          background: T.surface,
           border: `1px solid ${T.hairline}`,
           borderRadius: 16,
           padding: '12px 12px 12px 14px',
-          boxShadow: '0 16px 44px rgba(0,0,0,0.5)',
+          boxShadow: '0 12px 32px rgba(27,42,61,0.18), 0 2px 8px rgba(27,42,61,0.10)',
         }}
       >
         <Mark size={40} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14.5, fontWeight: 700, color: T.text }}>Install Athar Eye</div>
+          <div style={{ fontSize: 14.5, fontWeight: 700, color: T.ink }}>Install OptiSync</div>
           <div
             style={{
               fontSize: 12.5,
@@ -153,8 +151,8 @@ export function InstallPrompt() {
               padding: '0 16px',
               borderRadius: 11,
               border: 'none',
-              background: T.accent,
-              color: T.onAccent,
+              background: T.navy,
+              color: '#fff',
               fontSize: 14.5,
               fontWeight: 700,
               fontFamily: T.font,
@@ -173,7 +171,7 @@ export function InstallPrompt() {
             height: 30,
             borderRadius: 9,
             border: 'none',
-            background: 'rgba(255,255,255,0.06)',
+            background: T.surface2,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

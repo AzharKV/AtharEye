@@ -21,7 +21,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     // eslint-disable-next-line no-console
-    console.error('[AtharEye] render error:', error, info);
+    console.error('[OptiSync] render error:', error, info);
   }
 
   render() {
@@ -57,8 +57,8 @@ export class ErrorBoundary extends Component<Props, State> {
             padding: '0 22px',
             borderRadius: 14,
             border: 'none',
-            background: T.accent,
-            color: T.onAccent,
+            background: T.navy,
+            color: '#fff',
             fontSize: 16,
             fontWeight: 700,
             fontFamily: T.font,

@@ -1,0 +1,4 @@
+/* OptiSync — webfont. Inter (Google Fonts CDN).
+   Real Inter, not a substitute. If you need self-hosted binaries,
+   drop them in assets/fonts/ and replace this @import with @font-face rules. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');

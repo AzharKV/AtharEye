@@ -306,6 +306,12 @@ athar-eye/
     area-gradient sparkline, StageChip/StatusPill dot styles, Projects row (chip top-right + pin-location
     + status dot), card r14 + subtle shadow. Verified across screens in preview; build/tsc/lint clean.
     **Remaining:** deploy `pwa/dist/` (Netlify) + on-device Add-to-Home-Screen / offline check.
+  - **Repo cleanup (pre-host):** PWA source fully de-Athar'd (InstallPrompt + ErrorBoundary → OptiSync,
+    light skin; lockfile name). `design-source/` replaced with the **OptiSync** Claude Design export
+    (app/*.jsx, tokens, prototype). README / START_HERE / CLAUDE.md updated to OptiSync;
+    CLAUDE_CODE_BUILD.md banner-marked legacy/superseded. `reactnative/` · `flutter/` · `ios-native/`
+    intentionally **kept as frozen Athar-Eye-era comparison ports** (prior dark design, not re-ported) —
+    owner decision.
 - **v1.13 (3 Jun 2026) — stack comparison ports: Flutter (`flutter/`) + native iOS SwiftUI (`ios-native/`).**
   Optional follow-on to v1.12, to compare native feel / animation performance across stacks. Each is a
   **focused comparison subset** (not all 13 screens): the navy/teal tokens + the 6 demo projects (verbatim)

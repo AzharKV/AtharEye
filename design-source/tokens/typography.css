@@ -1,0 +1,31 @@
+/* OptiSync — typography tokens. Inter, Notion-calm. */
+:root{
+  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  /* Numerics share the sans family but always render tabular + lining figures
+     (every %, coverage figure, date count). Applied via the .mono helper. */
+  --font-mono:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+
+  /* type scale (px) */
+  --fs-display:40px;   /* splash wordmark */
+  --fs-h1:22px;        /* screen titles */
+  --fs-h2:19px;        /* report / sheet titles */
+  --fs-h3:17px;        /* card titles */
+  --fs-body:15px;      /* default body + inputs */
+  --fs-sm:13px;        /* dense body, list meta */
+  --fs-meta:12px;      /* captions */
+  --fs-label:11.5px;   /* section labels, chips */
+
+  /* weights */
+  --fw-regular:400;
+  --fw-medium:500;
+  --fw-semibold:600;
+  --fw-bold:700;
+
+  /* tracking — Inter heads track tight, labels track open */
+  --track-tight:-.02em;
+  --track-body:-.006em;
+  --track-label:.06em;
+
+  --lh-tight:1.2;
+  --lh-body:1.5;
+}

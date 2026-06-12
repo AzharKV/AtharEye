@@ -1,0 +1,26 @@
+<!-- @dsCard group="Components" viewport="700x250" subtitle="Field (text/number/select) + Segmented" name="Form controls" -->
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<style>body{margin:0;background:var(--canvas);padding:20px;font-family:var(--font-sans)}</style>
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+</head><body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+const NS = Object.values(window).find(v => v && v.Field && v.Segmented) || window;
+const { Field, Segmented, Card } = NS;
+function Demo(){
+  const [name,setName]=useState('Morningside Townhouse');
+  const [cov,setCov]=useState('62');
+  const [sector,setSector]=useState('Residential');
+  return <Card>
+    <Field label="Project name" value={name} onChange={setName} />
+    <Field label="Coverage (%)" type="number" value={cov} onChange={setCov} hint="Scanned vs the BIM plan, 0–100" />
+    <div className="field"><label>Sector</label><Segmented value={sector} options={['Residential','Commercial']} onChange={setSector} /></div>
+  </Card>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script>
+</body></html>

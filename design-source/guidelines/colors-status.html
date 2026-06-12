@@ -1,0 +1,18 @@
+<!-- @dsCard group="Colors" viewport="700x170" subtitle="Status colours + issue severity dots" name="Status & severity" -->
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>body{margin:0;background:var(--canvas);padding:18px;font-family:var(--font-sans)}
+.row{display:flex;gap:12px;margin-bottom:14px}.sw{flex:1}.chip{height:46px;border-radius:10px;box-shadow:var(--sh-card)}
+.nm{font-size:12px;font-weight:700;color:var(--ink);margin-top:7px}.hx{font-size:11px;color:var(--muted)}
+.dots{display:flex;gap:18px;align-items:center}.di{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--ink)}</style>
+</head><body>
+<div class="row">
+  <div class="sw"><div class="chip" style="background:var(--amber)"></div><div class="nm">Amber</div><div class="hx mono">#B5781A · needs review</div></div>
+  <div class="sw"><div class="chip" style="background:var(--red)"></div><div class="nm">Red</div><div class="hx mono">#C0492F · critical</div></div>
+  <div class="sw"><div class="chip" style="background:var(--grey-sev)"></div><div class="nm">Grey</div><div class="hx mono">#9AA7B6 · minor</div></div>
+</div>
+<div class="dots">
+  <span class="di"><span class="sev Critical"></span>Critical</span>
+  <span class="di"><span class="sev Major"></span>Major</span>
+  <span class="di"><span class="sev Minor"></span>Minor</span>
+</div>
+</body></html>

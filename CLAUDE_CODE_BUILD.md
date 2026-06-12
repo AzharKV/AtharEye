@@ -1,6 +1,12 @@
 # Athar Eye — Claude Code Build Brief (production PWA)
 **Companion to `SPEC.md`. Read both before writing code.**
 
+> **⚠️ Legacy / superseded.** This is the *original Athar Eye* engineering brief. The product is now
+> **OptiSync** and the PWA was rebuilt on the light "Blueprint + teal" design (see `SPEC.md` §15 v1.14,
+> `pwa/ARCHITECTURE.md`, and `design-source/`). The product/data/screens/tokens here are **out of date**
+> — use the OptiSync sources instead. The **native-feel acceptance criteria in §4 still apply** to the
+> PWA (instant loads, 60fps, offline, opaque transitions, safe areas, no fake status bar).
+
 **Goal:** rebuild the validated Claude Design prototype as a production-grade, installable PWA that is **indistinguishable from a native iOS app** — no jank, instant loads, offline-capable, deployable to free hosting. The design is locked; this is an engineering task, not a redesign.
 
 ---

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OptiSync — App Icon</title>
+<style>
+  :root{
+    --canvas:#EDF1F6; --hairline:#D8E1EC; --ink:#1B2A3D; --muted:#64748B;
+    --navy:#1E3A66; --teal:#18837E;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:#e9edf2;color:var(--ink);min-height:100vh;
+    display:flex;flex-direction:column;align-items:center;padding:48px 24px 72px;}
+  .head{text-align:center;margin-bottom:40px;}
+  .head h1{font-size:24px;font-weight:750;letter-spacing:-.02em;}
+  .head p{font-size:14px;color:var(--muted);margin-top:6px;}
+  .grid{display:flex;gap:40px;flex-wrap:wrap;justify-content:center;align-items:flex-start;}
+  .frame{display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .frame .label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+  .card{background:#fff;border:1px solid var(--hairline);border-radius:20px;box-shadow:0 1px 2px rgba(27,42,61,.05);padding:28px;}
+  .mono{font-family:var(--mono);}
+
+  /* icon master */
+  .master{width:300px;height:300px;border-radius:2px;overflow:hidden;box-shadow:0 14px 36px rgba(27,42,61,.22);}
+  .swatchrow{display:flex;gap:8px;margin-top:18px;justify-content:center;}
+  .sw{display:flex;flex-direction:column;align-items:center;gap:5px;}
+  .sw .chip{width:34px;height:34px;border-radius:8px;border:1px solid rgba(0,0,0,.06);}
+  .sw span{font-size:9.5px;color:var(--muted);font-family:var(--mono);}
+
+  /* sizes preview */
+  .sizes{display:flex;align-items:flex-end;gap:18px;margin-top:6px;}
+  .sizes .s{display:flex;flex-direction:column;align-items:center;gap:7px;}
+  .sizes .s span{font-size:10px;color:var(--muted);font-family:var(--mono);}
+  .sq{overflow:hidden;box-shadow:0 4px 12px rgba(27,42,61,.16);}
+
+  /* iOS home screen */
+  .phone{width:300px;height:620px;border-radius:46px;background:#0a0d13;
+    box-shadow:0 0 0 11px #0a0d13,0 30px 70px rgba(0,0,0,.4);position:relative;overflow:hidden;}
+  .wall{position:absolute;inset:0;border-radius:36px;overflow:hidden;
+    background:linear-gradient(165deg,#2b4a7a 0%,#1c3358 45%,#142844 100%);}
+  .wall::after{content:"";position:absolute;inset:0;
+    background:radial-gradient(120% 80% at 70% 8%,rgba(47,182,173,.22),transparent 60%);}
+  .ios-status{position:absolute;top:0;left:0;right:0;height:46px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 7px;color:#fff;z-index:3;}
+  .ios-status .t{font-family:var(--mono);font-size:14px;font-weight:600;}
+  .ios-notch{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:92px;height:24px;background:#0a0d13;border-radius:14px;z-index:4;}
+  .springboard{position:absolute;inset:0;padding:62px 22px 0;z-index:2;display:grid;grid-template-columns:repeat(4,1fr);gap:22px 16px;align-content:start;}
+  .appicon{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .appicon .ic{width:54px;height:54px;border-radius:13px;overflow:hidden;box-shadow:0 3px 8px rgba(0,0,0,.25);}
+  .appicon .nm{font-size:10px;color:#fff;font-weight:500;text-shadow:0 1px 2px rgba(0,0,0,.4);letter-spacing:.01em;}
+  .ph{display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;color:#fff;width:100%;height:100%;}
+  .dock{position:absolute;left:14px;right:14px;bottom:18px;height:84px;border-radius:30px;
+    background:rgba(255,255,255,.16);backdrop-filter:blur(20px);z-index:2;
+    display:flex;align-items:center;justify-content:space-around;padding:0 14px;}
+  .dock .ic{width:54px;height:54px;border-radius:13px;overflow:hidden;box-shadow:0 3px 8px rgba(0,0,0,.25);}
+  .ios-home{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:110px;height:5px;border-radius:3px;background:rgba(255,255,255,.6);z-index:4;}
+  .badge{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:9px;background:#C0492F;color:#fff;font-size:10px;font-weight:700;font-family:var(--mono);display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid #1c3358;}
+  .note{max-width:680px;text-align:center;font-size:13px;color:var(--muted);line-height:1.6;margin-top:44px;}
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>OptiSync — App icon</h1>
+    <p>The OptiSync product logo · shown as the home-screen app icon at install sizes</p>
+  </div>
+
+  <div class="grid">
+    <!-- master -->
+    <div class="frame">
+      <div class="label">1024 × 1024 master</div>
+      <div class="card">
+        <div class="master" id="masterSlot"></div>
+        <div class="swatchrow">
+          <div class="sw"><div class="chip" style="background:#1E3A66"></div><span>#1E3A66</span></div>
+          <div class="sw"><div class="chip" style="background:#18837E"></div><span>#18837E</span></div>
+          <div class="sw"><div class="chip" style="background:#2fb6ad"></div><span>#2FB6AD</span></div>
+          <div class="sw"><div class="chip" style="background:#ffffff"></div><span>#FFFFFF</span></div>
+        </div>
+        <div class="sizes">
+          <div class="s"><div class="sq" data-icon style="width:64px;height:64px;border-radius:14px"></div><span>180</span></div>
+          <div class="s"><div class="sq" data-icon style="width:44px;height:44px;border-radius:10px"></div><span>120</span></div>
+          <div class="s"><div class="sq" data-icon style="width:30px;height:30px;border-radius:7px"></div><span>76</span></div>
+          <div class="s"><div class="sq" data-icon style="width:20px;height:20px;border-radius:5px"></div><span>40</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- home screen -->
+    <div class="frame">
+      <div class="label">iOS home screen · Add to Home Screen</div>
+      <div class="phone">
+        <div class="wall"></div>
+        <div class="ios-notch"></div>
+        <div class="ios-status"><div class="t">9:41</div><div class="t" style="font-size:12px">􀙇 􀛨 􀛪</div></div>
+        <div class="springboard">
+          <div class="appicon"><div class="ic ph" style="background:linear-gradient(160deg,#3a3f4a,#23262e)">􀉉</div><div class="nm">Calendar</div></div>
+          <div class="appicon"><div class="ic ph" style="background:linear-gradient(160deg,#4a8f4a,#2f6b35)">􀌃</div><div class="nm">Mail</div></div>
+          <div class="appicon"><div class="ic ph" style="background:linear-gradient(160deg,#d8a23a,#b5781a)">􀎚</div><div class="nm">Files</div></div>
+          <div class="appicon"><div class="ic ph" style="background:linear-gradient(160deg,#5a6472,#3a414c)">􀍉</div><div class="nm">Notes</div></div>
+          <div class="appicon"><div class="ic ph" style="background:linear-gradient(160deg,#3d77c2,#2d6fb0)">􀌤</div><div class="nm">Messages</div></div>
+          <div class="appicon"><div class="ic ph" style="background:linear-gradient(160deg,#c0492f,#9a3a26)">􀍟</div><div class="nm">Photos</div></div>
+          <div class="appicon" style="position:relative">
+            <div class="ic" data-icon style="border-radius:13px;box-shadow:0 4px 12px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.06)"></div>
+            <div class="badge" style="position:absolute;top:-3px;right:18px">3</div>
+            <div class="nm" style="font-weight:700">OptiSync</div>
+          </div>
+          <div class="appicon"><div class="ic ph" style="background:linear-gradient(160deg,#4a5560,#2f3741)">􀣋</div><div class="nm">Settings</div></div>
+        </div>
+        <div class="dock">
+          <div class="ic ph" style="background:linear-gradient(160deg,#2d6fb0,#1e3a66)">􀎬</div>
+          <div class="ic ph" style="background:linear-gradient(160deg,#4a8f4a,#2f6b35)">􀌾</div>
+          <div class="ic ph" style="background:linear-gradient(160deg,#5a6472,#3a414c)">􀍩</div>
+          <div class="ic" data-icon style="border-radius:13px;box-shadow:0 3px 8px rgba(0,0,0,.3)"></div>
+        </div>
+        <div class="ios-home"></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="note">The OptiSync product logo — a survey drone scanning a building against its BIM wireframe. Shown here as the PWA home-screen app icon; the final manifest sizes (180 / 192 / 512) are generated from this master at the code stage.</p>
+
+  <!-- icon source -->
+  <template id="iconSVG">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:100%">
+      <defs>
+        <linearGradient id="ig" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#234a7d"/><stop offset="1" stop-color="#193154"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#ig)"/>
+      <g stroke="#fff" stroke-opacity=".05" stroke-width="1">
+        <line x1="20" y1="0" x2="20" y2="100"/><line x1="35" y1="0" x2="35" y2="100"/><line x1="50" y1="0" x2="50" y2="100"/><line x1="65" y1="0" x2="65" y2="100"/><line x1="80" y1="0" x2="80" y2="100"/>
+        <line x1="0" y1="20" x2="100" y2="20"/><line x1="0" y1="35" x2="100" y2="35"/><line x1="0" y1="50" x2="100" y2="50"/><line x1="0" y1="65" x2="100" y2="65"/><line x1="0" y1="80" x2="100" y2="80"/>
+      </g>
+      <circle cx="50" cy="50" r="33" fill="none" stroke="#18837E" stroke-width="7" stroke-linecap="round"
+        stroke-dasharray="207.3" stroke-dashoffset="58" transform="rotate(-90 50 50)"/>
+      <g fill="#fff">
+        <rect x="38" y="44" width="11" height="22" rx="1.2"/>
+        <rect x="51" y="36" width="12" height="30" rx="1.2"/>
+      </g>
+      <g fill="#18837E">
+        <rect x="40.6" y="47" width="2.2" height="2.2"/><rect x="44.2" y="47" width="2.2" height="2.2"/>
+        <rect x="40.6" y="51.5" width="2.2" height="2.2"/><rect x="44.2" y="51.5" width="2.2" height="2.2"/>
+        <rect x="40.6" y="56" width="2.2" height="2.2"/><rect x="44.2" y="56" width="2.2" height="2.2"/>
+        <rect x="53.6" y="39.5" width="2.4" height="2.4"/><rect x="58" y="39.5" width="2.4" height="2.4"/>
+        <rect x="53.6" y="44.5" width="2.4" height="2.4"/><rect x="58" y="44.5" width="2.4" height="2.4"/>
+        <rect x="53.6" y="49.5" width="2.4" height="2.4"/><rect x="58" y="49.5" width="2.4" height="2.4"/>
+        <rect x="53.6" y="54.5" width="2.4" height="2.4"/><rect x="58" y="54.5" width="2.4" height="2.4"/>
+      </g>
+      <line x1="26" y1="40" x2="74" y2="40" stroke="#2fb6ad" stroke-width="1.6" stroke-opacity=".9"/>
+    </svg>
+  </template>
+
+  <script>
+    const img = '<img src="assets/optisync-logo.jpeg" alt="OptiSync" style="width:100%;height:100%;object-fit:cover;display:block">';
+    document.getElementById('masterSlot').innerHTML = img;
+    document.querySelectorAll('[data-icon]').forEach(el => { el.style.overflow = 'hidden'; el.innerHTML = img; });
+  </script>
+</body>
+</html>

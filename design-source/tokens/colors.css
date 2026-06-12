@@ -1,0 +1,39 @@
+/* OptiSync — color tokens. Blueprint + teal, light. */
+:root{
+  /* base palette */
+  --canvas:#EDF1F6;     /* app background */
+  --surface:#FFFFFF;    /* cards, sheets */
+  --hairline:#D8E1EC;   /* borders, dividers */
+  --ink:#1B2A3D;        /* primary text */
+  --muted:#64748B;      /* secondary text */
+
+  /* brand + structure */
+  --navy:#1E3A66;       /* primary / nav / buttons / structure */
+  --blue:#2D6FB0;       /* in-progress */
+  --teal:#18837E;       /* verified / complete / positive */
+  --teal-bright:#2FB6AD;/* live scan accent */
+
+  /* status */
+  --amber:#B5781A;      /* behind / needs review */
+  --red:#C0492F;        /* critical */
+  --grey-sev:#9AA7B6;   /* minor severity */
+
+  /* tints (derived, single-source) */
+  --navy-08:rgba(30,58,102,.08);
+  --navy-04:rgba(30,58,102,.04);
+  --teal-10:rgba(24,131,126,.10);
+  --amber-10:rgba(181,120,26,.12);
+  --red-10:rgba(192,73,47,.10);
+
+  /* semantic aliases */
+  --text-primary:var(--ink);
+  --text-secondary:var(--muted);
+  --surface-app:var(--canvas);
+  --surface-card:var(--surface);
+  --border-hairline:var(--hairline);
+  --accent-primary:var(--navy);
+  --accent-positive:var(--teal);
+  --accent-progress:var(--blue);
+  --accent-warning:var(--amber);
+  --accent-critical:var(--red);
+}

@@ -1,0 +1,24 @@
+<!-- @dsCard group="Components" viewport="700x200" subtitle="Card surface + SectionHeader with + Add" name="Card & SectionHeader" -->
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<style>body{margin:0;background:var(--canvas);padding:20px;font-family:var(--font-sans)}</style>
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+</head><body>
+<div id="root"></div>
+<script type="text/babel">
+const NS = Object.values(window).find(v => v && v.Card && v.SectionHeader) || window;
+const { Card, SectionHeader, StatusPill } = NS;
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <Card>
+    <SectionHeader label="Open issues" count={3} onAdd={()=>{}} />
+    <div style={{display:'flex',flexDirection:'column',gap:9}}>
+      <div className="row between"><span style={{fontSize:13.5,fontWeight:600,color:'var(--ink)'}}>Boiler flue clearance below regs</span><StatusPill status="Needs review"/></div>
+      <div style={{height:1,background:'var(--hairline)'}}></div>
+      <div className="row between"><span style={{fontSize:13.5,fontWeight:600,color:'var(--ink)'}}>Wall-tile lippage exceeds tolerance</span><span className="mono" style={{fontSize:12,color:'var(--muted)'}}>MO-02</span></div>
+    </div>
+  </Card>
+);
+</script>
+</body></html>
