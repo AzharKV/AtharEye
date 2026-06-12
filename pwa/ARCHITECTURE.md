@@ -14,15 +14,24 @@
 `feature/optisync-phase-1`). The PWA is being rebuilt from *Athar Eye* (dark) into **OptiSync** (light
 "Blueprint + teal") per the handoff bundle — see `../SPEC.md` §15 v1.14.
 
-**Done — phases 1–8:** rebrand shell; **data layer**; light **tokens + primitives**; in-memory **store**;
-**portfolio + report document**; **timeline scrubber (signature #1) + full CRUD**; **scan flow
-(signature #2)**; **reports** (history/per-scan/variants/share-export); and the **account cluster** —
-Account hub (CR monogram, computed stats, company card, Edit profile), **Issues & snags** (portfolio
-aggregate, open/critical/closed counts, severity + status filters, add/edit/close/re-open/delete via the
-project-scoped editor), **Plans/billing** (current plan + usage, the £0/£19/£49/£99/£149 tier ladder with
-switch, add-ons), **Team & access** (org roster, Owner/Admin/Editor/Viewer, invite/edit/remove). Verified
-the Account hub + Issues in preview.
-**Next:** phase 9 (real logo + PWA icons + golden-path acceptance) — **waiting on the logo file**.
+**Done — all 9 phases.** rebrand shell; **data layer**; light **tokens + primitives**; in-memory
+**store**; **portfolio + report document**; **timeline scrubber (signature #1) + full CRUD**; **scan flow
+(signature #2)**; **reports** (history/per-scan/variants/share-export); the **account cluster** (Account
+hub, Issues, Plans, Team, Settings); and **phase 9 — real logo + PWA icons + design reconciliation**:
+the supplied OptiSync logo (`public/optisync-logo.jpeg`) drives the in-app Mark, the static + React
+splash, and the generated icons (apple-touch / 180 / 192 / 512 / maskable / favicon via `sips`); SW
+runtime-caches gallery photos + scan videos (CacheFirst) so they work offline after first view.
+
+**Design reconciliation (against the recovered Claude Design export, `app/*.jsx` + `tokens/`):** tokens
+verified (only `teal-bright`/`grey-sev` tweaked); donut centre → ink on a `navy-08` track; sparkline →
+area-gradient + dotted; StageChip → tinted pill + dot, StatusPill → dot + label (no bg); ZoneBars →
+navy/teal only; Card → r14 + subtler shadow; **list headers → the 22px white app-bar with the 2px navy
+underline** (was a 32px large title); **tab bar → navy scan button + active `navy-08` pills** (was a teal
+FAB); the **Projects row → stage chip top-right + pin-location + status dot below**. Verified in preview
+against the design's `projects.png`.
+
+**Remaining manual step:** deploy `pwa/dist/` (Netlify) + verify Add-to-Home-Screen / standalone launch +
+offline on a real iPhone.
 
 ### OptiSync module map (current)
 - **`types.ts`** — domain model: `Project` (zones/issues/scans/bim/trades/team/captures), `Issue`

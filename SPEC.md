@@ -298,8 +298,14 @@ athar-eye/
     copy link / email, with progress→success) + Report→Project nav; ✓(8) account cluster — Account hub
     (CR monogram/stats/company/Edit profile), Issues & snags (portfolio aggregate + counts + filters +
     CRUD), Plans/billing (tier ladder + switch + add-ons), Team & access (roles, invite/edit/remove),
-    Settings; (9) real logo + PWA icons + acceptance. Phases 2–8 verified in preview. Sheets portal above
-    the tab bar. build/tsc/lint clean. **Phase 9 waits on the user's logo file.**
+    Settings; ✓(9) real logo + PWA icons + offline caching + **design reconciliation** against the
+    recovered Claude Design export (`app/*.jsx`, `tokens/`). **All 9 phases done.** The supplied OptiSync
+    logo drives the Mark/splash/generated icons (apple-touch/180/192/512/maskable/favicon via sips); SW
+    runtime-caches photos + scan videos. Reconciled to the locked design: 22px white app-bar + 2px navy
+    underline (list screens), navy scan tab + active navy-08 pills, donut ink centre on navy-08 track,
+    area-gradient sparkline, StageChip/StatusPill dot styles, Projects row (chip top-right + pin-location
+    + status dot), card r14 + subtle shadow. Verified across screens in preview; build/tsc/lint clean.
+    **Remaining:** deploy `pwa/dist/` (Netlify) + on-device Add-to-Home-Screen / offline check.
 - **v1.13 (3 Jun 2026) — stack comparison ports: Flutter (`flutter/`) + native iOS SwiftUI (`ios-native/`).**
   Optional follow-on to v1.12, to compare native feel / animation performance across stacks. Each is a
   **focused comparison subset** (not all 13 screens): the navy/teal tokens + the 6 demo projects (verbatim)

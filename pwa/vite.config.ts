@@ -19,6 +19,8 @@ export default defineConfig({
         'icon-192.png',
         'icon-512.png',
         'icon-maskable-512.png',
+        'optisync-logo.jpeg',
+        'fonts/inter-latin-wght-normal.woff2',
       ],
       // Manifest: OptiSync, light Blueprint+teal theme, standalone, portrait.
       manifest: {
@@ -49,6 +51,20 @@ export default defineConfig({
         // SPA fallback so deep links / reloads resolve offline.
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
+        // Gallery photos (jpeg) and scan videos (mp4) are too large to precache — cache them on
+        // first view so they're available offline thereafter.
+        runtimeCaching: [
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|webp)$/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'optisync-images', expiration: { maxEntries: 140, maxAgeSeconds: 60 * 60 * 24 * 60 } },
+          },
+          {
+            urlPattern: /\.mp4$/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'optisync-media', rangeRequests: true, expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 60 } },
+          },
+        ],
       },
       devOptions: {
         // Enable the SW in `vite preview` checks; off during `vite dev` HMR.

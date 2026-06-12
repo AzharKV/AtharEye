@@ -1,4 +1,5 @@
-// Bottom tab bar: Projects · Reports · [Scan] · Account. Centre Scan is the teal hero action.
+// Bottom tab bar (design .tabbar): Projects · Reports · Scan · Account — 4-col grid, active tab icon
+// in a navy-08 pill, the Scan action a navy button. White, blurred, hairline top, safe-area aware.
 import { T } from '../theme';
 import { haptic } from '../lib/haptic';
 import { Icon } from '../components/Icon';
@@ -23,21 +24,12 @@ export function TabBar({
           haptic();
           onTab(name);
         }}
-        style={{
-          flex: 1,
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 3,
-          padding: '9px 0 0',
-          color: on ? T.navy : T.muted,
-        }}
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: on ? T.navy : T.muted, fontSize: 10.5, fontWeight: 600 }}
       >
-        <Icon name={icon} size={24} stroke={on ? 2.3 : 2} />
-        <span style={{ fontSize: 10.5, fontWeight: on ? 700 : 600, letterSpacing: -0.1 }}>{name}</span>
+        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 52, height: 30, borderRadius: 9, background: on ? T.navyTint : 'transparent', transition: 'background .18s' }}>
+          <Icon name={icon} size={23} stroke={on ? 2.2 : 1.9} />
+        </span>
+        {name}
       </button>
     );
   };
@@ -48,44 +40,32 @@ export function TabBar({
         left: 0,
         right: 0,
         bottom: 0,
-        zIndex: 100,
-        display: 'flex',
-        alignItems: 'flex-start',
-        padding: '0 6px 20px',
-        paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
-        background: 'rgba(255,255,255,0.86)',
-        backdropFilter: 'blur(22px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(22px) saturate(160%)',
+        zIndex: 40,
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        padding: '10px 8px 18px',
+        paddingBottom: 'max(18px, env(safe-area-inset-bottom))',
+        background: 'rgba(255,255,255,0.94)',
+        backdropFilter: 'saturate(180%) blur(20px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(20px)',
         borderTop: `1px solid ${T.hairline}`,
       }}
     >
       {item('Projects', 'projects')}
       {item('Reports', 'reports')}
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-        <button
-          onClick={() => {
-            haptic();
-            onScan();
-          }}
-          aria-label="New scan"
-          style={{
-            marginTop: -16,
-            width: 56,
-            height: 56,
-            borderRadius: 18,
-            border: 'none',
-            cursor: 'pointer',
-            background: `linear-gradient(160deg, ${T.accent2}, ${T.teal})`,
-            boxShadow: '0 8px 20px rgba(24,131,126,0.40), inset 0 1px 0 rgba(255,255,255,0.30)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fff',
-          }}
-        >
-          <Icon name="scan" size={26} stroke={2.4} color="#fff" />
-        </button>
-      </div>
+      <button
+        onClick={() => {
+          haptic();
+          onScan();
+        }}
+        aria-label="New scan"
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: T.navy, fontSize: 10.5, fontWeight: 600 }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 52, height: 34, borderRadius: 11, background: T.navy, boxShadow: '0 5px 14px rgba(30,58,102,0.32)' }}>
+          <Icon name="scan" size={23} stroke={2.2} color="#fff" />
+        </span>
+        Scan
+      </button>
       {item('Account', 'user')}
     </div>
   );

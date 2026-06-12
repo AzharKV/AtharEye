@@ -64,14 +64,21 @@ export function Pill({ label, c, bg, dot = true }: { label: string; c: string; b
   );
 }
 
+// Status = colored dot + colored label, no background (design .status).
 export function StatusPill({ status }: { status: Status }) {
   const s = STATUS[status];
-  return <Pill label={s.label} c={s.c} bg={s.bg} />;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 700, color: s.c, whiteSpace: 'nowrap' }}>
+      <span style={{ width: 7, height: 7, borderRadius: 7, background: s.c }} />
+      {s.label}
+    </span>
+  );
 }
 
+// Stage = tinted pill with a leading dot (design .chip).
 export function StageChip({ stage }: { stage: Stage }) {
   const s = STAGE[stage];
-  return <Pill label={s.label} c={s.c} bg={s.bg} dot={false} />;
+  return <Pill label={s.label} c={s.c} bg={s.bg} />;
 }
 
 export function SevDot({ sev, size = 8 }: { sev: Severity; size?: number }) {
@@ -174,14 +181,12 @@ export function Donut({
         />
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ ...mono, fontSize: size * 0.27, fontWeight: 800, letterSpacing: -1.5, lineHeight: 1, color }}>
+        <div style={{ ...mono, fontSize: size * 0.27, fontWeight: 700, letterSpacing: -1, lineHeight: 1, color: T.ink }}>
           {Math.round(cov)}
-          <span style={{ fontSize: size * 0.12, color: T.muted, fontWeight: 700 }}>%</span>
+          <span style={{ fontSize: size * 0.27 * 0.42, color: T.muted, verticalAlign: 'top' }}>%</span>
         </div>
-        <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, marginTop: 5, letterSpacing: 0.6, textTransform: 'uppercase' }}>
-          verified
-        </div>
-        {sub && <div style={{ fontSize: 11.5, color: T.faint, marginTop: 2 }}>{sub}</div>}
+        <div style={{ fontSize: 11, fontWeight: 600, color: T.muted, marginTop: 4 }}>verified</div>
+        {sub && <div style={{ ...mono, fontSize: 10.5, color: T.muted, marginTop: 1 }}>{sub}</div>}
       </div>
     </div>
   );
@@ -195,54 +200,50 @@ export function ZoneBars({ zones }: { zones: Zone[] }) {
       {sorted.map((z) => (
         <div key={z.id}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
-            <span style={{ fontSize: 13.5, fontWeight: 600, color: T.ink }}>{z.name}</span>
-            <span style={{ ...mono, fontSize: 13, fontWeight: 700, color: T.muted }}>{z.coverage}%</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{z.name}</span>
+            <span style={{ ...mono, fontSize: 12.5, fontWeight: 700, color: z.coverage >= 100 ? T.teal : T.ink }}>{z.coverage}%</span>
           </div>
-          <Bar value={z.coverage} color={z.coverage >= 100 ? T.teal : z.coverage < 40 ? T.blue : T.navy} />
+          <Bar value={z.coverage} height={8} color={z.coverage >= 100 ? T.teal : T.navy} />
         </div>
       ))}
     </div>
   );
 }
 
-// ── Coverage-over-time sparkline — navy line, teal end dot, dates beneath
+// ── Coverage-over-time sparkline — navy line + soft area fill, teal end dot (design Sparkline)
 export function Sparkline({
   points,
-  width = 300,
-  height = 56,
-  showDates = true,
+  width = 326,
+  height = 70,
 }: {
   points: { date: string; coverage: number }[];
   width?: number;
   height?: number;
-  showDates?: boolean;
 }) {
-  if (points.length === 0) return null;
-  const pad = 6;
+  if (points.length < 2) return null;
+  const padX = 6;
+  const padY = 8;
   const w = width;
   const h = height;
-  const n = points.length;
-  const x = (i: number) => (n === 1 ? w / 2 : pad + (i * (w - pad * 2)) / (n - 1));
-  const y = (v: number) => h - pad - (v / 100) * (h - pad * 2);
-  const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)} ${y(p.coverage).toFixed(1)}`).join(' ');
-  const last = points[n - 1];
+  const innerW = w - padX * 2;
+  const innerH = h - padY * 2;
+  const xy = points.map((p, i) => [padX + innerW * (i / (points.length - 1)), padY + innerH * (1 - p.coverage / 100)]);
+  const d = xy.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+  const area = `${d} L${xy[xy.length - 1][0].toFixed(1)} ${h - padY} L${xy[0][0].toFixed(1)} ${h - padY} Z`;
   return (
-    <div>
-      <svg width="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ display: 'block' }}>
-        <line x1={pad} y1={h - pad} x2={w - pad} y2={h - pad} stroke={T.hairline} strokeWidth={1} />
-        <path d={d} fill="none" stroke={T.navy} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx={x(n - 1)} cy={y(last.coverage)} r={4} fill={T.teal} />
-      </svg>
-      {showDates && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-          {points.map((p, i) => (
-            <span key={i} style={{ ...mono, fontSize: 9.5, color: T.faint, fontWeight: 600 }}>
-              {p.coverage}%
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
+    <svg width="100%" viewBox={`0 0 ${w} ${h}`} style={{ display: 'block' }}>
+      <defs>
+        <linearGradient id="spk" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={T.navy} stopOpacity="0.14" />
+          <stop offset="1" stopColor={T.navy} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill="url(#spk)" />
+      <path d={d} fill="none" stroke={T.navy} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+      {xy.map((p, i) => (
+        <circle key={i} cx={p[0]} cy={p[1]} r={i === xy.length - 1 ? 4 : 2.4} fill={i === xy.length - 1 ? T.teal : T.navy} stroke="#fff" strokeWidth={1.4} />
+      ))}
+    </svg>
   );
 }
 
@@ -331,9 +332,9 @@ export function Card({
       onPointerLeave={() => setD(false)}
       style={{
         background: T.surface,
-        borderRadius: 16,
+        borderRadius: 14,
         border: `1px solid ${T.hairline}`,
-        boxShadow: '0 1px 2px rgba(27,42,61,0.04), 0 6px 16px rgba(27,42,61,0.05)',
+        boxShadow: '0 1px 2px rgba(27,42,61,0.04), 0 1px 1px rgba(27,42,61,0.03)',
         cursor: onClick ? 'pointer' : 'default',
         transform: d ? 'scale(0.99)' : 'scale(1)',
         transition: 'transform .12s',
@@ -355,15 +356,28 @@ export function SectionLabel({ children, right }: { children: ReactNode; right?:
   );
 }
 
-// ── Large-title header
-export function ScreenHeader({ title, sub, trailing }: { title: string; sub?: string; trailing?: ReactNode }) {
+// ── App bar — white, 2px navy underline, compact 22px title (design .appbar). Sticky so it stays
+//    put while the body scrolls; children below render the search / filter rows.
+export function ScreenHeader({ title, sub, trailing, children }: { title: string; sub?: string; trailing?: ReactNode; children?: ReactNode }) {
   return (
-    <div style={{ padding: '4px 20px 8px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-        <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800, letterSpacing: -0.8, lineHeight: '38px', color: T.ink }}>{title}</h1>
+    <div
+      style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 30,
+        background: T.surface,
+        borderBottom: `2px solid ${T.navy}`,
+        padding: 'calc(env(safe-area-inset-top) + 14px) 20px 12px',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: -0.4, color: T.ink }}>{title}</h1>
+          {sub && <div style={{ marginTop: 2, fontSize: 13, fontWeight: 500, color: T.muted }}>{sub}</div>}
+        </div>
         {trailing}
       </div>
-      {sub && <div style={{ marginTop: 4, fontSize: 14, fontWeight: 500, color: T.muted }}>{sub}</div>}
+      {children}
     </div>
   );
 }

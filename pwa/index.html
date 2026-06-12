@@ -257,6 +257,10 @@
         display: block;
         width: 112px;
         height: 112px;
+        border-radius: 25px;
+        object-fit: cover;
+        border: 1px solid #d8e1ec;
+        box-shadow: 0 8px 24px rgba(27, 42, 61, 0.12);
       }
       #initial-splash .meta {
         position: absolute;
@@ -293,18 +297,8 @@
     <!-- instant brand splash; matches the OS splash + the React <Splash>, handed off seamlessly -->
     <div id="initial-splash">
       <div class="brand">
-        <!-- Placeholder OptiSync mark (scan reticle on navy). Swapped for the real logo at the brand phase. -->
-        <svg class="mark" viewBox="0 0 112 112" xmlns="http://www.w3.org/2000/svg" aria-label="OptiSync">
-          <rect width="112" height="112" rx="25" fill="#1E3A66" />
-          <circle cx="56" cy="56" r="30" fill="none" stroke="#18837E" stroke-width="4.5" />
-          <circle cx="56" cy="56" r="9" fill="#18837E" />
-          <g stroke="#18837E" stroke-width="4" stroke-linecap="round" opacity="0.65">
-            <path d="M56 14 V24" />
-            <path d="M56 88 V98" />
-            <path d="M14 56 H24" />
-            <path d="M88 56 H98" />
-          </g>
-        </svg>
+        <!-- Real OptiSync product icon (matches the installed home-screen icon). -->
+        <img class="mark" src="/optisync-logo.jpeg" alt="OptiSync" width="112" height="112" />
         <div class="meta">
           <div class="word">Opti<span>Sync</span></div>
           <div class="tag">Scan. Compare. Prove.</div>

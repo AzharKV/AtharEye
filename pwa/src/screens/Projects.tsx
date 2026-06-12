@@ -1,13 +1,13 @@
-// Projects (home) — portfolio list of 6 projects: mini coverage donut, stage chip, status pill;
-// search; stage filter pills (All · Needs review · Early · Mid · Complete); + New; swipe-to-delete.
+// Projects (home) — portfolio list of 6 projects: mini coverage donut, stage chip (top-right),
+// pin location + status; search + stage filter pills inside the app bar; + New; swipe-to-delete.
 import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { T, STATUS } from '../theme';
+import { T } from '../theme';
 import type { Project } from '../types';
 import { haptic } from '../lib/haptic';
 import { useStore } from '../lib/store';
 import { Screen, useNav } from '../navigation/Navigator';
-import { Chips, ScreenHeader, Ring, StageChip, StatusPill, EmptyState, mono } from '../components/primitives';
+import { Ring, ScreenHeader, StageChip, StatusPill } from '../components/primitives';
 import { Icon } from '../components/Icon';
 import { ProjectDetail } from './ProjectDetail';
 import { NewProject } from './NewProject';
@@ -30,8 +30,7 @@ function matchesFilter(p: Project, f: Filter): boolean {
   }
 }
 
-const ringColor = (p: Project): string =>
-  p.status === 'Needs review' ? T.amber : p.overall_coverage >= 100 ? T.teal : T.navy;
+const ringColor = (p: Project): string => (p.overall_coverage >= 100 ? T.teal : T.navy);
 
 export function ProjectsList() {
   const { data, deleteProject } = useStore();
@@ -41,82 +40,68 @@ export function ProjectsList() {
 
   const q = query.trim().toLowerCase();
   const list = data.projects.filter(
-    (p) =>
-      matchesFilter(p, filter) &&
-      (q === '' || `${p.name} ${p.location} ${p.client}`.toLowerCase().includes(q)),
+    (p) => matchesFilter(p, filter) && (q === '' || `${p.name} ${p.location} ${p.client}`.toLowerCase().includes(q)),
   );
 
   return (
-    <Screen>
+    <Screen padTop={0}>
       <ScreenHeader
         title="Projects"
-        sub={`${data.projects.length} active · ${data.company.name}`}
+        sub={`${data.projects.length} active projects`}
         trailing={
           <button
             onClick={() => {
               haptic();
               nav.push(<NewProject />);
             }}
-            aria-label="New project"
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 13,
-              border: 'none',
-              background: T.navy,
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 13px', borderRadius: 10, border: 'none', background: T.navy, color: '#fff', fontWeight: 650, fontSize: 13.5, fontFamily: T.font, cursor: 'pointer', flexShrink: 0 }}
           >
-            <Icon name="plus" size={22} color="#fff" />
+            <Icon name="plus" size={16} color="#fff" /> New
           </button>
         }
-      />
-
-      {/* Search */}
-      <div style={{ padding: '4px 20px 10px' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 9,
-            background: T.surface,
-            border: `1px solid ${T.hairline}`,
-            borderRadius: 12,
-            padding: '10px 13px',
-          }}
-        >
-          <Icon name="search" size={18} color={T.faint} />
+      >
+        {/* Search */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 12, background: T.canvas, border: `1px solid ${T.hairline}`, borderRadius: 10, padding: '9px 11px' }}>
+          <Icon name="search" size={17} color={T.muted} />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search projects, locations, clients"
-            style={{
-              flex: 1,
-              border: 'none',
-              outline: 'none',
-              background: 'none',
-              fontFamily: T.font,
-              fontSize: 15,
-              color: T.ink,
-            }}
+            placeholder="Search projects, clients, locations"
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontFamily: T.font, fontSize: 14, color: T.ink }}
           />
           {query && (
             <button onClick={() => setQuery('')} style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex' }}>
-              <Icon name="close" size={16} color={T.faint} />
+              <Icon name="close" size={15} color={T.muted} />
             </button>
           )}
         </div>
-      </div>
+        {/* Stage filters */}
+        <div className="no-scrollbar" style={{ display: 'flex', gap: 6, marginTop: 11, overflowX: 'auto', paddingBottom: 2 }}>
+          {FILTERS.map((f) => {
+            const on = filter === f;
+            const attn = f === 'Needs review';
+            const bg = on ? (attn ? T.amber : T.navy) : attn ? T.amberTint : T.canvas;
+            const col = on ? '#fff' : attn ? T.amber : T.muted;
+            const bd = on ? (attn ? T.amber : T.navy) : attn ? 'rgba(181,120,26,.32)' : T.hairline;
+            return (
+              <button
+                key={f}
+                onClick={() => {
+                  haptic();
+                  setFilter(f);
+                }}
+                style={{ flexShrink: 0, fontSize: 12, fontWeight: 600, padding: '6px 12px', borderRadius: 999, whiteSpace: 'nowrap', background: bg, color: col, border: `1px solid ${bd}`, cursor: 'pointer', fontFamily: T.font }}
+              >
+                {f}
+              </button>
+            );
+          })}
+        </div>
+      </ScreenHeader>
 
-      <Chips items={[...FILTERS]} active={filter} onPick={(f) => setFilter(f as Filter)} tones={{ 'Needs review': T.amber }} />
-
-      <div style={{ padding: '2px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ padding: '14px 16px 4px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {list.length === 0 ? (
-          <EmptyState icon="projects" title="No projects" sub="No projects match this search or filter." />
+          <div style={{ textAlign: 'center', color: T.muted, fontSize: 13, padding: '40px 0' }}>No projects match.</div>
         ) : (
           list.map((p) => (
             <SwipeRow key={p.id} onDelete={() => deleteProject(p.id)}>
@@ -124,12 +109,16 @@ export function ProjectsList() {
             </SwipeRow>
           ))
         )}
+        {list.length > 0 && (
+          <div style={{ textAlign: 'center', fontSize: 11, color: T.faint, marginTop: 8, letterSpacing: 0.3 }}>Swipe a project left to delete</div>
+        )}
       </div>
     </Screen>
   );
 }
 
 function ProjectRow({ project: p, onOpen }: { project: Project; onOpen: () => void }) {
+  const loc = p.location.split(',').slice(-2).join(',').trim();
   return (
     <div
       onClick={() => {
@@ -139,29 +128,31 @@ function ProjectRow({ project: p, onOpen }: { project: Project; onOpen: () => vo
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 14,
-        padding: '14px 15px',
+        gap: 12,
+        padding: 14,
         background: T.surface,
         border: `1px solid ${T.hairline}`,
-        borderRadius: 16,
-        boxShadow: '0 1px 2px rgba(27,42,61,0.04), 0 6px 16px rgba(27,42,61,0.05)',
+        borderRadius: 14,
+        boxShadow: '0 1px 2px rgba(27,42,61,0.04), 0 1px 1px rgba(27,42,61,0.03)',
         cursor: 'pointer',
       }}
     >
-      <Ring value={p.overall_coverage} size={50} stroke={5} color={ringColor(p)} />
+      <Ring value={p.overall_coverage} size={46} stroke={5} color={ringColor(p)} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 15.5, fontWeight: 700, color: T.ink, letterSpacing: -0.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {p.name}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: T.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: '1 1 auto', minWidth: 0 }}>{p.name}</span>
+          <span style={{ flexShrink: 0 }}>
+            <StageChip stage={p.stage} />
+          </span>
         </div>
-        <div style={{ ...mono, fontSize: 12.5, color: T.muted, margin: '2px 0 7px' }}>
-          {p.location.split(',')[0]} · {p.sector} · {p.scans.length} scans
+        <div style={{ fontSize: 12, color: T.muted, margin: '3px 0 7px', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Icon name="pin" size={12} color={T.muted} /> {loc}
+          <span style={{ opacity: 0.4 }}>·</span>
+          {p.sector}
         </div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          <StageChip stage={p.stage} />
-          <StatusPill status={p.status} />
-        </div>
+        <StatusPill status={p.status} />
       </div>
-      <Icon name="chevron" size={18} color={STATUS[p.status].c === T.amber ? T.amber : T.faint} />
+      <Icon name="chevron" size={17} color={T.faint} />
     </div>
   );
 }
@@ -176,30 +167,13 @@ function SwipeRow({ children, onDelete }: { children: ReactNode; onDelete: () =>
   const REVEAL = 84;
 
   return (
-    <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden' }}>
+    <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden' }}>
       <button
         onClick={() => {
           haptic();
           onDelete();
         }}
-        style={{
-          position: 'absolute',
-          top: 0,
-          bottom: 0,
-          right: 0,
-          width: REVEAL,
-          border: 'none',
-          background: T.red,
-          color: '#fff',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 3,
-          cursor: 'pointer',
-          fontSize: 12,
-          fontWeight: 700,
-        }}
+        style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: REVEAL, border: 'none', background: T.red, color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}
       >
         <Icon name="trash" size={20} color="#fff" />
         Delete
@@ -215,9 +189,7 @@ function SwipeRow({ children, onDelete }: { children: ReactNode; onDelete: () =>
           if (!dragging) return;
           const ddx = e.clientX - startX.current;
           const ddy = e.clientY - startY.current;
-          if (axis.current === null && Math.abs(ddx) + Math.abs(ddy) > 6) {
-            axis.current = Math.abs(ddx) > Math.abs(ddy) ? 'x' : 'y';
-          }
+          if (axis.current === null && Math.abs(ddx) + Math.abs(ddy) > 6) axis.current = Math.abs(ddx) > Math.abs(ddy) ? 'x' : 'y';
           if (axis.current === 'x') {
             const base = dx <= -REVEAL ? -REVEAL : 0;
             setDx(Math.max(-REVEAL, Math.min(0, base + ddx)));
@@ -231,11 +203,7 @@ function SwipeRow({ children, onDelete }: { children: ReactNode; onDelete: () =>
           setDragging(false);
           setDx(dx < -REVEAL / 2 ? -REVEAL : 0);
         }}
-        style={{
-          transform: `translateX(${dx}px)`,
-          transition: dragging ? 'none' : 'transform .2s cubic-bezier(.32,.72,0,1)',
-          touchAction: 'pan-y',
-        }}
+        style={{ transform: `translateX(${dx}px)`, transition: dragging ? 'none' : 'transform .22s cubic-bezier(.2,.8,.2,1)', touchAction: 'pan-y' }}
       >
         {children}
       </div>

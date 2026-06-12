@@ -30,7 +30,7 @@ export function Account() {
   const monogram = data.company.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
   return (
-    <Screen>
+    <Screen padTop={0}>
       <ScreenHeader
         title="Account"
         trailing={<button onClick={() => setEditing(true)} style={{ border: 'none', background: 'none', color: T.navy, fontWeight: 700, fontSize: 14.5, cursor: 'pointer' }}>Edit</button>}

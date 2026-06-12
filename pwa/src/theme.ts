@@ -20,18 +20,18 @@ export const T = {
   teal: '#18837E',
   amber: '#B5781A',
   red: '#C0492F',
-  // Soft tints for pills / fills
-  navyTint: '#E7ECF4',
-  blueTint: '#E5EEF7',
-  tealTint: '#E2F1EF',
-  amberTint: '#F6EEDD',
-  redTint: '#F7E7E2',
-  track: '#E2E9F1',
+  // Soft tints for pills / fills (single-source, match tokens/colors.css)
+  navyTint: 'rgba(30,58,102,0.08)',
+  blueTint: 'rgba(45,111,176,0.12)',
+  tealTint: 'rgba(24,131,126,0.10)',
+  amberTint: 'rgba(181,120,26,0.12)',
+  redTint: 'rgba(192,73,47,0.10)',
+  track: 'rgba(30,58,102,0.08)',
   // Semantic aliases (reused components + brand)
   bg: '#EDF1F6',
   text: '#1B2A3D',
   accent: '#18837E',
-  accent2: '#2AA7A0',
+  accent2: '#2FB6AD',
   accentPress: '#136B67',
   onAccent: '#FFFFFF',
   bar: '#1E3A66',
@@ -54,7 +54,7 @@ export const STATUS: Record<Status, { c: string; bg: string; label: string }> = 
 export const SEV: Record<Severity, { c: string; label: string }> = {
   Critical: { c: T.red, label: 'Critical' },
   Major: { c: T.amber, label: 'Major' },
-  Minor: { c: T.faint, label: 'Minor' },
+  Minor: { c: '#9AA7B6', label: 'Minor' },
 };
 
 /** Stage chip: Early stage (navy) → Mid-build (blue) → Complete (teal). */

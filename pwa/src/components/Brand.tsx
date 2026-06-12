@@ -1,31 +1,27 @@
-// Brand.tsx — OptiSync Mark + Wordmark lockup.
-// PLACEHOLDER mark: a scan reticle on a navy ground (Blueprint+teal brand). It is
-// drawn as inline SVG with brand-fixed colors (navy #1E3A66 + teal #18837E) so it
-// reads the same on any surface. The real product logo is swapped in at the brand
-// phase (see SPEC §15) — it replaces this SVG + the generated PWA icons.
+// Brand.tsx — OptiSync Mark (the real product app icon) + Wordmark lockup.
+// The Mark renders the actual home-screen icon (drone + scanning eye over a building), so the in-app
+// lockup matches the installed icon exactly. Same image drives the generated PWA icons.
 import { T } from '../theme';
 
+const ICON_SRC = `${import.meta.env.BASE_URL}optisync-logo.jpeg`;
+
 export function Mark({ size = 30, r }: { size?: number; r?: number }) {
-  const radius = r ?? Math.round(size * 0.22);
   return (
-    <svg
+    <img
+      src={ICON_SRC}
+      alt="OptiSync"
       width={size}
       height={size}
-      viewBox="0 0 112 112"
-      role="img"
-      aria-label="OptiSync"
-      style={{ display: 'block', flexShrink: 0 }}
-    >
-      <rect width="112" height="112" rx={(radius / size) * 112} fill="#1E3A66" />
-      <circle cx="56" cy="56" r="30" fill="none" stroke="#18837E" strokeWidth="4.5" />
-      <circle cx="56" cy="56" r="9" fill="#18837E" />
-      <g stroke="#18837E" strokeWidth="4" strokeLinecap="round" opacity="0.65">
-        <path d="M56 14 V24" />
-        <path d="M56 88 V98" />
-        <path d="M14 56 H24" />
-        <path d="M88 56 H98" />
-      </g>
-    </svg>
+      style={{
+        width: size,
+        height: size,
+        borderRadius: r ?? Math.round(size * 0.22),
+        flexShrink: 0,
+        display: 'block',
+        objectFit: 'cover',
+        border: `1px solid ${T.hairline}`,
+      }}
+    />
   );
 }
 

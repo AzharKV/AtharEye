@@ -39,7 +39,7 @@ export function ReportsList() {
   });
 
   return (
-    <Screen>
+    <Screen padTop={0}>
       <ScreenHeader title="Reports" sub={`${rows.length} reports · latest first`} />
       <div style={{ padding: '6px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {rows.map((p) => {
