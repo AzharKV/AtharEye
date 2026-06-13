@@ -146,9 +146,10 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
           <div key={`z-${cov}`} style={{ animation: 'fadeIn .18s ease' }}>
             <SectionLabel right={isLatest ? <AddBtn onClick={() => setSheet({ t: 'zone', id: null })} /> : undefined}>Zone coverage</SectionLabel>
             <Card style={{ padding: 16 }}>
-              {[...view.zones].sort((a, b) => b.coverage - a.coverage).map((z) => (
-                <ZoneRow key={z.id} zone={z} editable={isLatest} onEdit={() => setSheet({ t: 'zone', id: z.id })} />
-              ))}
+              {[...view.zones].sort((a, b) => b.coverage - a.coverage).map((z) => {
+                const processing = isLatest && p.scans.some((s) => s.status === 'Processing' && s.zoneId === z.id);
+                return <ZoneRow key={z.id} zone={z} editable={isLatest} processing={processing} onEdit={() => setSheet({ t: 'zone', id: z.id })} />;
+              })}
             </Card>
           </div>
         )}
@@ -303,7 +304,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
 function isLatestCoverage(p: Project, c: number): boolean {
   return c === p.overall_coverage;
 }
-const sevRank = (s: Issue['severity']) => (s === 'Critical' ? 0 : s === 'Major' ? 1 : 2);
+const sevRank = (s: Issue['severity']) => (s === 'Critical' ? 0 : s === 'Major' ? 1 : s === 'Minor' ? 2 : 3);
 
 // ── Interactive scan-history scrubber (continuous track + absolutely-placed nodes, per design
 //    Timeline). One straight rail with a navy progress fill; nodes sit on the rail so the line never
@@ -344,10 +345,14 @@ function Scrubber({ project, selected, onSelect }: { project: Project; selected:
       <div style={{ position: 'absolute', left: 14, top: 46, height: 4, borderRadius: 3, background: T.navy, width: `calc((100% - 28px) * ${pct(sel) / 100})`, transition: 'width .3s cubic-bezier(.4,0,.2,1)' }} />
       {scans.map((s, i) => {
         const active = i === sel;
+        const isProcessing = s.status === 'Processing';
+        const nodeColor = isProcessing ? T.amber : active ? T.teal : i < sel ? T.navy : T.surface;
+        const nodeBorder = isProcessing ? `2px solid ${T.amber}` : active ? '4px solid #fff' : `2px solid ${i <= sel ? T.navy : T.hairline}`;
+        const nodeShadow = isProcessing ? `0 2px 8px rgba(181,120,26,.4), 0 0 0 1px ${T.amber}` : active ? `0 2px 8px rgba(24,131,126,.5), 0 0 0 1px ${T.teal}` : 'none';
         return (
           <div key={s.id} style={{ position: 'absolute', left: `calc(14px + (100% - 28px) * ${pct(i) / 100})`, top: 0, transform: 'translateX(-50%)', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             {active ? (
-              <div style={{ ...mono, fontSize: 13, fontWeight: 700, color: T.teal, marginTop: 4 }}>{s.coverage}%</div>
+              <div style={{ ...mono, fontSize: 13, fontWeight: 700, color: isProcessing ? T.amber : T.teal, marginTop: 4 }}>{s.coverage}%</div>
             ) : (
               <div style={{ height: 21 }} />
             )}
@@ -358,10 +363,11 @@ function Scrubber({ project, selected, onSelect }: { project: Project; selected:
                 width: active ? 18 : 11,
                 height: active ? 18 : 11,
                 borderRadius: '50%',
-                background: active ? T.teal : i < sel ? T.navy : T.surface,
-                border: active ? '4px solid #fff' : `2px solid ${i <= sel ? T.navy : T.hairline}`,
-                boxShadow: active ? `0 2px 8px rgba(24,131,126,.5), 0 0 0 1px ${T.teal}` : 'none',
+                background: nodeColor,
+                border: nodeBorder,
+                boxShadow: nodeShadow,
                 transition: 'all .2s',
+                animation: isProcessing ? 'pulse 1.4s ease-in-out infinite' : undefined,
               }}
             />
             <div style={{ ...mono, position: 'absolute', top: 62, fontSize: 9.5, color: active ? T.ink : T.muted, fontWeight: active ? 700 : 500, whiteSpace: 'nowrap' }}>{fmtDateShort(s.date)}</div>
@@ -372,7 +378,7 @@ function Scrubber({ project, selected, onSelect }: { project: Project; selected:
   );
 }
 
-function ZoneRow({ zone, editable, onEdit }: { zone: Zone; editable: boolean; onEdit: () => void }) {
+function ZoneRow({ zone, editable, processing, onEdit }: { zone: Zone; editable: boolean; processing?: boolean; onEdit: () => void }) {
   return (
     <button
       onClick={editable ? onEdit : undefined}
@@ -381,11 +387,14 @@ function ZoneRow({ zone, editable, onEdit }: { zone: Zone; editable: boolean; on
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 600, color: T.ink }}>
           {zone.name}
-          {editable && <Icon name="edit" size={12} color={T.faint} />}
+          {editable && !processing && <Icon name="edit" size={12} color={T.faint} />}
+          {processing && (
+            <span style={{ fontSize: 10, fontWeight: 700, color: T.amber, background: T.amberTint, borderRadius: 999, padding: '2px 7px' }}>Processing</span>
+          )}
         </span>
-        <span style={{ ...mono, fontSize: 13, fontWeight: 700, color: zone.coverage >= 100 ? T.teal : T.muted }}>{zone.coverage}%</span>
+        <span style={{ ...mono, fontSize: 13, fontWeight: 700, color: processing ? T.amber : zone.coverage >= 100 ? T.teal : T.muted }}>{zone.coverage}%</span>
       </div>
-      <Bar value={zone.coverage} color={zone.coverage >= 100 ? T.teal : zone.coverage < 40 ? T.blue : T.navy} />
+      <Bar value={zone.coverage} color={processing ? T.amber : zone.coverage >= 100 ? T.teal : zone.coverage < 40 ? T.blue : T.navy} />
     </button>
   );
 }

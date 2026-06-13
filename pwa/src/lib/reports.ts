@@ -240,4 +240,4 @@ export function reportFor(project: Project, coverage?: number): ReportModel {
   };
 }
 
-const sev = (s: Issue['severity']): number => (s === 'Critical' ? 0 : s === 'Major' ? 1 : 2);
+const sev = (s: Issue['severity']): number => (s === 'Critical' ? 0 : s === 'Major' ? 1 : s === 'Minor' ? 2 : 3);

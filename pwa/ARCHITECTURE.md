@@ -12,9 +12,7 @@
 
 **Last updated:** 2026-06-13 · **Status:** **OptiSync redesign in progress** (branch
 `feature/optisync-phase-1`). The PWA is being rebuilt from *Athar Eye* (dark) into **OptiSync** (light
-"Blueprint + teal") per the handoff bundle — see `../SPEC.md` §16 v1.19 (scan poster/feed now share
-one per-zone `ZONE_MEDIA` source so they can't be different rooms; builds on v1.18 demo round 2: 22% /
-Early start state + single user-triggered capture).
+"Blueprint + teal") per the handoff bundle — see `../SPEC.md` §16 v1.20 (async scan lifecycle · report rebuild · PDF export — builds on v1.19 scan poster/feed fix).
 
 **Done — all 9 phases.** rebrand shell; **data layer**; light **tokens + primitives**; in-memory
 **store**; **portfolio + report document**; **timeline scrubber (signature #1) + full CRUD**; **scan flow
@@ -51,43 +49,23 @@ offline on a real iPhone.
 
 ### OptiSync module map (current)
 - **`types.ts`** — domain model: `Project` (zones/issues/scans/bim/trades/team/captures), `Issue`
-  (with `appear`/`clear` coverage thresholds for the scrubber), `AppData` (company/user/team/sub/settings).
+  (with `appear`/`clear` coverage thresholds for the scrubber; full finding fields: `location_detail`, `finding`, `measured`, `tolerance`, `deviation`, `impact`, `action`, `responsible`, `thumbnail`), `Scan` (now carries `status: ScanStatus`, `zoneId?`, `startedAt?`), `ScanStatus = 'Uploading' | 'Uploaded' | 'Processing' | 'Ready' | 'Failed'`, `Severity` (4-level: Critical/Major/Minor/Cosmetic), `AppData`.
 - **`data.ts`** — dataset selector: exports `SEED: AppData` = `SEED_HOUSE` (default) or `SEED_LEGACY` when `VITE_DATASET=legacy`. DEV-mode rollup assertion runs over the active seed.
-- **`data.house.ts`** — `SEED_HOUSE`: single Bonaly Terrace renovation project — opens **early-stage at 22%** (84 m² whole-house GIA, **4 scanned zones** z2–z5, **2 scans** = baseline + first progress, 2 issues that appear by 22%, 6 captures with the garden as hero). Default demo dataset. (Rollup is area-weighted over the four scanned zones = 56 m², not the 84 m² GIA.)
-- **`data.legacy.ts`** — `SEED_LEGACY`: the original 6-project portfolio (Stirling/Morningside/Leith/Hyndland/Marischal/City Quay). Loaded with `VITE_DATASET=legacy`.
-- **`lib/photos.ts`** — p-index → asset path (curated subset under `public/captures/design-assets`),
-  stage pools, plan/before-after assets, scan-bg stills + `scan_feed.mp4`/`scan_feed_2.mp4`;
-  **`ZONE_MEDIA`** + **`zoneMedia(zoneId)`** — single-source per-zone scan media for the Bonaly demo: each entry carries **both** the `feed` (mp4) and the `poster` (its frame-0 jpg) so the aim freeze and the played clip can never be different rooms (z2=living, z3=kitchen, z4=bathroom, z5=bedroom — one dedicated ~8 s clip + matching poster each). `zoneMedia` resolves an id to its entry or, for an unmapped zone (e.g. legacy ids), a **consistent** generic room (`SCAN_FEED` + `SCAN_BG.living`, `fallback: true`) — never one room's still over another room's clip. (Replaced the v1.18 split `ZONE_FEED[id] ?? SCAN_FEED` feed + by-name `bgForZone` poster, whose two sources could diverge.)
-- **`lib/reports.ts`** — `rollup` (area-weighted), `stateAt(project, coverage)` (scrubber/per-scan
-  resolver: rescaled zones + issues-open-at-coverage + stage captures), `reportFor` (report view-model)
-  + faithful staged prose (Reports A–E).
-- **`lib/store.ts`** — in-memory `StoreProvider`/`useStore`; single mutation path
-  `update(id, recipe, {rollup})` + `addProject`/`deleteProject`/`patch`. **No localStorage** — refresh
-  re-seeds (the intended demo reset).
-- **`theme.ts`** — light Blueprint+teal `T` (superset incl. back-compat aliases) + `STATUS`/`SEV`/`STAGE`.
-- **`components/primitives.tsx`** — Donut/Ring, ZoneBars/Bar, Sparkline, SevDot, Status/Stage pills,
-  Card, Chips, Button, KeyVal, Gallery + **exported `Lightbox`** (reused by the project-detail captures),
-  ScreenHeader, mono.
-- **`navigation/`** — reused Navigator/backstack/Screen; `TabBar` (Projects·Reports·Scan·Account, shown
-  **only on tab roots** — `Navigator` reports `onDepth`, `AppRoot` hides the bar when depth > 1),
-  `PushHeader` (white + 2px navy underline), `AppActions` (startScan/goToReports/openReport).
-- **`components/Sheet.tsx`** — bottom sheet (scrim + slide-up, owns one Back layer, **portals to
-  `#app-card`** to clear the tab bar) + form fields (TextField/NumberField/SelectField).
-- **`components/ShareSheet.tsx`** — share/export (screen 13): report-type pick → Save as PDF (progress
-  → success), Copy link, Email to client.
-- **`screens/editors.tsx`** — bottom-sheet CRUD editors (EditProject/Zone/Issue/Trade/Team/Bim) +
-  ScanLog/ScanDetail. Zone-coverage edits roll up overall % via `update(id, recipe, {rollup})`.
-- **`screens/`** — `Projects` (list/search/filters/swipe-delete), `NewProject`, `ProjectDetail`
-  (overview + interactive scan-history **scrubber** + View log + per-scan report + full CRUD),
-  `Reports` (history + report doc + **Issues shortcut in the header**), `Account` (hub + Edit-profile
-  sheet; **no Issues link — it lives in Reports now**), `Issues`, `Plans`, `Team`, `Settings`,
-  `scan/ScanFlow` (prototype flow: light project picker → light **area select** → aim/Begin capture →
-  capture → process → result; per-zone walkthrough clip as the feed + canvas point cloud (vertical
-  sweep). **Single user-triggered capture** (v1.18): the feed is **still before Begin** (paused on its
-  first frame + a subtle stabilising drift + "Hold steady"), plays **once** on Begin, ends on the clip's
-  `ended`, the sweep reaching clip length, the **"Capture complete"** tap, or a safety net — **never
-  loops**, holds the **last frame** through process/result. The from→to delta is frozen at capture start
-  and the scan is written to the store on the user's finish action).
+- **`data.house.ts`** — `SEED_HOUSE`: single Bonaly Terrace renovation project — opens **early-stage at 22%** (84 m² whole-house GIA, **4 scanned zones** z2–z5, **2 scans** = baseline + first progress, 2 issues seeded with full finding fields: **RV-01** Major/Bedroom 1 wall 17 mm out of plumb, **RV-02** Minor/Kitchen partition 38 mm off BIM; both scans `status: 'Ready'`).
+- **`data.legacy.ts`** — `SEED_LEGACY`: the original 6-project portfolio. All 28 scans now carry `status: 'Ready'`. Loaded with `VITE_DATASET=legacy`.
+- **`lib/photos.ts`** — p-index → asset path; **`ZONE_MEDIA`** + **`zoneMedia(zoneId)`** — single-source per-zone scan media (v1.19).
+- **`lib/processing.ts`** *(new v1.20)* — `PROCESSING_MS = 60_000` (configurable ≥ 60 s); `processingStage(elapsedMs)` → staged label (`Queued → Aligning to BIM → Generating report`); `ProcessingJob` interface (projectId/zoneId/scanId/startedAt). Jobs live in `AppRoot` state, not the domain store.
+- **`lib/pdf.ts`** *(new v1.20)* — `generatePdf(report, scope, activeZoneId?)` → `Promise<Blob>`. Lazy jsPDF import (not in main bundle). Multipage A4: cover (navy header band) → exec summary + severity legend → zone progress → findings register → methodology + sign-off. All colours from locked design tokens only.
+- **`lib/reports.ts`** — `rollup`, `stateAt`, `reportFor` + staged prose. `sev()` severity rank updated to 4-level (Critical=0/Major=1/Minor=2/Cosmetic=3).
+- **`lib/store.ts`** — in-memory `StoreProvider`/`useStore`; single mutation path `update(id, recipe, {rollup})`. **No localStorage** — refresh re-seeds.
+- **`theme.ts`** — light Blueprint+teal `T` + `STATUS`/`SEV`/`STAGE`. `SEV` now includes `definition` text per level; 4th level `Cosmetic` added.
+- **`components/primitives.tsx`** — Donut/Ring, ZoneBars/Bar, Sparkline, SevDot, Status/Stage pills, Card, Chips, **Button** (now has `disabled` prop), **KeyVal** (now has `tight` prop), Gallery + Lightbox, ScreenHeader, mono.
+- **`navigation/`** — Navigator/backstack/Screen; `TabBar`; `PushHeader`; **`AppActions`** (v1.20: adds `startProcessing`, `isZoneProcessing`, `processingStageFor`).
+- **`components/Sheet.tsx`** — bottom sheet + form fields.
+- **`components/ShareSheet.tsx`** *(rewritten v1.20)* — async PDF export via `generatePdf()` with fake progress bar; Web Share API (`navigator.share({ files })`) on iOS; download fallback on desktop; AbortError (user cancel) handled gracefully; Copy link path unchanged.
+- **`App.tsx`** *(updated v1.20)* — `AppRoot` holds `jobs: Record<string, ProcessingJob>` + `toastMsg`; `useEffect` timer (2 s tick) flips scan to `Ready` when `Date.now() - startedAt >= PROCESSING_MS`, clears job, fires toast. `GlobalToast` floats above tab bar (teal checkCircle, auto-hides 3 s).
+- **`screens/editors.tsx`** — bottom-sheet CRUD editors + ScanLog/ScanDetail.
+- **`screens/`** — `Projects` (list/search/filters/swipe-delete), `NewProject`, **`ProjectDetail`** (scrubber nodes pulse amber when Processing; zone rows show amber "Processing" badge + amber coverage bar; `sevRank` handles 4-level severity), **`Reports`** (scope toggle "Whole project / By zone" + zone chips; `SevTally` 4-column grid; `FindingCard` full finding entries; Methodology & limitations + Sign-off sections; "Pending" card when zone is Processing; passes `report/scope/activeZoneId` to ShareSheet), `Account`, `Issues`, `Plans`, `Team`, `Settings`, **`scan/ScanFlow`** (steps extended: `uploading → uploaded` before `onClose`; writes scan with `status: 'Processing'`/`zoneId`/`startedAt`, calls `startProcessing()`; zone select shows amber "Processing" badge + disables button for Processing zones).
 
 *Sections below still describe Athar-Eye internals; they are revised as the later phases land.*
 

@@ -256,6 +256,7 @@ export function Button({
   style = {},
   full,
   danger,
+  disabled,
 }: {
   children: ReactNode;
   primary?: boolean;
@@ -264,16 +265,19 @@ export function Button({
   style?: CSSProperties;
   full?: boolean;
   danger?: boolean;
+  disabled?: boolean;
 }) {
   const [d, setD] = useState(false);
   const accent = danger ? T.red : T.navy;
   return (
     <button
+      disabled={disabled}
       onClick={() => {
+        if (disabled) return;
         haptic();
         onClick?.();
       }}
-      onPointerDown={() => setD(true)}
+      onPointerDown={() => { if (!disabled) setD(true); }}
       onPointerUp={() => setD(false)}
       onPointerLeave={() => setD(false)}
       style={{
@@ -287,7 +291,8 @@ export function Button({
         fontSize: 15.5,
         fontWeight: 700,
         fontFamily: T.font,
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.5 : 1,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -430,11 +435,11 @@ export function Chips({
 }
 
 // ── Meta table row (report header / facts)
-export function KeyVal({ k, v }: { k: string; v: ReactNode }) {
+export function KeyVal({ k, v, tight }: { k: string; v: ReactNode; tight?: boolean }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, padding: '7px 0', borderBottom: `1px solid ${T.hairline2}` }}>
-      <span style={{ fontSize: 13.5, color: T.muted, fontWeight: 500 }}>{k}</span>
-      <span style={{ fontSize: 13.5, color: T.ink, fontWeight: 600, textAlign: 'right' }}>{v}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, padding: tight ? '3px 0' : '7px 0', borderBottom: tight ? 'none' : `1px solid ${T.hairline2}` }}>
+      <span style={{ fontSize: tight ? 11.5 : 13.5, color: T.muted, fontWeight: 500 }}>{k}</span>
+      <span style={{ fontSize: tight ? 11.5 : 13.5, color: T.ink, fontWeight: 600, textAlign: 'right' }}>{v}</span>
     </div>
   );
 }
