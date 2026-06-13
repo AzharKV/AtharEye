@@ -1,9 +1,8 @@
 // Reports — history list + the full progress report document.
-// Task B: two-scope IA (Whole project / By zone toggle), 4-level severity tally,
-// full finding cards (id · sev · zone · finding · measured/tolerance/deviation ·
-// impact · action · responsible · status), methodology + sign-off footer sections.
-// Task C: real PDF via ShareSheet → generatePdf (jsPDF, Web Share API).
-// Task A: "Pending" badge when the active zone has a Processing scan.
+// §1 Lead with findings: donut → severity tally → findings above the fold; meta collapsible.
+// §2 Zone vs project depth split: project = breadth (all zones, NSR rollup); zone = depth (one zone, NSR table).
+// §3 Pending: slim banner when zone processing but has prior report; placeholder only if no prior data.
+// §5 NSR works: zone = full table; project = rollup + per-zone counts; named in methodology.
 import { useState } from 'react';
 import { T, SEV } from '../theme';
 import { reportFor } from '../lib/reports';
@@ -32,7 +31,9 @@ import {
 import { Wordmark } from '../components/Brand';
 import { ShareSheet } from '../components/ShareSheet';
 import { Icon } from '../components/Icon';
-import type { Severity } from '../types';
+import type { Project } from '../types';
+import type { NsrItem, NsrStatus } from '../types';
+import { zoneMedia } from '../lib/photos';
 
 export function ReportsList() {
   const { data } = useStore();
@@ -86,7 +87,7 @@ export function ReportsList() {
 
 // ── Severity tally strip
 function SevTally({ issues }: { issues: ReportModel['openIssues'] }) {
-  const sevs: Severity[] = ['Critical', 'Major', 'Minor', 'Cosmetic'];
+  const sevs = ['Critical', 'Major', 'Minor', 'Cosmetic'] as const;
   return (
     <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
       {sevs.map((sev) => {
@@ -103,12 +104,11 @@ function SevTally({ issues }: { issues: ReportModel['openIssues'] }) {
   );
 }
 
-// ── Full finding card (Task B)
+// ── Full finding card
 function FindingCard({ issue, last }: { issue: ReportModel['openIssues'][0]; last: boolean }) {
   const s = SEV[issue.severity];
   return (
     <div style={{ paddingBottom: last ? 0 : 12, marginBottom: last ? 0 : 12, borderBottom: last ? 'none' : `1px solid ${T.hairline2}` }}>
-      {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
         <SevDot sev={issue.severity} />
         <span style={{ fontSize: 11, fontWeight: 700, color: s.c, background: `${s.c}18`, borderRadius: 999, padding: '2px 8px' }}>{s.label}</span>
@@ -116,15 +116,19 @@ function FindingCard({ issue, last }: { issue: ReportModel['openIssues'][0]; las
         <div style={{ flex: 1 }} />
         <span style={{ ...mono, fontSize: 10.5, color: T.muted }}>{fmtDate(issue.raised)}</span>
       </div>
-      {/* Zone + location */}
       <div style={{ fontSize: 12.5, fontWeight: 700, color: T.ink, marginBottom: 4 }}>
         {issue.zone}{issue.location_detail ? ` — ${issue.location_detail}` : ''}
       </div>
-      {/* Finding description */}
+      {issue.thumbnail && (
+        <img
+          src={issue.thumbnail}
+          alt={`Scan evidence — ${issue.zone}`}
+          style={{ width: '100%', borderRadius: 8, marginBottom: 8, objectFit: 'cover', maxHeight: 140 }}
+        />
+      )}
       {issue.finding && (
         <div style={{ fontSize: 12.5, color: T.ink, lineHeight: 1.55, marginBottom: 6 }}>{issue.finding}</div>
       )}
-      {/* Measured / Tolerance / Deviation */}
       {(issue.measured || issue.tolerance || issue.deviation) && (
         <div style={{ background: T.canvas, borderRadius: 8, padding: '8px 10px', marginBottom: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>
           {issue.measured && <KeyVal k="Measured" v={<span style={{ ...mono, fontWeight: 700 }}>{issue.measured}</span>} tight />}
@@ -136,25 +140,148 @@ function FindingCard({ issue, last }: { issue: ReportModel['openIssues'][0]; las
           )}
         </div>
       )}
-      {/* Impact */}
       {issue.impact && (
         <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.5, marginBottom: 5 }}>
           <span style={{ fontWeight: 700, color: T.ink }}>Impact: </span>{issue.impact}
         </div>
       )}
-      {/* Action + responsible */}
       {issue.action && (
         <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.5, marginBottom: 5 }}>
           <span style={{ fontWeight: 700, color: T.ink }}>Action: </span>{issue.action}
           {issue.responsible && <span style={{ color: T.muted }}> · {issue.responsible}</span>}
         </div>
       )}
-      {/* Status */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
         <span style={{ width: 7, height: 7, borderRadius: 7, background: issue.status === 'Open' ? T.amber : T.teal }} />
         <span style={{ fontSize: 11.5, color: T.muted, fontWeight: 600 }}>{issue.status}</span>
       </div>
     </div>
+  );
+}
+
+// ── NSR status badge colour
+const NSR_STATUS_COLOR: Record<NsrStatus, string> = {
+  Done: T.teal,
+  'In progress': T.amber,
+  Outstanding: T.muted,
+};
+
+// ── NSR full table (zone drill-down)
+function NsrTable({ works }: { works: NsrItem[] }) {
+  if (works.length === 0) {
+    return (
+      <div style={{ fontSize: 12.5, color: T.muted, padding: '8px 0' }}>No works items scheduled for this zone.</div>
+    );
+  }
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+        <thead>
+          <tr>
+            {(['Code', 'Description', 'Unit', 'Qty', 'Status'] as const).map((h) => (
+              <th key={h} style={{ textAlign: 'left', padding: '5px 8px', borderBottom: `2px solid ${T.hairline}`, color: T.muted, fontWeight: 700, fontSize: 11, whiteSpace: 'nowrap' }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {works.map((w, i) => (
+            <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : T.canvas }}>
+              <td style={{ ...mono, padding: '6px 8px', color: T.muted, fontSize: 11, whiteSpace: 'nowrap' }}>{w.code}</td>
+              <td style={{ padding: '6px 8px', color: T.ink, lineHeight: 1.4 }}>{w.description}</td>
+              <td style={{ ...mono, padding: '6px 8px', color: T.muted, textAlign: 'center', whiteSpace: 'nowrap' }}>{w.unit}</td>
+              <td style={{ ...mono, padding: '6px 8px', color: T.ink, textAlign: 'right', whiteSpace: 'nowrap' }}>{w.qty}</td>
+              <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: NSR_STATUS_COLOR[w.status] }}>
+                  <span style={{ width: 6, height: 6, borderRadius: 6, background: NSR_STATUS_COLOR[w.status], flexShrink: 0 }} />
+                  {w.status}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── NSR rollup for whole-project view
+function NsrRollup({ project }: { project: Project }) {
+  const zonesWithWorks = project.zones.filter((z) => z.works && z.works.length > 0);
+  if (zonesWithWorks.length === 0) return null;
+
+  const totalItems = zonesWithWorks.reduce((s, z) => s + (z.works?.length ?? 0), 0);
+  const doneItems = zonesWithWorks.reduce((s, z) => s + (z.works?.filter((w) => w.status === 'Done').length ?? 0), 0);
+
+  return (
+    <>
+      {/* Summary row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+        <div style={{ flex: 1, height: 6, background: T.hairline, borderRadius: 6, overflow: 'hidden' }}>
+          <div style={{ width: `${totalItems > 0 ? (doneItems / totalItems) * 100 : 0}%`, height: '100%', background: T.teal, borderRadius: 6, transition: 'width .4s' }} />
+        </div>
+        <span style={{ ...mono, fontSize: 13, fontWeight: 700, color: T.ink, whiteSpace: 'nowrap' }}>{doneItems} / {totalItems} complete</span>
+      </div>
+      {/* Per-zone counts */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {zonesWithWorks.map((z) => {
+          const total = z.works?.length ?? 0;
+          const done = z.works?.filter((w) => w.status === 'Done').length ?? 0;
+          const inProg = z.works?.filter((w) => w.status === 'In progress').length ?? 0;
+          return (
+            <div key={z.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 12.5, color: T.ink, fontWeight: 600, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{z.name}</span>
+              <span style={{ ...mono, fontSize: 11, color: T.teal, fontWeight: 700 }}>{done} done</span>
+              {inProg > 0 && <span style={{ ...mono, fontSize: 11, color: T.amber, fontWeight: 700 }}>{inProg} in progress</span>}
+              <span style={{ ...mono, fontSize: 11, color: T.muted }}>{total} total</span>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+// ── Collapsible section wrapper
+function CollapsibleSection({ title, children }: { title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Card style={{ padding: 0, marginBottom: 0 }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: T.font }}
+      >
+        <span style={{ fontSize: 14, fontWeight: 700, color: T.ink }}>{title}</span>
+        <Icon name={open ? 'chevron' : 'chevron'} size={16} color={T.muted} style={{ transform: open ? 'rotate(90deg)' : 'rotate(-90deg)', transition: 'transform .2s' }} />
+      </button>
+      {open && (
+        <div style={{ padding: '0 16px 14px', borderTop: `1px solid ${T.hairline2}` }}>
+          {children}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ── Slim processing banner
+function ProcessingBanner() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: T.amberTint, borderRadius: 10, padding: '9px 14px', marginBottom: 12 }}>
+      <span style={{ width: 7, height: 7, borderRadius: 7, background: T.amber, flexShrink: 0, animation: 'pulse 1.4s ease-in-out infinite' }} />
+      <span style={{ fontSize: 12.5, fontWeight: 600, color: T.amber }}>New scan processing — updated report ready in ~60 s.</span>
+    </div>
+  );
+}
+
+// ── Zone scan evidence frame (poster still from the zone scan media)
+function ZoneEvidenceFrame({ zoneId }: { zoneId: string }) {
+  const media = zoneMedia(zoneId);
+  if (!media.poster) return null;
+  return (
+    <img
+      src={media.poster}
+      alt="Latest scan frame"
+      style={{ width: '100%', borderRadius: 10, objectFit: 'cover', maxHeight: 160, display: 'block' }}
+    />
   );
 }
 
@@ -179,14 +306,23 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
   const deep = p.depth === 'deep';
   const ringColor = p.status === 'Needs review' && r.coverage < 100 ? T.amber : r.coverage >= 100 ? T.teal : T.navy;
 
-  // Per-zone data for the selected zone
   const activeZone = activeZoneId ? p.zones.find((z) => z.id === activeZoneId) : null;
   const zoneIssues = scope === 'zone' && activeZone
     ? r.openIssues.filter((i) => i.zone === activeZone.name)
     : r.openIssues;
+
   const zoneIsProcessing = scope === 'zone' && activeZone
     ? p.scans.some((s) => s.status === 'Processing' && s.zoneId === activeZone.id)
     : false;
+
+  // Pending logic: show banner (not blank) if zone has prior coverage data
+  const hasPriorReport = activeZone ? activeZone.coverage > 0 : false;
+  const showPendingBanner = zoneIsProcessing && hasPriorReport;
+  const showPendingPlaceholder = zoneIsProcessing && !hasPriorReport;
+
+  // Zone coverage for zone scope
+  const displayCoverage = scope === 'zone' && activeZone ? activeZone.coverage : r.coverage;
+  const zoneRingColor = displayCoverage >= 100 ? T.teal : T.navy;
 
   return (
     <Screen padTop={0} padBottom={92}>
@@ -206,7 +342,7 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
           ))}
         </div>
 
-        {/* ── Zone selector (shown when scope = zone) */}
+        {/* ── Zone selector chips */}
         {scope === 'zone' && (
           <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 14, paddingBottom: 2 }}>
             {p.zones.map((z) => {
@@ -226,8 +362,11 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
           </div>
         )}
 
-        {/* ── Pending state for processing zone */}
-        {zoneIsProcessing && (
+        {/* ── Pending banner (slim — shown above report when zone processing but has prior data) */}
+        {showPendingBanner && <ProcessingBanner />}
+
+        {/* ── Pending placeholder (blank zone — no prior report exists) */}
+        {showPendingPlaceholder && (
           <Card style={{ padding: 18, marginBottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center' }}>
             <div style={{ width: 44, height: 44, borderRadius: 22, background: T.amberTint, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'pulse 1.4s ease-in-out infinite' }}>
               <Icon name="clock" size={22} color={T.amber} />
@@ -237,140 +376,231 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
           </Card>
         )}
 
-        {!zoneIsProcessing && (
+        {/* ── Main report content (always shown unless pending placeholder) */}
+        {!showPendingPlaceholder && (
           <>
-            <Card style={{ padding: 18 }}>
-              {/* Brand row */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 12, borderBottom: `2px solid ${T.navy}`, marginBottom: 14 }}>
-                <Wordmark size={18} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>Progress report</span>
-              </div>
-
-              {/* Header meta */}
-              <div style={{ marginBottom: 6 }}>
-                <KeyVal k="Project" v={p.name} />
-                <KeyVal k="Address" v={<span style={mono}>{p.location}</span>} />
-                <KeyVal k="Client" v={p.client} />
-                <KeyVal k="Contractor" v="Cairn Refurbishment Ltd" />
-                <KeyVal k="Type" v={p.type} />
-                <KeyVal k="Scope" v={scope === 'zone' && activeZone ? activeZone.name : 'Whole project'} />
-                <KeyVal k="Stage" v={r.rung} />
-                <KeyVal k="Report date" v={<span style={mono}>{r.date}</span>} />
-                <KeyVal k="Prepared by" v="J. Mackay · Site Supervisor" />
-                <KeyVal k="BIM model" v={<span style={mono}>{p.bim.file} (LOD {p.bim.lod})</span>} />
-                <KeyVal k="Coverage" v={<span style={{ ...mono, fontWeight: 700, color: T.teal }}>{r.coverage}%</span>} />
-                <KeyVal k="Accuracy" v={<span style={mono}>±17 mm</span>} />
-                <KeyVal k="Status" v={<StatusPill status={p.status} />} />
-              </div>
-
-              {/* Donut + summary */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '18px 0 8px' }}>
-                <Donut value={r.coverage} size={172} stroke={15} color={ringColor} countUp sub={`${100 - r.coverage}% outstanding`} />
-              </div>
-              <p style={{ fontSize: 13.5, lineHeight: 1.6, color: T.ink, margin: '6px 2px 0' }}>{r.summary}</p>
-            </Card>
-
-            {/* Zone coverage */}
-            {r.zones.length > 0 && scope === 'project' && (
+            {/* ─────────────────────── PROJECT SCOPE ─────────────────────── */}
+            {scope === 'project' && (
               <>
-                <SectionLabel>Zone coverage</SectionLabel>
-                <Card style={{ padding: 16 }}>
-                  <ZoneBars zones={r.zones} />
+                {/* Brand + coverage donut hero */}
+                <Card style={{ padding: 18, marginBottom: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10, borderBottom: `2px solid ${T.navy}`, marginBottom: 14 }}>
+                    <Wordmark size={18} />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>Progress report</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '4px 0 10px' }}>
+                    <Donut value={r.coverage} size={164} stroke={14} color={ringColor} countUp sub={`${100 - r.coverage}% outstanding`} />
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.6, color: T.ink, margin: '4px 2px 0' }}>{r.summary}</p>
                 </Card>
+
+                {/* Severity tally */}
+                <SectionLabel>Findings summary</SectionLabel>
+                <SevTally issues={r.openIssues} />
+
+                {/* Zone coverage bars */}
+                {r.zones.length > 0 && (
+                  <>
+                    <SectionLabel>Zone coverage</SectionLabel>
+                    <Card style={{ padding: 16, marginBottom: 0 }}>
+                      <ZoneBars zones={r.zones} />
+                    </Card>
+                  </>
+                )}
+
+                {/* Findings register — worst-first */}
+                <SectionLabel right={
+                  <span style={{ ...mono, fontSize: 12.5, color: T.muted, fontWeight: 700 }}>
+                    {r.openIssues.length} open · {r.closedCount} closed
+                  </span>
+                }>
+                  Findings register
+                </SectionLabel>
+                <Card style={{ padding: r.openIssues.length ? 16 : 16, marginBottom: 0 }}>
+                  {r.openIssues.length === 0 ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.teal, fontSize: 13.5, fontWeight: 600, padding: '4px 0' }}>
+                      <Icon name="checkCircle" size={18} color={T.teal} /> Snag list cleared — 0 open.
+                    </div>
+                  ) : (
+                    r.openIssues.map((i, idx) => (
+                      <FindingCard key={i.id} issue={i} last={idx === r.openIssues.length - 1} />
+                    ))
+                  )}
+                </Card>
+
+                {/* NSR works rollup */}
+                {p.zones.some((z) => z.works && z.works.length > 0) && (
+                  <>
+                    <SectionLabel>NSR works schedule</SectionLabel>
+                    <Card style={{ padding: 16, marginBottom: 0 }}>
+                      <NsrRollup project={p} />
+                    </Card>
+                  </>
+                )}
+
+                {/* Project extras */}
+                <SectionLabel>Project overview</SectionLabel>
+                <Card style={{ padding: '6px 16px', marginBottom: 0 }}>
+                  <KeyVal k="Zones scanned" v={<span style={mono}>{p.zones.length} / {p.zones.length}</span>} />
+                  <KeyVal k="Open findings" v={<span style={{ ...mono, color: r.openIssues.length > 0 ? T.amber : T.teal, fontWeight: 700 }}>{r.openIssues.length}</span>} />
+                  <KeyVal k="Overall status" v={<StatusPill status={p.status} />} />
+                  <KeyVal k="Last BIM alignment" v={<span style={mono}>{p.bim.last_aligned ? fmtDate(p.bim.last_aligned) : '—'}</span>} />
+                  <KeyVal k="Scans recorded" v={<span style={mono}>{p.scans.filter((s) => s.status === 'Ready').length}</span>} />
+                </Card>
+
+                {/* Coverage over time */}
+                {r.spark.length > 1 && (
+                  <>
+                    <SectionLabel>Coverage over time</SectionLabel>
+                    <Card style={{ padding: 16, marginBottom: 0 }}>
+                      <Sparkline points={r.spark} />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+                        {r.spark.map((s, i) => (
+                          <span key={i} style={{ ...mono, fontSize: 9.5, color: T.faint, fontWeight: 600 }}>{fmtDate(s.date).slice(0, 6)}</span>
+                        ))}
+                      </div>
+                    </Card>
+                  </>
+                )}
+
+                {/* Collapsible report details */}
+                <SectionLabel>Report details</SectionLabel>
+                <CollapsibleSection title="Project &amp; report metadata">
+                  <div style={{ paddingTop: 10 }}>
+                    <KeyVal k="Project" v={p.name} />
+                    <KeyVal k="Address" v={<span style={mono}>{p.location}</span>} />
+                    <KeyVal k="Client" v={p.client} />
+                    <KeyVal k="Contractor" v="Cairn Refurbishment Ltd" />
+                    <KeyVal k="Type" v={p.type} />
+                    <KeyVal k="Scope" v="Whole project" />
+                    <KeyVal k="Stage" v={r.rung} />
+                    <KeyVal k="Report date" v={<span style={mono}>{r.date}</span>} />
+                    <KeyVal k="Prepared by" v="J. Mackay · Site Supervisor" />
+                    <KeyVal k="BIM model" v={<span style={mono}>{p.bim.file} (LOD {p.bim.lod})</span>} />
+                    <KeyVal k="Coverage" v={<span style={{ ...mono, fontWeight: 700, color: T.teal }}>{r.coverage}%</span>} />
+                    <KeyVal k="Accuracy" v={<span style={mono}>±17 mm</span>} />
+                  </div>
+                </CollapsibleSection>
+
+                {/* Captures */}
+                {deep && r.captures.length > 0 && (
+                  <>
+                    <SectionLabel>Latest captures</SectionLabel>
+                    <Gallery ids={r.captures} />
+                  </>
+                )}
+
+                {/* Next actions */}
+                {r.nextActions.length > 0 && (
+                  <>
+                    <SectionLabel>Next actions</SectionLabel>
+                    <Card style={{ padding: '12px 16px', marginBottom: 0 }}>
+                      <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {r.nextActions.map((a, i) => (
+                          <li key={i} style={{ fontSize: 13.5, color: T.ink, lineHeight: 1.5 }}>{a}</li>
+                        ))}
+                      </ol>
+                    </Card>
+                  </>
+                )}
               </>
             )}
+
+            {/* ─────────────────────── ZONE SCOPE ─────────────────────── */}
             {scope === 'zone' && activeZone && (
               <>
-                <SectionLabel>Zone progress</SectionLabel>
-                <Card style={{ padding: 16 }}>
-                  <ZoneBars zones={[r.zones.find((z) => z.id === activeZone.id) ?? activeZone]} />
-                </Card>
-              </>
-            )}
-
-            {/* Findings register (Task B) */}
-            <SectionLabel right={
-              <span style={{ ...mono, fontSize: 12.5, color: T.muted, fontWeight: 700 }}>
-                {zoneIssues.length} open · {r.closedCount} closed
-              </span>
-            }>
-              Findings register
-            </SectionLabel>
-
-            {/* Severity tally */}
-            {zoneIssues.length > 0 && <SevTally issues={zoneIssues} />}
-
-            <Card style={{ padding: zoneIssues.length ? 16 : 16 }}>
-              {zoneIssues.length === 0 ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.teal, fontSize: 13.5, fontWeight: 600, padding: '4px 0' }}>
-                  <Icon name="checkCircle" size={18} color={T.teal} /> Snag list cleared — 0 open.
-                </div>
-              ) : (
-                zoneIssues.map((i, idx) => (
-                  <FindingCard key={i.id} issue={i} last={idx === zoneIssues.length - 1} />
-                ))
-              )}
-            </Card>
-
-            {/* Coverage over time */}
-            {r.spark.length > 1 && (
-              <>
-                <SectionLabel>Coverage over time</SectionLabel>
-                <Card style={{ padding: 16 }}>
-                  <Sparkline points={r.spark} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
-                    {r.spark.map((s, i) => (
-                      <span key={i} style={{ ...mono, fontSize: 9.5, color: T.faint, fontWeight: 600 }}>{fmtDate(s.date).slice(0, 6)}</span>
-                    ))}
+                {/* Zone coverage donut + delta */}
+                <Card style={{ padding: 18, marginBottom: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10, borderBottom: `2px solid ${T.navy}`, marginBottom: 14 }}>
+                    <Wordmark size={18} />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>Zone report</span>
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: T.ink, marginBottom: 14 }}>{activeZone.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 10 }}>
+                    <Donut value={displayCoverage} size={130} stroke={12} color={zoneRingColor} countUp sub={`${100 - displayCoverage}% outstanding`} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>Coverage</div>
+                      <div style={{ ...mono, fontSize: 26, fontWeight: 700, color: T.navy }}>{displayCoverage}%</div>
+                      <div style={{ fontSize: 12, color: T.muted, marginTop: 6 }}>{activeZone.stage} stage</div>
+                      {activeZone.note && (
+                        <div style={{ fontSize: 12, color: T.muted, marginTop: 4, lineHeight: 1.4 }}>{activeZone.note}</div>
+                      )}
+                    </div>
                   </div>
                 </Card>
-              </>
-            )}
 
-            {/* BIM */}
-            <SectionLabel>BIM model</SectionLabel>
-            <Card style={{ padding: '6px 16px' }}>
-              <KeyVal k="Model" v={<span style={mono}>{p.bim.file}</span>} />
-              <KeyVal k="Software" v={p.bim.software} />
-              <KeyVal k="LOD" v={<span style={mono}>{p.bim.lod || '—'}</span>} />
-              <KeyVal k="Disciplines" v={p.bim.disciplines.join(', ') || '—'} />
-              <KeyVal k="Last aligned" v={<span style={mono}>{p.bim.last_aligned ? fmtDate(p.bim.last_aligned) : '—'}</span>} />
-            </Card>
-
-            {/* Captures (deep only) */}
-            {deep && r.captures.length > 0 && (
-              <>
-                <SectionLabel>Latest captures</SectionLabel>
-                <Gallery ids={r.captures} />
-              </>
-            )}
-
-            {/* Next actions */}
-            {r.nextActions.length > 0 && (
-              <>
-                <SectionLabel>Next actions</SectionLabel>
-                <Card style={{ padding: '12px 16px' }}>
-                  <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {r.nextActions.map((a, i) => (
-                      <li key={i} style={{ fontSize: 13.5, color: T.ink, lineHeight: 1.5 }}>{a}</li>
-                    ))}
-                  </ol>
+                {/* Zone scan evidence frame */}
+                <SectionLabel>Scan evidence</SectionLabel>
+                <Card style={{ padding: 10, marginBottom: 0 }}>
+                  <ZoneEvidenceFrame zoneId={activeZone.id} />
                 </Card>
+
+                {/* Zone severity tally */}
+                <SectionLabel>Findings summary</SectionLabel>
+                <SevTally issues={zoneIssues} />
+
+                {/* Zone findings */}
+                <SectionLabel right={
+                  <span style={{ ...mono, fontSize: 12.5, color: T.muted, fontWeight: 700 }}>
+                    {zoneIssues.length} open
+                  </span>
+                }>
+                  Findings register
+                </SectionLabel>
+                <Card style={{ padding: zoneIssues.length ? 16 : 16, marginBottom: 0 }}>
+                  {zoneIssues.length === 0 ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.teal, fontSize: 13.5, fontWeight: 600, padding: '4px 0' }}>
+                      <Icon name="checkCircle" size={18} color={T.teal} /> No open findings for this zone.
+                    </div>
+                  ) : (
+                    zoneIssues.map((i, idx) => (
+                      <FindingCard key={i.id} issue={i} last={idx === zoneIssues.length - 1} />
+                    ))
+                  )}
+                </Card>
+
+                {/* NSR works breakdown — full table for zone */}
+                {activeZone.works && activeZone.works.length > 0 && (
+                  <>
+                    <SectionLabel>NSR works breakdown</SectionLabel>
+                    <Card style={{ padding: 14, marginBottom: 0 }}>
+                      <NsrTable works={activeZone.works} />
+                    </Card>
+                  </>
+                )}
+
+                {/* Zone report details collapsible */}
+                <SectionLabel>Report details</SectionLabel>
+                <CollapsibleSection title="Zone &amp; report metadata">
+                  <div style={{ paddingTop: 10 }}>
+                    <KeyVal k="Project" v={p.name} />
+                    <KeyVal k="Zone" v={activeZone.name} />
+                    <KeyVal k="Address" v={<span style={mono}>{p.location}</span>} />
+                    <KeyVal k="Client" v={p.client} />
+                    <KeyVal k="Contractor" v="Cairn Refurbishment Ltd" />
+                    <KeyVal k="Stage" v={activeZone.stage} />
+                    <KeyVal k="Report date" v={<span style={mono}>{r.date}</span>} />
+                    <KeyVal k="Prepared by" v="J. Mackay · Site Supervisor" />
+                    <KeyVal k="BIM model" v={<span style={mono}>{p.bim.file} (LOD {p.bim.lod})</span>} />
+                    <KeyVal k="Coverage" v={<span style={{ ...mono, fontWeight: 700, color: T.teal }}>{displayCoverage}%</span>} />
+                    <KeyVal k="Accuracy" v={<span style={mono}>±17 mm</span>} />
+                  </div>
+                </CollapsibleSection>
               </>
             )}
 
-            {/* Methodology & limitations */}
-            <SectionLabel>Methodology & limitations</SectionLabel>
-            <Card style={{ padding: '12px 16px' }}>
+            {/* ── Shared: Methodology & limitations (mentions NSR) */}
+            <SectionLabel>Methodology &amp; limitations</SectionLabel>
+            <Card style={{ padding: '12px 16px', marginBottom: 0 }}>
               <div style={{ fontSize: 12.5, color: T.muted, lineHeight: 1.6 }}>
                 <p style={{ margin: '0 0 7px' }}>Geometry captured using iPhone LiDAR (ARKit Scene Reconstruction). Coverage computed by comparing the captured point cloud against the BIM reference model.</p>
                 <p style={{ margin: '0 0 7px' }}>BIM reference: <span style={{ ...mono, color: T.ink }}>{p.bim.file}</span> (LOD {p.bim.lod}, {p.bim.disciplines.join(', ')}). Last aligned {p.bim.last_aligned ? fmtDate(p.bim.last_aligned) : '—'}.</p>
-                <p style={{ margin: '0 0 7px' }}>Positional accuracy <strong style={{ color: T.ink }}>±17 mm</strong>. Surface defects (cracks, dampness, finish quality) are outside scope. Tolerances per NHBC Standards 2024 / Scottish Building Standards where applicable.</p>
+                <p style={{ margin: '0 0 7px' }}>Positional accuracy <strong style={{ color: T.ink }}>±17 mm</strong>. Works schedule follows the <strong style={{ color: T.ink }}>NSR (National Schedule of Rates)</strong> standard. Surface defects (cracks, dampness, finish quality) are outside scope. Tolerances per NHBC Standards 2024 / Scottish Building Standards where applicable.</p>
                 <p style={{ margin: 0 }}>This report reflects site conditions at time of scanning only. Subsequent works are not represented.</p>
               </div>
             </Card>
 
-            {/* Sign-off */}
+            {/* ── Sign-off */}
             <SectionLabel>Sign-off</SectionLabel>
             <Card style={{ padding: '6px 16px', marginBottom: 0 }}>
               <KeyVal k="Prepared by" v="J. Mackay · Site Supervisor" />

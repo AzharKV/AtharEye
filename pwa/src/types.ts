@@ -9,6 +9,17 @@ export type Severity = 'Critical' | 'Major' | 'Minor' | 'Cosmetic';
 export type ScanStatus = 'Uploading' | 'Uploaded' | 'Processing' | 'Ready' | 'Failed';
 export type TradeStatus = 'Done' | 'In progress' | 'Not started';
 export type Role = 'Owner' | 'Admin' | 'Editor' | 'Viewer';
+export type NsrUnit = 'LM' | 'SM' | 'NO';
+export type NsrStatus = 'Outstanding' | 'In progress' | 'Done';
+
+/** A National Schedule of Rates works item — the industry-standard breakdown unit for UK contractors. */
+export interface NsrItem {
+  code: string;
+  description: string;
+  unit: NsrUnit;
+  qty: number;
+  status: NsrStatus;
+}
 
 /** A room/area: scanned-and-aligned floor area vs the BIM plan, 0–100. Rolls up (area-weighted). */
 export interface Zone {
@@ -18,6 +29,8 @@ export interface Zone {
   coverage: number;
   stage: Stage;
   note: string;
+  /** NSR (National Schedule of Rates) works items scheduled for this zone. */
+  works?: NsrItem[];
 }
 
 export interface Trade {

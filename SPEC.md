@@ -1,5 +1,5 @@
 # OptiSync — Master Specification & Build Brief
-**Version 1.17 · Single source of truth · Last updated: 13 June 2026**
+**Version 1.21 · Single source of truth · Last updated: 13 June 2026**
 
 > **Naming.** The product is now **OptiSync** (formerly *Athar Eye*, formerly *BuildScan*), by **Athar Robotics**. The **PWA in `pwa/`** is the OptiSync build (this redesign); the **`reactnative/` · `flutter/` · `ios-native/`** comparison ports were built against the prior *Athar Eye* dark design and are **frozen** pending a re-port. For the OptiSync PWA the authoritative product/data/design source is the **handoff bundle** (`OPTISYNC_*` docs) summarised in §15 v1.14, which supersedes the Athar-Eye-era §6.2 tokens, §8 screens, and §10 data below (kept as the frozen-ports reference). Mentions of "Athar Eye" elsewhere in this doc are historical.
 
@@ -363,6 +363,39 @@ bonaly_stairs, bonaly_landing, bonaly_garden.
     on clip-end or tap → process → result with no looping and the video held on its last frame; Bedroom 1
     scan → report surfaces RV-01 (17 mm out of plumb). `tsc` + ESLint clean; `vite build` clean; DEV
     rollup assertion green (overall = 22); `VITE_DATASET=legacy` still restores the 6-project portfolio.
+- **v1.21 (13 Jun 2026) — Report rebuild: UX reorder + zone/project depth split + NSR works + PDF improvements.**
+  Full rebuild of the report screen and PDF export, aligned to UK construction industry standards (NSR, NHBC).
+  - **Report screen reordered (§1).** Content now leads with the coverage donut → severity tally → zone bars →
+    findings register above the fold. Project/report metadata moved into a **collapsible "Report details"**
+    section lower down.
+  - **Zone vs project depth split (§2).** "Whole project" scope = breadth (donut + exec summary + severity tally +
+    all zone bars + full findings register + NSR rollup + project extras + sparkline + collapsible meta +
+    methodology + sign-off). "By zone" scope = depth (zone donut + delta + zone scan evidence frame + zone
+    findings only + full NSR works table for that zone + collapsible meta + methodology + sign-off).
+    Both scopes share `FindingCard`, `NsrTable`, `NsrRollup` components and locked tokens.
+  - **Pending: slim banner, not blank (§3).** When a zone scan is Processing but the zone already has prior
+    coverage (> 0%), the last Ready report remains visible with a slim amber banner "New scan processing —
+    updated report ready in ~60 s." The pending placeholder only shows when the zone has no prior report.
+  - **NSR works breakdown (§5).** `NsrUnit = 'LM' | 'SM' | 'NO'`, `NsrStatus = 'Outstanding' | 'In progress' | 'Done'`,
+    `NsrItem { code, description, unit, qty, status }` added to `types.ts`; `Zone` extended with `works?: NsrItem[]`.
+    Real NSR lines seeded per zone in `data.house.ts` (14 items across 4 zones: N-431315/N-305709/N-330043/
+    N-382001/N-442651/N-432251/N-525007/N-305705). Statuses set so done-ratio ≈ each zone's coverage %.
+    Zone report shows full NSR table (code/description/unit/qty/status); project report shows rollup
+    (X of Y complete + per-zone counts). "NSR (National Schedule of Rates)" named in methodology section.
+  - **Findings with scan evidence.** Each `FindingCard` shows the `thumbnail` image inline (RV-01 → Bedroom 1,
+    RV-02 → Kitchen). Zone scan evidence frame (poster still from `ZONE_MEDIA`) added to zone drill-down.
+  - **Bonaly-specific prose added** (`lib/reports.ts`). `rv1` at `'Early stage'` now has a real summary +
+    3 next-action items referencing RV-01 and RV-02. Synthesized fallback prose no longer contains
+    "This snapshot re-renders…" dev language.
+  - **PDF improvements (§6).** Scoped coverage: zone export shows zone % on cover/donut/meta (not project %);
+    project export shows project %. Page count reduced: cover + exec summary combined on page 1;
+    zone progress page skipped for zone-scope exports. Scan evidence images embedded per finding card
+    (fetched as data URLs, `addImage` via jsPDF). NSR works breakdown page added (zone = single-zone table;
+    project = rollup + per-zone tables). Methodology page names NSR. All dev language removed.
+  - `tsc` + ESLint + `vite build` clean; rollup assertion green; `VITE_DATASET=legacy` still works.
+    Verified in browser preview: project scope (donut→tally→bars→findings+photos→NSR rollup→project extras→
+    collapsible meta→methodology with NSR→sign-off); zone scope (zone donut→scan frame→findings→NSR table→
+    collapsible meta→methodology→sign-off); Bedroom 1 zone shows 15% (not 22%).
 - **v1.17 (13 Jun 2026) — Demo dataset + per-zone scan feeds.**
   - **Dataset switch.** The default seed is now the single **Bonaly Terrace Refurbishment** project
     (`data.house.ts`, `SEED_HOUSE`). The original 6-project portfolio is preserved as

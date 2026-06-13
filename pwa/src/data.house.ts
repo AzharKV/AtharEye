@@ -48,10 +48,44 @@ export const SEED_HOUSE: AppData = {
       // Four scanned rooms (ids kept z2–z5 so ZONE_MEDIA + capture refs stay valid; each has its own
       // dedicated poster + feed, no fallback). Early stage across the board; Bedroom 1 is the problem zone.
       zones: [
-        { id: 'z2', name: 'Living room', area_m2: 20, coverage: 25, stage: 'Early', note: 'Strip-out done; first fix under way' },
-        { id: 'z3', name: 'Kitchen & dining', area_m2: 16, coverage: 23, stage: 'Early', note: 'First fix in; partition 38 mm off BIM' },
-        { id: 'z4', name: 'Bathroom', area_m2: 6, coverage: 26, stage: 'Early', note: 'Strip-out done; first fix in' },
-        { id: 'z5', name: 'Bedroom 1 (front)', area_m2: 14, coverage: 15, stage: 'Early', note: 'Stripped; 17 mm plumb deviation flagged' },
+        {
+          id: 'z2', name: 'Living room', area_m2: 20, coverage: 25, stage: 'Early',
+          note: 'Strip-out done; first fix under way',
+          works: [
+            { code: 'N-382001', description: 'RAIL: TAKE OFF EXISTING AND MAKE GOOD', unit: 'LM', qty: 5, status: 'Done' },
+            { code: 'N-330043', description: 'DOOR: RENEW FD30 FIRE INTERNAL - DECORATE', unit: 'NO', qty: 1, status: 'In progress' },
+            { code: 'N-431315', description: 'SCREED: LATEX SELF LEVEL', unit: 'SM', qty: 15, status: 'Outstanding' },
+            { code: 'N-305709', description: 'FLOORING: APPLY 2 COATS PRESERVATIVE', unit: 'SM', qty: 15, status: 'Outstanding' },
+            { code: 'N-442651', description: 'RADIATOR: PREPARE, PAINT', unit: 'SM', qty: 1, status: 'Outstanding' },
+          ],
+        },
+        {
+          id: 'z3', name: 'Kitchen & dining', area_m2: 16, coverage: 23, stage: 'Early',
+          note: 'First fix in; partition 38 mm off BIM',
+          works: [
+            { code: 'N-382001', description: 'RAIL: TAKE OFF EXISTING AND MAKE GOOD', unit: 'LM', qty: 14, status: 'In progress' },
+            { code: 'N-330043', description: 'DOOR: RENEW FD30 FIRE INTERNAL - DECORATE', unit: 'NO', qty: 1, status: 'Outstanding' },
+          ],
+        },
+        {
+          id: 'z4', name: 'Bathroom', area_m2: 6, coverage: 26, stage: 'Early',
+          note: 'Strip-out done; first fix in',
+          works: [
+            { code: 'N-432251', description: 'FLOOR TILES: HACK UP CERAMIC/QUARRY', unit: 'SM', qty: 3, status: 'Done' },
+            { code: 'N-382001', description: 'RAIL: TAKE OFF EXISTING AND MAKE GOOD', unit: 'LM', qty: 1, status: 'In progress' },
+            { code: 'N-442651', description: 'RADIATOR: PREPARE, PAINT', unit: 'SM', qty: 1, status: 'Outstanding' },
+            { code: 'N-525007', description: 'PANE: REGLAZE 6MM GWPP', unit: 'SM', qty: 1, status: 'Outstanding' },
+          ],
+        },
+        {
+          id: 'z5', name: 'Bedroom 1 (front)', area_m2: 14, coverage: 15, stage: 'Early',
+          note: 'Stripped; 17 mm plumb deviation flagged',
+          works: [
+            { code: 'N-305705', description: 'FLOORBOARD: REMOVE AND REFIX SINGLE BOARD', unit: 'LM', qty: 3, status: 'Outstanding' },
+            { code: 'N-442651', description: 'RADIATOR: PREPARE, PAINT', unit: 'SM', qty: 1, status: 'Outstanding' },
+            { code: 'N-525007', description: 'PANE: REGLAZE 6MM GWPP', unit: 'SM', qty: 1, status: 'Outstanding' },
+          ],
+        },
       ],
       // Area-weighted check (rollup is over the four scanned zones, not the 84 m² whole-house GIA):
       // (20×25 + 16×23 + 6×26 + 14×15) / (20+16+6+14)
