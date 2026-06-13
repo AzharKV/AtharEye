@@ -1,5 +1,5 @@
 # OptiSync — Master Specification & Build Brief
-**Version 1.15 · Single source of truth · Last updated: 12 June 2026**
+**Version 1.17 · Single source of truth · Last updated: 13 June 2026**
 
 > **Naming.** The product is now **OptiSync** (formerly *Athar Eye*, formerly *BuildScan*), by **Athar Robotics**. The **PWA in `pwa/`** is the OptiSync build (this redesign); the **`reactnative/` · `flutter/` · `ios-native/`** comparison ports were built against the prior *Athar Eye* dark design and are **frozen** pending a re-port. For the OptiSync PWA the authoritative product/data/design source is the **handoff bundle** (`OPTISYNC_*` docs) summarised in §15 v1.14, which supersedes the Athar-Eye-era §6.2 tokens, §8 screens, and §10 data below (kept as the frozen-ports reference). Mentions of "Athar Eye" elsewhere in this doc are historical.
 
@@ -251,7 +251,131 @@ athar-eye/
 
 ---
 
-## 15. Change log
+## 15. Demo scenario — Bonaly Terrace Refurbishment
+
+The default demo dataset (no `VITE_DATASET` env var) loads a single residential renovation
+project. Set `VITE_DATASET=legacy` to restore the 6-project portfolio.
+
+**Project:** Bonaly Terrace Refurbishment · id `rv1` · Residential full refurbishment ·
+Colinton, Edinburgh EH13 · Private client · 84 m² · Stage Mid · Status **Needs review** ·
+Overall coverage **69%** · Last scan 2026-06-11 · BIM: Autodesk Revit → IFC · `Bonaly_Refurb_R3.ifc` · LOD 300.
+
+**Team:** J. Mackay · Site supervisor; Cairn Refurbishment Ltd · Main contractor; R. Stewart · Joiner.
+
+**Zones (area-weighted rollup = 69%):**
+| id | Name | Area | Coverage | Note |
+|---|---|---|---|---|
+| z1 | Hallway & stairs | 12 m² | 70% | Parquet to refinish |
+| z2 | Living room | 18 m² | 72% | Bay reglazed; floor prep |
+| z3 | Kitchen & dining | 16 m² | 80% | Units in; worktops set |
+| z4 | Bathroom | 6 m² | 85% | Suite + tiling in |
+| z5 | Bedroom 1 (front) | 14 m² | 58% | Plastered; plumb deviation flagged |
+| z6 | Bedroom 2 (rear) | 12 m² | 60% | Plastered; boards lifted |
+| z7 | Landing | 6 m² | 55% | Balustrade pending |
+
+**Scan history:** sc1 2026-04-02 0% (Baseline) → sc2 2026-04-24 22% → sc3 2026-05-15 41% →
+sc4 2026-05-30 58% → sc5 2026-06-11 69% (plumb deviation flagged).
+
+**Issues:**
+- **RV-01 · Major** · Bedroom 1 (front) · "Front wall 17 mm out of plumb over 2.4 m (NHBC limit 8 mm)" · Open · raised 2026-06-11 · appears at 65%.
+  *Defensible: NHBC tolerance for internal walls is max 8 mm from plumb up to 3 m; scan reports 17 mm — ~2× tolerance, invisible to the naked eye.*
+- **RV-02 · Minor** · Kitchen & dining · "Island partition 38 mm off BIM setting-out line" · Open · raised 2026-05-30 · appears at 45%.
+
+**Review note:** "Our supervisor scanned the front bedroom in minutes — OptiSync flagged a 17 mm lean in the gable wall we'd otherwise only have caught at final inspection. Saved a re-plaster after decoration. — Cairn Refurbishment Ltd"
+
+**Captures (10 stills, `pwa/public/captures/`):** bonaly_living_room, bonaly_kitchen,
+bonaly_kitchen_diner, bonaly_bathroom, bonaly_bedroom1, bonaly_bedroom2, bonaly_hall,
+bonaly_stairs, bonaly_landing, bonaly_garden.
+
+**Per-zone scan feeds (`pwa/public/scans/`):**
+- `scan_living.mp4` → z2 (Living room) + fallback
+- `scan_kitchen.mp4` → z3 (Kitchen & dining)
+- `scan_bathroom.mp4` → z4 (Bathroom)
+- `scan_bedroom.mp4` → z5 (Bedroom 1) + z6 (Bedroom 2)
+
+**Dataset switch:** `VITE_DATASET=legacy npm run dev` loads `SEED_LEGACY` (6-project portfolio from `data.legacy.ts`). Omit for the house demo (`SEED_HOUSE` from `data.house.ts`). Selector in `data.ts`.
+
+---
+
+## 16. Change log
+- **v1.19 (13 Jun 2026) — Hotfix: scan poster/feed room mismatch.** Scan-flow visuals only — no data or
+  coverage changes (rollup stays 22).
+  - **The bug.** In the scan flow the aim freeze showed the correct room but the played clip could be a
+    different room (e.g. Bathroom froze on the bathroom still, then played the living-room clip). Cause:
+    poster and feed were resolved from **two separate sources** — the poster by room name (`bgForZone`),
+    the feed by zone id (`ZONE_FEED[zone.id] ?? SCAN_FEED`) — and the `??` fallback silently substituted
+    the living-room clip when an entry was missed, hiding the divergence.
+  - **The fix — one source of truth.** Replaced the split logic with a single per-zone media map
+    `ZONE_MEDIA: Record<string, { feed; poster }>` (keyed by `zone.id`, all four demo zones present) +
+    a `zoneMedia(zoneId)` resolver, both in `lib/photos.ts`. In `ScanFlow.tsx` the `<video>` reads
+    **both** `src={media.feed}` and `poster={media.poster}` from the same entry, so they cannot diverge.
+    Removed the old `bgForZone` by-name poster path and the `ZONE_FEED[…] ?? SCAN_FEED` feed path; deleted
+    `ZONE_FEED`. **No cross-room fallback:** an unmapped zone (e.g. legacy-dataset ids) resolves to a
+    *consistent* generic room (`SCAN_FEED` + `SCAN_BG.living`, `fallback: true`) — never one room's still
+    over another room's clip. DEV: `ScanFlow` logs the resolved `{ zoneId, feed }` on entering aim and
+    warns on any fallback; `data.ts` asserts every non-legacy zone id has a `ZONE_MEDIA` entry.
+  - **Posters == each clip's frame 0.** The four `pwa/public/scans/scan_{living,kitchen,bathroom,bedroom}
+    .mp4` were re-cut (clean in-room starts, ~8 s) and four new `poster_*.jpg` (frame 0 of each clip)
+    added, so aim freeze → Begin (play from t=0) is seamless and same-room by construction. Posters are
+    .jpg, already covered by the existing Workbox `optisync-images` runtime CacheFirst rule (no
+    `globPatterns`/precache change needed — jpgs/mp4s are runtime-cached by design). The single-play /
+    "Capture complete" / hold-last-frame behaviour from v1.18 is unchanged.
+  - Verified in the browser preview: for **all four zones** the aim poster and the played video are the
+    **same room** (Bathroom now plays `scan_bathroom.mp4`); DEV console logs the resolved `{zoneId,feed}`
+    with **no fallback warnings**; single-play + stop button + hold-last-frame still work. `tsc` + ESLint
+    clean; default + `VITE_DATASET=legacy` builds clean; rollup assertion green (unchanged 22).
+- **v1.18 (13 Jun 2026) — Demo round 2: lower starting state + scan-flow realism.** Two changes so the
+  live demo scan is the meaningful action, and so the "scan" behaves like a real, user-triggered capture.
+  - **Lower starting state (`data.house.ts`).** The project now opens **early-stage at 22%** (was 69%):
+    `overall_coverage 22`, `stage Early`, status stays **Needs review**. **Zones reduced 7 → 4** — removed
+    `z1` Hallway & stairs, `z6` Bedroom 2, `z7` Landing; kept `z2` Living (area 20 / cov 25), `z3`
+    Kitchen & dining (16 / 23), `z4` Bathroom (6 / 26), `z5` Bedroom 1 (14 / 15, the problem zone), all
+    `stage Early`. Ids kept z2–z5 so `ZONE_FEED` + capture refs stay valid. **Area-weighted rollup over
+    the four scanned zones = 1234 / 56 ≈ 22** (project `area_m2` stays 84 m² whole-house GIA). **Scans
+    5 → 2:** `sc1` 28 May (0, baseline) + `sc2` 11 Jun (22, first progress). **Issues:** RV-01 `appear`
+    65 → **18**, RV-02 `appear` 45 → **14**, so both show by 22%. **Trades** → early state (strip-out &
+    first fix Done; plastering / kitchen / bathroom In progress; joinery / flooring / decoration /
+    snagging Not started). **Captures 10 → 6** (garden hero + the four scanned rooms; hall/stairs/landing/
+    bedroom2 images left unused). `ZONE_FEED` `z6` entry removed — each of the four zones now has its own
+    dedicated clip, no fallback. Result: donut 22% / "Early stage", a 2-point scrubber (0 → 22), both
+    issues visible, and the Bedroom 1 scan is the meaningful demo action.
+  - **Scan flow = a real single capture (`ScanFlow.tsx`).** The feed `<video>` loses `autoPlay` + `loop`,
+    keeps `muted playsInline poster`, gains `preload="auto"`. New playback state machine (the scan
+    animation/overlay itself is unchanged): **aim** holds the feed **paused on its first frame** (poster)
+    with the aim grid, reticle, a **"Hold steady"** indicator and a subtle `scanDrift` stabilising scale
+    (toggle `AIM_DRIFT`, keyframe in `index.html`); **Begin capture** runs `currentTime = 0; play()` and
+    starts a fresh point cloud; **capture** shows the progress bar + a **"Capture complete"** stop button;
+    capture **ends on whichever comes first** — the clip's `ended`, the sweep reaching the clip length,
+    the stop tap, or `CAP_SAFETY_MS` — then `pause()`s on the **last frame** (never reset to poster,
+    **never loops**) for process → result. The point-cloud sweep is now wall-clock-driven over the clip's
+    duration (robust if a device throttles the muted feed). The from→to delta stays frozen at capture
+    start; the scan is still written to the store on the user's finish action.
+  - **Assets.** The four `pwa/public/scans/scan_{living,kitchen,bathroom,bedroom}.mp4` clips replaced with
+    the re-cut **8.5–9 s** versions (same filenames), so capture length = clip length.
+  - Verified in the browser preview: opens 22% / Early with 4 zones (detail + scan picker) + a 2-scan
+    scrubber + both issues; aim feed still before Begin → plays once → "Capture complete" visible → ends
+    on clip-end or tap → process → result with no looping and the video held on its last frame; Bedroom 1
+    scan → report surfaces RV-01 (17 mm out of plumb). `tsc` + ESLint clean; `vite build` clean; DEV
+    rollup assertion green (overall = 22); `VITE_DATASET=legacy` still restores the 6-project portfolio.
+- **v1.17 (13 Jun 2026) — Demo dataset + per-zone scan feeds.**
+  - **Dataset switch.** The default seed is now the single **Bonaly Terrace Refurbishment** project
+    (`data.house.ts`, `SEED_HOUSE`). The original 6-project portfolio is preserved as
+    `data.legacy.ts` (`SEED_LEGACY`), loaded when `VITE_DATASET=legacy`. `data.ts` is now a thin
+    selector: `SEED = VITE_DATASET === 'legacy' ? SEED_LEGACY : SEED_HOUSE`. The DEV-mode
+    rollup assertion runs over the active seed only.
+  - **Bonaly Terrace seed.** Single residential renovation: 84 m², 7 zones, 5 scans, 10 photo
+    captures, 2 issues (RV-01 wall 17 mm out of plumb — the hero defect for the demo; RV-02 island
+    partition 38 mm off BIM). Area-weighted rollup verified = 69. Hero issue RV-01 appears at 65%
+    (visible after the final Bedroom 1 scan in the demo flow).
+  - **Per-zone scan feeds.** `lib/photos.ts` now exports `ZONE_FEED: Record<string,string>` mapping
+    zone ids z2/z3/z4/z5/z6 to their zone-specific mp4 (living/kitchen/bathroom/bedroom/bedroom).
+    `ScanFlow.tsx` sets `<video src={ZONE_FEED[zone.id] ?? SCAN_FEED}>` — z1/z7 and any unknown
+    zones fall back to the existing `SCAN_FEED`. The four new mp4s are in `pwa/public/scans/`; the
+    existing Workbox mp4 CacheFirst rule covers them for offline use.
+  - **10 photo captures** added to `pwa/public/captures/` (478-px-wide video frames); wired as
+    direct-path strings in the house project's `captures` array (`photoSrc` already handles
+    paths starting with `/`).
+  - `tsc` + ESLint clean; `vite build` clean; rollup assertion green.
 - **v1.16 (12 Jun 2026) — OptiSync PWA: zone-coverage rollup fix + scan feed video.**
   Two correctness fixes found in a post-deploy test pass.
   - **Zone coverage reconciliation.** Four projects had `overall_coverage` headlines that did not equal

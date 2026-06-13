@@ -11,25 +11,23 @@ import { T } from '../../theme';
 import type { Project, Zone } from '../../types';
 import { fmtDateShort } from '../../lib/format';
 import { useStore } from '../../lib/store';
-import { SCAN_BG, SCAN_FEED } from '../../lib/photos';
+import { zoneMedia } from '../../lib/photos';
 import { Button, Card, Ring, SectionLabel, StageChip, mono } from '../../components/primitives';
 import { Icon } from '../../components/Icon';
 
 type Step = 'picker' | 'select' | 'aim' | 'capture' | 'process' | 'result';
-const CAP_MS = 3000;
 const PROC_MS = 1500;
+// Capture now runs for the length of the clip (~8.5–9 s) and ends on the video's `ended` event or the
+// user's "Capture complete" tap. CAP_SAFETY_MS only fires if `ended` never arrives (clip failed to
+// load); CAP_FALLBACK_MS drives the point-cloud sweep when the video has no readable duration.
+const CAP_SAFETY_MS = 11000;
+const CAP_FALLBACK_MS = 9000;
+// Subtle stabilising drift on the paused feed before Begin — feels live, clearly not yet scanning.
+// Flip to false to leave the aim feed fully frozen.
+const AIM_DRIFT = true;
 
 const shortName = (name: string) => name.split(' ').slice(0, 2).join(' ');
 const defaultZone = (p: Project): Zone | null => p.zones.find((z) => /kitchen/i.test(z.name)) ?? p.zones[0] ?? null;
-
-// Zone → walkthrough still (people-free), matching the prototype's bgFor().
-function bgForZone(name: string): string {
-  const z = name.toLowerCase();
-  if (z.includes('kitchen')) return SCAN_BG.kitchen;
-  if (z.includes('bed')) return SCAN_BG.bedroom;
-  if (z.includes('hall') || z.includes('stair') || z.includes('landing')) return SCAN_BG.stairs;
-  return SCAN_BG.living;
-}
 
 interface CloudPt { x: number; y: number; d: number; jx: number; jy: number }
 function makeCloud(n: number, W: number, H: number): CloudPt[] {
@@ -58,6 +56,7 @@ export function ScanFlow({
 
   const target = data.projects.find((p) => p.id === targetId) ?? null;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const cloudRef = useRef<CloudPt[] | null>(null);
   const rafRef = useRef(0);
   const wrote = useRef(false);
@@ -80,6 +79,27 @@ export function ScanFlow({
     const zoneDelta = from >= 100 ? 0 : 6;
     setPlan({ from, to: Math.min(100, from + bump), zoneId: zone.id, zoneName: zone.name, zoneFrom: zone.coverage, zoneTo: Math.min(100, zone.coverage + zoneDelta), zoneDelta });
     setStep('aim');
+  };
+
+  // Aim → capture: play the clip once from the top; the point cloud accretes fresh (see step effect).
+  // play() is kicked off here, inside the user gesture, so the single capture is genuinely user-driven.
+  const beginCapture = () => {
+    const v = videoRef.current;
+    if (v) {
+      v.currentTime = 0;
+      const pr = v.play();
+      if (pr) pr.catch(() => {});
+    }
+    setStep('capture');
+  };
+
+  // End the capture — on the clip's `ended`, the user's "Capture complete" tap, or the safety net.
+  // Freeze the feed on its current frame (never reset to poster, never loop), then process → result.
+  const endCapture = () => {
+    const v = videoRef.current;
+    if (v) v.pause();
+    setCounter(100);
+    setStep('process');
   };
 
   // Write the scan once, then close / open the report (prototype finish()). Writing on the user's
@@ -168,16 +188,29 @@ export function ScanFlow({
     cancelAnimationFrame(rafRef.current);
     if (step === 'capture') {
       cloudRef.current = null; // fresh cloud per scan
+      const v = videoRef.current;
       const t0 = performance.now();
+      // Sweep runs over the clip's own length (so the point cloud finishes as the clip ends), driven by
+      // wall-clock rather than the media clock — robust if a device throttles the muted feed. Capture
+      // ends on whichever comes first: the clip's `ended`, the sweep reaching clip length, the user's
+      // "Capture complete" tap, or the safety net. Never loops.
+      const durMs = v && isFinite(v.duration) && v.duration > 0 ? v.duration * 1000 : CAP_FALLBACK_MS;
       const loop = (now: number) => {
-        const p = Math.min(1, (now - t0) / CAP_MS);
+        const p = Math.min(1, (now - t0) / durMs);
         drawCapture(p);
         setCounter(Math.round(p * 100));
         if (p < 1) rafRef.current = requestAnimationFrame(loop);
+        else endCapture();
       };
       rafRef.current = requestAnimationFrame(loop);
-      const to = setTimeout(() => { setCounter(100); setStep('process'); }, CAP_MS + 150);
-      return () => { cancelAnimationFrame(rafRef.current); clearTimeout(to); };
+      const onEnded = () => endCapture(); // clip auto-completes (~9 s) — no loop
+      v?.addEventListener('ended', onEnded);
+      const safety = setTimeout(endCapture, CAP_SAFETY_MS);
+      return () => {
+        cancelAnimationFrame(rafRef.current);
+        clearTimeout(safety);
+        v?.removeEventListener('ended', onEnded);
+      };
     }
     if (step === 'process') {
       const t0 = performance.now();
@@ -197,6 +230,16 @@ export function ScanFlow({
     return () => cancelAnimationFrame(rafRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
+
+  // DEV breadcrumb: surface the resolved { zoneId, feed } the instant the camera feed mounts, and warn
+  // (never silently) if a zone has no dedicated media entry — poster + feed always share one source.
+  useEffect(() => {
+    if (!import.meta.env.DEV || step !== 'aim') return;
+    const zoneId = zone?.id ?? '(none)';
+    const m = zoneMedia(zoneId);
+    if (m.fallback) console.warn('[ScanFlow] no ZONE_MEDIA for zone — using generic feed', { zoneId, feed: m.feed });
+    else console.log('[ScanFlow] scan media resolved', { zoneId, feed: m.feed });
+  }, [step, zone?.id]);
 
   // ── Light step: project picker (no project preselected)
   if (step === 'picker' || !target) {
@@ -269,18 +312,21 @@ export function ScanFlow({
 
   // ── Camera steps (aim / capture / process / result)
   const zoneName = zone?.name ?? 'Area';
+  // Single source of truth: the aim poster AND the played clip read from the same per-zone entry, so
+  // they can never be different rooms. No `?? SCAN_FEED` cross-room fallback for the demo zones.
+  const media = zoneMedia(zone?.id ?? '');
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 500, background: '#0a0e14', overflow: 'hidden', animation: 'modalUp .3s cubic-bezier(.32,.72,0,1)' }}>
       {/* live feed (walkthrough still) */}
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
         <video
-          src={SCAN_FEED}
-          poster={bgForZone(zoneName)}
-          autoPlay
-          loop
+          ref={videoRef}
+          src={media.feed}
+          poster={media.poster}
           muted
           playsInline
-          style={{ position: 'absolute', inset: '-4%', width: '108%', height: '108%', objectFit: 'cover', filter: step === 'process' ? 'brightness(.4) saturate(.6)' : step === 'result' ? 'brightness(.7)' : 'brightness(.86)', transition: 'filter .5s' }}
+          preload="auto"
+          style={{ position: 'absolute', inset: '-4%', width: '108%', height: '108%', objectFit: 'cover', filter: step === 'process' ? 'brightness(.4) saturate(.6)' : step === 'result' ? 'brightness(.7)' : 'brightness(.86)', transition: 'filter .5s', animation: AIM_DRIFT && step === 'aim' ? 'scanDrift 3s ease-out forwards' : undefined }}
         />
         {step === 'aim' && (
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.10) 1px,transparent 1px)', backgroundSize: '34px 34px', animation: 'gridfade 2s ease-in-out infinite alternate' }} />
@@ -311,25 +357,39 @@ export function ScanFlow({
         </div>
       )}
 
+      {/* aim: hold-steady indicator (stabilising — clearly not yet scanning) */}
+      {step === 'aim' && (
+        <div style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top) + 78px)', left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(10,14,20,.5)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', borderRadius: 999, padding: '8px 14px', color: '#fff', fontSize: 13, fontWeight: 700 }}>
+            <span style={{ width: 9, height: 9, borderRadius: 999, background: T.amber, boxShadow: '0 0 0 4px rgba(181,120,26,0.25)', animation: 'pulse 1.4s ease-in-out infinite' }} />
+            Hold steady — stabilising
+          </div>
+        </div>
+      )}
+
       {/* aim: reticle + prompt + Begin capture */}
       {step === 'aim' && <Reticle />}
       {step === 'aim' && (
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 18px calc(22px + env(safe-area-inset-bottom))', zIndex: 10, textAlign: 'center' }}>
           <div style={{ color: '#fff', fontSize: 15, fontWeight: 650, marginBottom: 4 }}>Move slowly across the room</div>
           <div style={{ color: 'rgba(255,255,255,.7)', fontSize: 12.5, marginBottom: 18 }}>Keep the area inside the frame · iPhone LiDAR, no extra hardware</div>
-          <button onClick={() => setStep('capture')} style={{ width: '100%', height: 50, borderRadius: 13, border: 'none', background: T.teal, color: '#fff', fontSize: 15.5, fontWeight: 700, fontFamily: T.font, cursor: 'pointer', boxShadow: '0 8px 24px rgba(24,131,126,.5)' }}>
+          <button onClick={beginCapture} style={{ width: '100%', height: 50, borderRadius: 13, border: 'none', background: T.teal, color: '#fff', fontSize: 15.5, fontWeight: 700, fontFamily: T.font, cursor: 'pointer', boxShadow: '0 8px 24px rgba(24,131,126,.5)' }}>
             Begin capture
           </button>
         </div>
       )}
 
-      {/* capture: progress bar */}
+      {/* capture: progress bar + explicit "Capture complete" stop control */}
       {step === 'capture' && (
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 18px calc(24px + env(safe-area-inset-bottom))', zIndex: 10 }}>
           <div style={{ height: 6, borderRadius: 4, background: 'rgba(255,255,255,.2)', overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${counter}%`, background: T.accent2, borderRadius: 4 }} />
           </div>
           <div style={{ ...mono, color: 'rgba(255,255,255,.8)', fontSize: 11, marginTop: 7, textAlign: 'center' }}>Building point cloud · {Math.round(counter * 6.2)} pts</div>
+          <button onClick={endCapture} style={{ width: '100%', height: 50, borderRadius: 13, border: 'none', background: '#fff', color: T.ink, fontSize: 15.5, fontWeight: 700, fontFamily: T.font, cursor: 'pointer', marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, boxShadow: '0 8px 24px rgba(0,0,0,.35)' }}>
+            <span style={{ width: 15, height: 15, borderRadius: 3, background: T.red }} />
+            Capture complete
+          </button>
         </div>
       )}
 

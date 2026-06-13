@@ -10,9 +10,11 @@
 > - [`../design-source/`](../design-source/) — the locked Claude Design export (visual reference; **ported, not reinvented**).
 > - [`../CLAUDE.md`](../CLAUDE.md) — how an AI/dev session should work in this repo.
 
-**Last updated:** 2026-06-12 · **Status:** **OptiSync redesign in progress** (branch
+**Last updated:** 2026-06-13 · **Status:** **OptiSync redesign in progress** (branch
 `feature/optisync-phase-1`). The PWA is being rebuilt from *Athar Eye* (dark) into **OptiSync** (light
-"Blueprint + teal") per the handoff bundle — see `../SPEC.md` §15 v1.16.
+"Blueprint + teal") per the handoff bundle — see `../SPEC.md` §16 v1.19 (scan poster/feed now share
+one per-zone `ZONE_MEDIA` source so they can't be different rooms; builds on v1.18 demo round 2: 22% /
+Early start state + single user-triggered capture).
 
 **Done — all 9 phases.** rebrand shell; **data layer**; light **tokens + primitives**; in-memory
 **store**; **portfolio + report document**; **timeline scrubber (signature #1) + full CRUD**; **scan flow
@@ -50,9 +52,12 @@ offline on a real iPhone.
 ### OptiSync module map (current)
 - **`types.ts`** — domain model: `Project` (zones/issues/scans/bim/trades/team/captures), `Issue`
   (with `appear`/`clear` coverage thresholds for the scrubber), `AppData` (company/user/team/sub/settings).
-- **`data.ts`** — `SEED: AppData`: the 6 UK projects verbatim (OPTISYNC_DATA_SPEC) + Cairn account.
+- **`data.ts`** — dataset selector: exports `SEED: AppData` = `SEED_HOUSE` (default) or `SEED_LEGACY` when `VITE_DATASET=legacy`. DEV-mode rollup assertion runs over the active seed.
+- **`data.house.ts`** — `SEED_HOUSE`: single Bonaly Terrace renovation project — opens **early-stage at 22%** (84 m² whole-house GIA, **4 scanned zones** z2–z5, **2 scans** = baseline + first progress, 2 issues that appear by 22%, 6 captures with the garden as hero). Default demo dataset. (Rollup is area-weighted over the four scanned zones = 56 m², not the 84 m² GIA.)
+- **`data.legacy.ts`** — `SEED_LEGACY`: the original 6-project portfolio (Stirling/Morningside/Leith/Hyndland/Marischal/City Quay). Loaded with `VITE_DATASET=legacy`.
 - **`lib/photos.ts`** — p-index → asset path (curated subset under `public/captures/design-assets`),
-  stage pools, plan/before-after assets, scan-bg stills + `scan_feed.mp4`/`scan_feed_2.mp4`.
+  stage pools, plan/before-after assets, scan-bg stills + `scan_feed.mp4`/`scan_feed_2.mp4`;
+  **`ZONE_MEDIA`** + **`zoneMedia(zoneId)`** — single-source per-zone scan media for the Bonaly demo: each entry carries **both** the `feed` (mp4) and the `poster` (its frame-0 jpg) so the aim freeze and the played clip can never be different rooms (z2=living, z3=kitchen, z4=bathroom, z5=bedroom — one dedicated ~8 s clip + matching poster each). `zoneMedia` resolves an id to its entry or, for an unmapped zone (e.g. legacy ids), a **consistent** generic room (`SCAN_FEED` + `SCAN_BG.living`, `fallback: true`) — never one room's still over another room's clip. (Replaced the v1.18 split `ZONE_FEED[id] ?? SCAN_FEED` feed + by-name `bgForZone` poster, whose two sources could diverge.)
 - **`lib/reports.ts`** — `rollup` (area-weighted), `stateAt(project, coverage)` (scrubber/per-scan
   resolver: rescaled zones + issues-open-at-coverage + stage captures), `reportFor` (report view-model)
   + faithful staged prose (Reports A–E).
@@ -77,9 +82,12 @@ offline on a real iPhone.
   `Reports` (history + report doc + **Issues shortcut in the header**), `Account` (hub + Edit-profile
   sheet; **no Issues link — it lives in Reports now**), `Issues`, `Plans`, `Team`, `Settings`,
   `scan/ScanFlow` (prototype flow: light project picker → light **area select** → aim/Begin capture →
-  capture → process → result; zone-specific still feed + canvas point cloud (vertical sweep); beats
-  timer-driven; the from→to delta is frozen at capture start and the scan is written to the store on the
-  user's finish action).
+  capture → process → result; per-zone walkthrough clip as the feed + canvas point cloud (vertical
+  sweep). **Single user-triggered capture** (v1.18): the feed is **still before Begin** (paused on its
+  first frame + a subtle stabilising drift + "Hold steady"), plays **once** on Begin, ends on the clip's
+  `ended`, the sweep reaching clip length, the **"Capture complete"** tap, or a safety net — **never
+  loops**, holds the **last frame** through process/result. The from→to delta is frozen at capture start
+  and the scan is written to the store on the user's finish action).
 
 *Sections below still describe Athar-Eye internals; they are revised as the later phases land.*
 
@@ -224,7 +232,7 @@ pwa/
 - **`Projects.tsx`** — `ProjectsList` (portfolio summary ring + counts, filter chips, **search** (`SearchBar` → live filter by name/location/type/client), skeleton list, cards → `ProjectDetail`), `ProjectDetail` (scroll-aware floating header, parallax `BannerBlueprint`, progress `Ring` card, BIM model card + `BimUploadSheet`, coverage-by-area `Bar`s, team `Avatar`s, CTAs → `actions.startScan` / push `ReportDetail`, and **Delete project** → `DeleteConfirm` action sheet → `actions.deleteProject` (persisted)), `NewProject` (form + `Field`s + BIM attach → builds a `Project` and `actions.addProject`). Local: `DeleteConfirm`, `BimUploadSheet` (faked upload→align), `Field`, `BIM_SAMPLES`, `PTYPES`.
 - **`Reports.tsx`** — `ReportsList` (filter chips, **search**, skeleton, cards → `ReportDetail`), `ReportDetail` (branded sticky header, **count-up `Donut`**, Covered/Missing m², `IsoMassing`, meta table, coverage-by-room, open-issues with severity badges, `ShareSheet` + PDF `Toast`).
 - **`Settings.tsx`** — `Settings` (profile row → `Profile`, subscription card + usage `Bar` → `Plans`, scanning/app `Row`s + `Toggle`s, footer lockup), `Profile` (avatar, stats, details), `Plans` (tier cards, add-ons, switch `Toast`). Local: `Toggle`, `Row`.
-- **`scan/ScanFlow.tsx`** (lazy chunk) — prototype flow: light **project picker** → light **area select** → aim → capture → process → result. Feed element is a `<video src={SCAN_FEED} poster={bgForZone(zoneName)} autoPlay loop muted playsInline>` (`scan_feed.mp4`, runtime CacheFirst). The `poster` paints instantly before the video decodes. Per-step filter: `process` → dim+desaturate; `result` → brightness `.7`; default → `.86`. Grid overlay (aim step) + point-cloud `<canvas>` (rAF sweep on capture, jitter-settle on process) layer on top. Delta frozen at capture start; scan written to store on user's finish action (not on entering Result) so from→to numbers stay stable.
+- **`scan/ScanFlow.tsx`** (lazy chunk) — prototype flow: light **project picker** → light **area select** → aim → capture → process → result. Feed element is a `<video ref src={media.feed} poster={media.poster} muted playsInline preload="auto">` where `media = zoneMedia(zone.id)` — **one source for both `src` and `poster`**, so the aim freeze and the played clip are always the same room (the v1.18 split-source bug, where a by-name poster and a by-id feed could diverge — e.g. Bathroom froze on the bathroom still but played the living-room clip). It has **no `autoPlay`, no `loop`**, so it behaves like a real capture: **aim** holds the feed paused on its first frame (poster) with the aim grid, reticle, a "Hold steady" indicator and an optional `scanDrift` stabilising scale (toggle `AIM_DRIFT`); **Begin** runs `currentTime = 0; play()` and starts a fresh point cloud; **capture** shows the progress bar + a **"Capture complete"** stop button; capture ends on whichever fires first — the clip's `ended`, the wall-clock sweep reaching the clip's duration, the stop tap, or `CAP_SAFETY_MS` — then `pause()`s on the **last frame** (never reset to poster, never looped) for process → result. The sweep is wall-clock-driven over the clip length (robust if a device throttles the muted feed). Per-step filter: `process` → dim+desaturate; `result` → brightness `.7`; default → `.86`. Delta frozen at capture start; scan written to store on user's finish action (not on entering Result) so from→to numbers stay stable.
 
 ---
 
@@ -335,7 +343,7 @@ Authoritative list lives in **`SPEC.md` §15** (v1.2 – v1.9). Summary of code-
 - **Deterministic SVG pattern IDs** (no `Math.random`) in `BlueprintTile`/`IsoMassing`.
 - **System Back button integrated** (`backstack.ts`) with the in-memory nav via the History API — Android/browser Back pops screens / closes the scan & sheets instead of leaving the app. Not in the design-source.
 - **Persisted to localStorage** (`lib/store.ts`) seeded from `data.ts` — created projects + recorded scans survive reload; no backend. (Firebase/etc. is the future multi-device path.)
-- **Scan visual:** looping walkthrough **video** (`scan_feed.mp4`, `SCAN_FEED`, `autoPlay loop muted playsInline`) as the live feed — per the locked v0.9 decision. Zone-specific still (`bgForZone`) as the `poster` for instant paint. Grid overlay + point-cloud canvas layered on top. Runtime CacheFirst in Workbox (`optisync-media`) so Airplane-mode works after first load. `data.ts` zone coverages are area-weighted to match each project's `overall_coverage` (enforced by a DEV-mode `console.assert` loop on module load).
+- **Scan visual:** per-zone walkthrough **video** as the live feed, `muted playsInline preload="auto"`. **As of v1.18 the feed is a single user-triggered capture, not an autoplaying loop** — paused on its first frame in aim, played once from `currentTime = 0` on Begin, and frozen on its last frame on completion (clip `ended` / sweep-complete / "Capture complete" tap / safety net); it never loops. **As of v1.19 the `src` and `poster` come from one `zoneMedia(zone.id)` entry** (`ZONE_MEDIA` in `lib/photos.ts`) so the aim freeze and the played clip are always the same room — fixing the split-source mismatch (by-name poster vs by-id feed) where e.g. Bathroom played the living-room clip. The Bonaly demo has 4 zone-specific ~8 s mp4s + matching frame-0 `poster_*.jpg` (`scan_/poster_{living,kitchen,bathroom,bedroom}`, re-cut with clean in-room starts so freeze→play is seamless); an unmapped zone (e.g. legacy ids) gets a **consistent** generic room (`SCAN_FEED` + `SCAN_BG.living`), never a cross-room substitution, with a DEV warn. Posters are .jpg so the existing Workbox `optisync-images` runtime CacheFirst rule covers them (mp4s → `optisync-media`); both work offline after first view. A DEV `console.assert` in `data.ts` checks every non-legacy zone id has a `ZONE_MEDIA` entry. Grid overlay + point-cloud canvas layered on top. Zone coverages are area-weighted to match each project's `overall_coverage` (DEV-mode `console.assert` in `data.ts`).
 - **Splash matches the OS splash:** the static HTML splash, the React `<Splash>`, and the manifest `background_color` all use solid `#0C0F12` with the icon centered, so the Android/iOS native launch splash hands off to the web splash with no icon jump/shrink.
 - ESLint relaxed for the design's idiomatic `cond && fn()` statements; Fast-Refresh co-location hint off.
 
@@ -363,7 +371,7 @@ launch + real Airplane-mode relaunch on hardware.
 
 | Task | Where |
 |---|---|
-| Change demo data | `SPEC.md` §10 **first**, then `src/data.ts` (keep verbatim) |
+| Change demo data | `SPEC.md` §15 **first**, then `src/data.house.ts` (house) or `src/data.legacy.ts` (6-project) |
 | Add/scale a design token | `src/theme.ts` (`T`) — never hardcode a token's hex elsewhere |
 | Add an icon | add a path to `ICONS` in `src/components/Icon.tsx` (name auto-joins `IconName`) |
 | Add a screen | create in `src/screens/`, push via `useNav().push(<X/>)` from a parent; lazy-load if heavy |
