@@ -10,9 +10,9 @@
 > - [`../design-source/`](../design-source/) — the locked Claude Design export (visual reference; **ported, not reinvented**).
 > - [`../CLAUDE.md`](../CLAUDE.md) — how an AI/dev session should work in this repo.
 
-**Last updated:** 2026-06-12 · **Status:** **OptiSync redesign in progress** (branch
+**Last updated:** 2026-06-13 · **Status:** **OptiSync redesign in progress** (branch
 `feature/optisync-phase-1`). The PWA is being rebuilt from *Athar Eye* (dark) into **OptiSync** (light
-"Blueprint + teal") per the handoff bundle — see `../SPEC.md` §15 v1.16.
+"Blueprint + teal") per the handoff bundle — see `../SPEC.md` §16 v1.17.
 
 **Done — all 9 phases.** rebrand shell; **data layer**; light **tokens + primitives**; in-memory
 **store**; **portfolio + report document**; **timeline scrubber (signature #1) + full CRUD**; **scan flow
@@ -50,9 +50,12 @@ offline on a real iPhone.
 ### OptiSync module map (current)
 - **`types.ts`** — domain model: `Project` (zones/issues/scans/bim/trades/team/captures), `Issue`
   (with `appear`/`clear` coverage thresholds for the scrubber), `AppData` (company/user/team/sub/settings).
-- **`data.ts`** — `SEED: AppData`: the 6 UK projects verbatim (OPTISYNC_DATA_SPEC) + Cairn account.
+- **`data.ts`** — dataset selector: exports `SEED: AppData` = `SEED_HOUSE` (default) or `SEED_LEGACY` when `VITE_DATASET=legacy`. DEV-mode rollup assertion runs over the active seed.
+- **`data.house.ts`** — `SEED_HOUSE`: single Bonaly Terrace renovation project (84 m², 7 zones, 5 scans, 2 issues, 10 captures). Default demo dataset.
+- **`data.legacy.ts`** — `SEED_LEGACY`: the original 6-project portfolio (Stirling/Morningside/Leith/Hyndland/Marischal/City Quay). Loaded with `VITE_DATASET=legacy`.
 - **`lib/photos.ts`** — p-index → asset path (curated subset under `public/captures/design-assets`),
-  stage pools, plan/before-after assets, scan-bg stills + `scan_feed.mp4`/`scan_feed_2.mp4`.
+  stage pools, plan/before-after assets, scan-bg stills + `scan_feed.mp4`/`scan_feed_2.mp4`;
+  **`ZONE_FEED`** — zone-id → per-zone mp4 map for the Bonaly demo (z2=living, z3=kitchen, z4=bathroom, z5/z6=bedroom; others fall back to `SCAN_FEED`).
 - **`lib/reports.ts`** — `rollup` (area-weighted), `stateAt(project, coverage)` (scrubber/per-scan
   resolver: rescaled zones + issues-open-at-coverage + stage captures), `reportFor` (report view-model)
   + faithful staged prose (Reports A–E).
@@ -335,7 +338,7 @@ Authoritative list lives in **`SPEC.md` §15** (v1.2 – v1.9). Summary of code-
 - **Deterministic SVG pattern IDs** (no `Math.random`) in `BlueprintTile`/`IsoMassing`.
 - **System Back button integrated** (`backstack.ts`) with the in-memory nav via the History API — Android/browser Back pops screens / closes the scan & sheets instead of leaving the app. Not in the design-source.
 - **Persisted to localStorage** (`lib/store.ts`) seeded from `data.ts` — created projects + recorded scans survive reload; no backend. (Firebase/etc. is the future multi-device path.)
-- **Scan visual:** looping walkthrough **video** (`scan_feed.mp4`, `SCAN_FEED`, `autoPlay loop muted playsInline`) as the live feed — per the locked v0.9 decision. Zone-specific still (`bgForZone`) as the `poster` for instant paint. Grid overlay + point-cloud canvas layered on top. Runtime CacheFirst in Workbox (`optisync-media`) so Airplane-mode works after first load. `data.ts` zone coverages are area-weighted to match each project's `overall_coverage` (enforced by a DEV-mode `console.assert` loop on module load).
+- **Scan visual:** looping walkthrough **video** (`ZONE_FEED[zone.id] ?? SCAN_FEED`, `autoPlay loop muted playsInline`) as the live feed — per the locked v0.9 decision. The Bonaly demo has 4 zone-specific mp4s (`scan_living/kitchen/bathroom/bedroom.mp4`); all other projects/zones fall back to `SCAN_FEED`. Zone-specific still (`bgForZone`) as the `poster` for instant paint. Grid overlay + point-cloud canvas layered on top. Runtime CacheFirst in Workbox (`optisync-media`) so Airplane-mode works after first load. Zone coverages are area-weighted to match each project's `overall_coverage` (enforced by a DEV-mode `console.assert` loop in `data.ts` on module load).
 - **Splash matches the OS splash:** the static HTML splash, the React `<Splash>`, and the manifest `background_color` all use solid `#0C0F12` with the icon centered, so the Android/iOS native launch splash hands off to the web splash with no icon jump/shrink.
 - ESLint relaxed for the design's idiomatic `cond && fn()` statements; Fast-Refresh co-location hint off.
 
@@ -363,7 +366,7 @@ launch + real Airplane-mode relaunch on hardware.
 
 | Task | Where |
 |---|---|
-| Change demo data | `SPEC.md` §10 **first**, then `src/data.ts` (keep verbatim) |
+| Change demo data | `SPEC.md` §15 **first**, then `src/data.house.ts` (house) or `src/data.legacy.ts` (6-project) |
 | Add/scale a design token | `src/theme.ts` (`T`) — never hardcode a token's hex elsewhere |
 | Add an icon | add a path to `ICONS` in `src/components/Icon.tsx` (name auto-joins `IconName`) |
 | Add a screen | create in `src/screens/`, push via `useNav().push(<X/>)` from a parent; lazy-load if heavy |

@@ -1,5 +1,5 @@
 # OptiSync — Master Specification & Build Brief
-**Version 1.15 · Single source of truth · Last updated: 12 June 2026**
+**Version 1.17 · Single source of truth · Last updated: 13 June 2026**
 
 > **Naming.** The product is now **OptiSync** (formerly *Athar Eye*, formerly *BuildScan*), by **Athar Robotics**. The **PWA in `pwa/`** is the OptiSync build (this redesign); the **`reactnative/` · `flutter/` · `ios-native/`** comparison ports were built against the prior *Athar Eye* dark design and are **frozen** pending a re-port. For the OptiSync PWA the authoritative product/data/design source is the **handoff bundle** (`OPTISYNC_*` docs) summarised in §15 v1.14, which supersedes the Athar-Eye-era §6.2 tokens, §8 screens, and §10 data below (kept as the frozen-ports reference). Mentions of "Athar Eye" elsewhere in this doc are historical.
 
@@ -251,7 +251,72 @@ athar-eye/
 
 ---
 
-## 15. Change log
+## 15. Demo scenario — Bonaly Terrace Refurbishment
+
+The default demo dataset (no `VITE_DATASET` env var) loads a single residential renovation
+project. Set `VITE_DATASET=legacy` to restore the 6-project portfolio.
+
+**Project:** Bonaly Terrace Refurbishment · id `rv1` · Residential full refurbishment ·
+Colinton, Edinburgh EH13 · Private client · 84 m² · Stage Mid · Status **Needs review** ·
+Overall coverage **69%** · Last scan 2026-06-11 · BIM: Autodesk Revit → IFC · `Bonaly_Refurb_R3.ifc` · LOD 300.
+
+**Team:** J. Mackay · Site supervisor; Cairn Refurbishment Ltd · Main contractor; R. Stewart · Joiner.
+
+**Zones (area-weighted rollup = 69%):**
+| id | Name | Area | Coverage | Note |
+|---|---|---|---|---|
+| z1 | Hallway & stairs | 12 m² | 70% | Parquet to refinish |
+| z2 | Living room | 18 m² | 72% | Bay reglazed; floor prep |
+| z3 | Kitchen & dining | 16 m² | 80% | Units in; worktops set |
+| z4 | Bathroom | 6 m² | 85% | Suite + tiling in |
+| z5 | Bedroom 1 (front) | 14 m² | 58% | Plastered; plumb deviation flagged |
+| z6 | Bedroom 2 (rear) | 12 m² | 60% | Plastered; boards lifted |
+| z7 | Landing | 6 m² | 55% | Balustrade pending |
+
+**Scan history:** sc1 2026-04-02 0% (Baseline) → sc2 2026-04-24 22% → sc3 2026-05-15 41% →
+sc4 2026-05-30 58% → sc5 2026-06-11 69% (plumb deviation flagged).
+
+**Issues:**
+- **RV-01 · Major** · Bedroom 1 (front) · "Front wall 17 mm out of plumb over 2.4 m (NHBC limit 8 mm)" · Open · raised 2026-06-11 · appears at 65%.
+  *Defensible: NHBC tolerance for internal walls is max 8 mm from plumb up to 3 m; scan reports 17 mm — ~2× tolerance, invisible to the naked eye.*
+- **RV-02 · Minor** · Kitchen & dining · "Island partition 38 mm off BIM setting-out line" · Open · raised 2026-05-30 · appears at 45%.
+
+**Review note:** "Our supervisor scanned the front bedroom in minutes — OptiSync flagged a 17 mm lean in the gable wall we'd otherwise only have caught at final inspection. Saved a re-plaster after decoration. — Cairn Refurbishment Ltd"
+
+**Captures (10 stills, `pwa/public/captures/`):** bonaly_living_room, bonaly_kitchen,
+bonaly_kitchen_diner, bonaly_bathroom, bonaly_bedroom1, bonaly_bedroom2, bonaly_hall,
+bonaly_stairs, bonaly_landing, bonaly_garden.
+
+**Per-zone scan feeds (`pwa/public/scans/`):**
+- `scan_living.mp4` → z2 (Living room) + fallback
+- `scan_kitchen.mp4` → z3 (Kitchen & dining)
+- `scan_bathroom.mp4` → z4 (Bathroom)
+- `scan_bedroom.mp4` → z5 (Bedroom 1) + z6 (Bedroom 2)
+
+**Dataset switch:** `VITE_DATASET=legacy npm run dev` loads `SEED_LEGACY` (6-project portfolio from `data.legacy.ts`). Omit for the house demo (`SEED_HOUSE` from `data.house.ts`). Selector in `data.ts`.
+
+---
+
+## 16. Change log
+- **v1.17 (13 Jun 2026) — Demo dataset + per-zone scan feeds.**
+  - **Dataset switch.** The default seed is now the single **Bonaly Terrace Refurbishment** project
+    (`data.house.ts`, `SEED_HOUSE`). The original 6-project portfolio is preserved as
+    `data.legacy.ts` (`SEED_LEGACY`), loaded when `VITE_DATASET=legacy`. `data.ts` is now a thin
+    selector: `SEED = VITE_DATASET === 'legacy' ? SEED_LEGACY : SEED_HOUSE`. The DEV-mode
+    rollup assertion runs over the active seed only.
+  - **Bonaly Terrace seed.** Single residential renovation: 84 m², 7 zones, 5 scans, 10 photo
+    captures, 2 issues (RV-01 wall 17 mm out of plumb — the hero defect for the demo; RV-02 island
+    partition 38 mm off BIM). Area-weighted rollup verified = 69. Hero issue RV-01 appears at 65%
+    (visible after the final Bedroom 1 scan in the demo flow).
+  - **Per-zone scan feeds.** `lib/photos.ts` now exports `ZONE_FEED: Record<string,string>` mapping
+    zone ids z2/z3/z4/z5/z6 to their zone-specific mp4 (living/kitchen/bathroom/bedroom/bedroom).
+    `ScanFlow.tsx` sets `<video src={ZONE_FEED[zone.id] ?? SCAN_FEED}>` — z1/z7 and any unknown
+    zones fall back to the existing `SCAN_FEED`. The four new mp4s are in `pwa/public/scans/`; the
+    existing Workbox mp4 CacheFirst rule covers them for offline use.
+  - **10 photo captures** added to `pwa/public/captures/` (478-px-wide video frames); wired as
+    direct-path strings in the house project's `captures` array (`photoSrc` already handles
+    paths starting with `/`).
+  - `tsc` + ESLint clean; `vite build` clean; rollup assertion green.
 - **v1.16 (12 Jun 2026) — OptiSync PWA: zone-coverage rollup fix + scan feed video.**
   Two correctness fixes found in a post-deploy test pass.
   - **Zone coverage reconciliation.** Four projects had `overall_coverage` headlines that did not equal

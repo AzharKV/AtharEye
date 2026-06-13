@@ -11,7 +11,7 @@ import { T } from '../../theme';
 import type { Project, Zone } from '../../types';
 import { fmtDateShort } from '../../lib/format';
 import { useStore } from '../../lib/store';
-import { SCAN_BG, SCAN_FEED } from '../../lib/photos';
+import { SCAN_BG, SCAN_FEED, ZONE_FEED } from '../../lib/photos';
 import { Button, Card, Ring, SectionLabel, StageChip, mono } from '../../components/primitives';
 import { Icon } from '../../components/Icon';
 
@@ -274,7 +274,7 @@ export function ScanFlow({
       {/* live feed (walkthrough still) */}
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
         <video
-          src={SCAN_FEED}
+          src={zone ? (ZONE_FEED[zone.id] ?? SCAN_FEED) : SCAN_FEED}
           poster={bgForZone(zoneName)}
           autoPlay
           loop
