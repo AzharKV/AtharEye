@@ -50,11 +50,12 @@ export const STATUS: Record<Status, { c: string; bg: string; label: string }> = 
   Complete: { c: T.teal, bg: T.tealTint, label: 'Complete' },
 };
 
-/** Issue severity dot: Critical = red · Major = amber · Minor = grey. */
-export const SEV: Record<Severity, { c: string; label: string }> = {
-  Critical: { c: T.red, label: 'Critical' },
-  Major: { c: T.amber, label: 'Major' },
-  Minor: { c: '#9AA7B6', label: 'Minor' },
+/** Issue severity dot: Critical = red · Major = amber · Minor = grey · Cosmetic = faint grey. */
+export const SEV: Record<Severity, { c: string; label: string; definition: string }> = {
+  Critical: { c: T.red, label: 'Critical', definition: 'Affects safety, structural integrity or weather-tightness; fix immediately.' },
+  Major: { c: T.amber, label: 'Major', definition: 'Affects function or fails to meet spec; fix before handover.' },
+  Minor: { c: '#9AA7B6', label: 'Minor', definition: 'Noticeable but does not affect function; fix within agreed time.' },
+  Cosmetic: { c: T.faint, label: 'Cosmetic', definition: 'Surface blemish only; address during snagging.' },
 };
 
 /** Stage chip: Early stage (navy) → Mid-build (blue) → Complete (teal). */

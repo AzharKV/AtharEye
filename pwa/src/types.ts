@@ -5,9 +5,21 @@ export type Sector = 'Residential' | 'Commercial';
 /** Stage band — drives the stage chip + report variant. UI label = Early / Mid / Complete. */
 export type Stage = 'Early' | 'Mid' | 'Complete';
 export type Status = 'On track' | 'Needs review' | 'Behind' | 'Complete';
-export type Severity = 'Critical' | 'Major' | 'Minor';
+export type Severity = 'Critical' | 'Major' | 'Minor' | 'Cosmetic';
+export type ScanStatus = 'Uploading' | 'Uploaded' | 'Processing' | 'Ready' | 'Failed';
 export type TradeStatus = 'Done' | 'In progress' | 'Not started';
 export type Role = 'Owner' | 'Admin' | 'Editor' | 'Viewer';
+export type NsrUnit = 'LM' | 'SM' | 'NO';
+export type NsrStatus = 'Outstanding' | 'In progress' | 'Done';
+
+/** A National Schedule of Rates works item — the industry-standard breakdown unit for UK contractors. */
+export interface NsrItem {
+  code: string;
+  description: string;
+  unit: NsrUnit;
+  qty: number;
+  status: NsrStatus;
+}
 
 /** A room/area: scanned-and-aligned floor area vs the BIM plan, 0–100. Rolls up (area-weighted). */
 export interface Zone {
@@ -17,6 +29,8 @@ export interface Zone {
   coverage: number;
   stage: Stage;
   note: string;
+  /** NSR (National Schedule of Rates) works items scheduled for this zone. */
+  works?: NsrItem[];
 }
 
 export interface Trade {
@@ -40,6 +54,17 @@ export interface Issue {
   closed?: string;
   appear: number;
   clear?: number;
+  /** Full finding fields (Task B — shown in findings register and PDF). */
+  location_detail?: string;
+  finding?: string;
+  measured?: string;
+  tolerance?: string;
+  deviation?: string;
+  impact?: string;
+  action?: string;
+  responsible?: string;
+  /** Path to a scan capture used as evidence thumbnail. */
+  thumbnail?: string;
 }
 
 export interface Scan {
@@ -47,6 +72,11 @@ export interface Scan {
   date: string;
   coverage: number;
   note: string;
+  status: ScanStatus;
+  /** Zone this scan covers — used for per-zone lock (Processing = block new scan of same zone). */
+  zoneId?: string;
+  /** Wall-clock ms when processing started (for stage label computation). */
+  startedAt?: number;
 }
 
 export interface Bim {

@@ -1,30 +1,25 @@
-// Scan flow (lazy chunk) — signature interaction #2, ported to the OptiSync prototype flow
-// (design-source/app/screens-scan.jsx + the ScanPicker in app.jsx):
-//   picker (light) → select area (light) → aim → capture → process → result.
-// The light steps choose the site + the zone; the camera steps render a walkthrough still as the
-// live feed with the LiDAR point cloud accreting on a <canvas> (vertical sweep), then collapse into
-// the aligned model. Transitions are setTimeout-driven so the flow always reaches Result even if rAF
-// is throttled. Completing the scan writes a real new scan to the project (scrubber/log + report).
-// Honest scope: a deterministic SIMULATION of a LiDAR capture, not real ARKit.
+// Scan flow (lazy chunk) — signature interaction #2.
+// After capture the flow moves through: result → uploading (1.5 s) → uploaded (1.5 s) → closes
+// to the project. The scan is written with status 'Processing'; AppRoot's timer advances it to
+// 'Ready' after PROCESSING_MS and shows a toast. While a zone's scan is Processing, that zone
+// is locked in the select step (per-zone lock, not project lock).
 import { useEffect, useRef, useState } from 'react';
 import { T } from '../../theme';
 import type { Project, Zone } from '../../types';
 import { fmtDateShort } from '../../lib/format';
 import { useStore } from '../../lib/store';
+import { useAppActions } from '../../navigation/AppActions';
 import { zoneMedia } from '../../lib/photos';
 import { Button, Card, Ring, SectionLabel, StageChip, mono } from '../../components/primitives';
 import { Icon } from '../../components/Icon';
 
-type Step = 'picker' | 'select' | 'aim' | 'capture' | 'process' | 'result';
+type Step = 'picker' | 'select' | 'aim' | 'capture' | 'process' | 'result' | 'uploading' | 'uploaded';
 const PROC_MS = 1500;
-// Capture now runs for the length of the clip (~8.5–9 s) and ends on the video's `ended` event or the
-// user's "Capture complete" tap. CAP_SAFETY_MS only fires if `ended` never arrives (clip failed to
-// load); CAP_FALLBACK_MS drives the point-cloud sweep when the video has no readable duration.
 const CAP_SAFETY_MS = 11000;
 const CAP_FALLBACK_MS = 9000;
-// Subtle stabilising drift on the paused feed before Begin — feels live, clearly not yet scanning.
-// Flip to false to leave the aim feed fully frozen.
 const AIM_DRIFT = true;
+const UPLOAD_MS = 1500; // "Uploading…" phase duration
+const UPLOADED_MS = 1500; // "✓ Uploaded" phase before auto-close
 
 const shortName = (name: string) => name.split(' ').slice(0, 2).join(' ');
 const defaultZone = (p: Project): Zone | null => p.zones.find((z) => /kitchen/i.test(z.name)) ?? p.zones[0] ?? null;
@@ -41,13 +36,14 @@ function makeCloud(n: number, W: number, H: number): CloudPt[] {
 export function ScanFlow({
   projectId,
   onClose,
-  onViewReport,
+  onViewReport: _onViewReport,
 }: {
   projectId: string | null;
   onClose: () => void;
   onViewReport: (projectId: string, coverage?: number) => void;
 }) {
   const { data, update } = useStore();
+  const { startProcessing } = useAppActions();
   const initial = projectId ? data.projects.find((p) => p.id === projectId) ?? null : null;
   const [targetId, setTargetId] = useState<string | null>(projectId ?? null);
   const [zone, setZone] = useState<Zone | null>(initial ? defaultZone(initial) : null);
@@ -61,9 +57,6 @@ export function ScanFlow({
   const rafRef = useRef(0);
   const wrote = useRef(false);
 
-  // The scan delta, frozen the instant capture starts (so the result card + the write use the same
-  // from→to numbers — recomputing live would drift once the store mutates). Prototype delta: project
-  // +4 for Morningside else +3; headline zone +6.
   const [plan, setPlan] = useState<{ from: number; to: number; zoneId: string; zoneName: string; zoneFrom: number; zoneTo: number; zoneDelta: number } | null>(null);
 
   const selectProject = (p: Project) => {
@@ -81,8 +74,6 @@ export function ScanFlow({
     setStep('aim');
   };
 
-  // Aim → capture: play the clip once from the top; the point cloud accretes fresh (see step effect).
-  // play() is kicked off here, inside the user gesture, so the single capture is genuinely user-driven.
   const beginCapture = () => {
     const v = videoRef.current;
     if (v) {
@@ -93,8 +84,6 @@ export function ScanFlow({
     setStep('capture');
   };
 
-  // End the capture — on the clip's `ended`, the user's "Capture complete" tap, or the safety net.
-  // Freeze the feed on its current frame (never reset to poster, never loop), then process → result.
   const endCapture = () => {
     const v = videoRef.current;
     if (v) v.pause();
@@ -102,23 +91,31 @@ export function ScanFlow({
     setStep('process');
   };
 
-  // Write the scan once, then close / open the report (prototype finish()). Writing on the user's
-  // action — not on entering Result — keeps the result card's from→to numbers stable.
-  const finish = (goReport: boolean) => {
+  // Write scan as 'Processing', trigger the background timer, navigate back to project.
+  const commitAndClose = () => {
     if (target && plan && !wrote.current) {
       wrote.current = true;
+      const scanId = `sc-${Date.now().toString(36)}`;
       update(target.id, (d) => {
-        d.scans.push({ id: `sc-${Date.now().toString(36)}`, date: '2026-06-12', coverage: plan.to, note: `New scan — ${plan.zoneName} +${plan.zoneDelta}%` });
+        d.scans.push({
+          id: scanId,
+          date: '2026-06-13',
+          coverage: plan.to,
+          note: `${plan.zoneName} scan`,
+          status: 'Processing',
+          zoneId: plan.zoneId,
+          startedAt: Date.now(),
+        });
         d.overall_coverage = plan.to;
         const z = d.zones.find((x) => x.id === plan.zoneId);
         if (z) z.coverage = plan.zoneTo;
       });
+      startProcessing(target.id, plan.zoneId, scanId);
     }
-    if (goReport && target) onViewReport(target.id);
-    else onClose();
+    onClose();
   };
 
-  // ── Point-cloud canvas helpers (vertical sweep on capture, jitter-collapse on settle).
+  // ── Point-cloud canvas helpers
   const setupCanvas = () => {
     const c = canvasRef.current;
     if (!c) return null;
@@ -183,17 +180,13 @@ export function ScanFlow({
     }
   };
 
-  // Step machine — transitions via setTimeout (robust to rAF throttling); rAF only paints frames.
+  // Step machine — uploading → uploaded are timer-driven; committed on uploaded expiry.
   useEffect(() => {
     cancelAnimationFrame(rafRef.current);
     if (step === 'capture') {
-      cloudRef.current = null; // fresh cloud per scan
+      cloudRef.current = null;
       const v = videoRef.current;
       const t0 = performance.now();
-      // Sweep runs over the clip's own length (so the point cloud finishes as the clip ends), driven by
-      // wall-clock rather than the media clock — robust if a device throttles the muted feed. Capture
-      // ends on whichever comes first: the clip's `ended`, the sweep reaching clip length, the user's
-      // "Capture complete" tap, or the safety net. Never loops.
       const durMs = v && isFinite(v.duration) && v.duration > 0 ? v.duration * 1000 : CAP_FALLBACK_MS;
       const loop = (now: number) => {
         const p = Math.min(1, (now - t0) / durMs);
@@ -203,7 +196,7 @@ export function ScanFlow({
         else endCapture();
       };
       rafRef.current = requestAnimationFrame(loop);
-      const onEnded = () => endCapture(); // clip auto-completes (~9 s) — no loop
+      const onEnded = () => endCapture();
       v?.addEventListener('ended', onEnded);
       const safety = setTimeout(endCapture, CAP_SAFETY_MS);
       return () => {
@@ -227,12 +220,18 @@ export function ScanFlow({
       const to = setTimeout(() => drawSettled(1), 40);
       return () => clearTimeout(to);
     }
+    if (step === 'uploading') {
+      const to = setTimeout(() => setStep('uploaded'), UPLOAD_MS);
+      return () => clearTimeout(to);
+    }
+    if (step === 'uploaded') {
+      const to = setTimeout(commitAndClose, UPLOADED_MS);
+      return () => clearTimeout(to);
+    }
     return () => cancelAnimationFrame(rafRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  // DEV breadcrumb: surface the resolved { zoneId, feed } the instant the camera feed mounts, and warn
-  // (never silently) if a zone has no dedicated media entry — poster + feed always share one source.
   useEffect(() => {
     if (!import.meta.env.DEV || step !== 'aim') return;
     const zoneId = zone?.id ?? '(none)';
@@ -241,7 +240,7 @@ export function ScanFlow({
     else console.log('[ScanFlow] scan media resolved', { zoneId, feed: m.feed });
   }, [step, zone?.id]);
 
-  // ── Light step: project picker (no project preselected)
+  // ── Light step: project picker
   if (step === 'picker' || !target) {
     return (
       <LightShell title="New scan" sub="Which site are you scanning?" backLabel="Cancel" onBack={onClose}>
@@ -268,7 +267,7 @@ export function ScanFlow({
     );
   }
 
-  // ── Light step: choose the area to scan
+  // ── Light step: choose the area to scan (with per-zone processing lock)
   if (step === 'select') {
     return (
       <LightShell
@@ -277,7 +276,7 @@ export function ScanFlow({
         backLabel={projectId ? 'Cancel' : 'Back'}
         onBack={projectId ? onClose : () => setStep('picker')}
         footer={
-          <Button primary full icon="scan" onClick={startCapture}>
+          <Button primary full icon="scan" onClick={startCapture} disabled={!zone || target.scans.some((s) => s.status === 'Processing' && s.zoneId === zone?.id)}>
             Start scan{zone ? ` · ${zone.name}` : ''}
           </Button>
         }
@@ -286,22 +285,28 @@ export function ScanFlow({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {target.zones.map((z) => {
             const on = zone?.id === z.id;
+            const locked = target.scans.some((s) => s.status === 'Processing' && s.zoneId === z.id);
             return (
               <button
                 key={z.id}
-                onClick={() => setZone(z)}
-                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: 14, borderRadius: 14, border: `1px solid ${on ? T.navy : T.hairline}`, background: T.surface, boxShadow: on ? `0 0 0 3px ${T.navyTint}` : '0 1px 2px rgba(27,42,61,0.04)', cursor: 'pointer' }}
+                onClick={() => !locked && setZone(z)}
+                disabled={locked}
+                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: 14, borderRadius: 14, border: `1px solid ${on ? T.navy : T.hairline}`, background: locked ? T.canvas : T.surface, boxShadow: on ? `0 0 0 3px ${T.navyTint}` : '0 1px 2px rgba(27,42,61,0.04)', cursor: locked ? 'not-allowed' : 'pointer', opacity: locked ? 0.65 : 1 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 10, border: `2px solid ${on ? T.navy : T.hairline}`, background: on ? T.navy : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {on && <Icon name="check" size={13} color="#fff" />}
+                  <div style={{ width: 20, height: 20, borderRadius: 10, border: `2px solid ${on && !locked ? T.navy : T.hairline}`, background: on && !locked ? T.navy : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {on && !locked && <Icon name="check" size={13} color="#fff" />}
                   </div>
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>{z.name}</div>
                     <div style={{ ...mono, fontSize: 11.5, color: T.muted, marginTop: 1 }}>{z.coverage}% · {z.area_m2} m²</div>
                   </div>
                 </div>
-                <Ring value={z.coverage} size={34} stroke={4} color={z.coverage >= 100 ? T.teal : T.navy} />
+                {locked ? (
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: T.amber, background: T.amberTint, borderRadius: 999, padding: '3px 9px' }}>Processing</span>
+                ) : (
+                  <Ring value={z.coverage} size={34} stroke={4} color={z.coverage >= 100 ? T.teal : T.navy} />
+                )}
               </button>
             );
           })}
@@ -310,14 +315,12 @@ export function ScanFlow({
     );
   }
 
-  // ── Camera steps (aim / capture / process / result)
+  // ── Camera steps (aim / capture / process / result / uploading / uploaded)
   const zoneName = zone?.name ?? 'Area';
-  // Single source of truth: the aim poster AND the played clip read from the same per-zone entry, so
-  // they can never be different rooms. No `?? SCAN_FEED` cross-room fallback for the demo zones.
   const media = zoneMedia(zone?.id ?? '');
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 500, background: '#0a0e14', overflow: 'hidden', animation: 'modalUp .3s cubic-bezier(.32,.72,0,1)' }}>
-      {/* live feed (walkthrough still) */}
+      {/* live feed */}
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
         <video
           ref={videoRef}
@@ -326,7 +329,7 @@ export function ScanFlow({
           muted
           playsInline
           preload="auto"
-          style={{ position: 'absolute', inset: '-4%', width: '108%', height: '108%', objectFit: 'cover', filter: step === 'process' ? 'brightness(.4) saturate(.6)' : step === 'result' ? 'brightness(.7)' : 'brightness(.86)', transition: 'filter .5s', animation: AIM_DRIFT && step === 'aim' ? 'scanDrift 3s ease-out forwards' : undefined }}
+          style={{ position: 'absolute', inset: '-4%', width: '108%', height: '108%', objectFit: 'cover', filter: step === 'process' ? 'brightness(.4) saturate(.6)' : step === 'result' || step === 'uploading' || step === 'uploaded' ? 'brightness(.7)' : 'brightness(.86)', transition: 'filter .5s', animation: AIM_DRIFT && step === 'aim' ? 'scanDrift 3s ease-out forwards' : undefined }}
         />
         {step === 'aim' && (
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.10) 1px,transparent 1px)', backgroundSize: '34px 34px', animation: 'gridfade 2s ease-in-out infinite alternate' }} />
@@ -357,7 +360,7 @@ export function ScanFlow({
         </div>
       )}
 
-      {/* aim: hold-steady indicator (stabilising — clearly not yet scanning) */}
+      {/* aim: hold-steady indicator */}
       {step === 'aim' && (
         <div style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top) + 78px)', left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(10,14,20,.5)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', borderRadius: 999, padding: '8px 14px', color: '#fff', fontSize: 13, fontWeight: 700 }}>
@@ -379,7 +382,7 @@ export function ScanFlow({
         </div>
       )}
 
-      {/* capture: progress bar + explicit "Capture complete" stop control */}
+      {/* capture: progress bar + explicit stop control */}
       {step === 'capture' && (
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 18px calc(24px + env(safe-area-inset-bottom))', zIndex: 10 }}>
           <div style={{ height: 6, borderRadius: 4, background: 'rgba(255,255,255,.2)', overflow: 'hidden' }}>
@@ -393,28 +396,45 @@ export function ScanFlow({
         </div>
       )}
 
-      {/* result */}
+      {/* result — capture done; BIM alignment happens server-side during ~60 s processing, so no deltas shown here */}
       {step === 'result' && plan && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 12, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'linear-gradient(transparent 40%, rgba(10,14,20,.6))', animation: 'scrimIn .3s ease' }}>
           <div style={{ padding: '0 16px calc(20px + env(safe-area-inset-bottom))' }}>
             <div style={{ background: T.surface, borderRadius: 18, padding: 18, boxShadow: '0 20px 50px rgba(8,12,18,0.5)', animation: 'sheetUp .35s cubic-bezier(.32,.72,0,1)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                <div style={{ width: 30, height: 30, borderRadius: 15, background: T.tealTint, color: T.teal, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name="checkCircle" size={19} color={T.teal} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: T.ink }}>Scan aligned to BIM</div>
-                  <div style={{ fontSize: 11.5, color: T.muted, fontWeight: 600 }}>{plan.zoneName} · {shortName(target.name)}</div>
-                </div>
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: T.ink }}>Capture complete</div>
+                <div style={{ fontSize: 12, color: T.muted, marginTop: 3 }}>{plan.zoneName} · ready to upload</div>
               </div>
-              <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-                <DeltaTile label={plan.zoneName} value={`+${plan.zoneDelta}%`} sub={`${plan.zoneFrom}→${plan.zoneTo}%`} />
-                <DeltaTile label="Project coverage" value={`${plan.to}%`} sub={`${plan.from}→${plan.to}`} accent />
-              </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <Button full onClick={() => finish(false)}>Done</Button>
-                <Button full primary icon="reports" onClick={() => finish(true)}>View report</Button>
-              </div>
+              <Button full primary icon="upload" onClick={() => setStep('uploading')}>
+                Upload & finish
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* uploading — brief spinner */}
+      {(step === 'uploading' || step === 'uploaded') && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 12, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'linear-gradient(transparent 40%, rgba(10,14,20,.75))' }}>
+          <div style={{ padding: '0 16px calc(20px + env(safe-area-inset-bottom))' }}>
+            <div style={{ background: T.surface, borderRadius: 18, padding: '22px 18px', boxShadow: '0 20px 50px rgba(8,12,18,0.5)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, animation: 'sheetUp .3s cubic-bezier(.32,.72,0,1)' }}>
+              {step === 'uploading' ? (
+                <>
+                  <div style={{ width: 44, height: 44, borderRadius: 22, background: T.navyTint, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'spin 1s linear infinite' }}>
+                    <Icon name="upload" size={22} color={T.navy} />
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: T.ink }}>Uploading…</div>
+                  <div style={{ fontSize: 12.5, color: T.muted }}>Sending scan data to OptiSync</div>
+                </>
+              ) : (
+                <>
+                  <div style={{ width: 44, height: 44, borderRadius: 22, background: T.tealTint, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name="checkCircle" size={24} color={T.teal} />
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: T.ink }}>✓ Uploaded</div>
+                  <div style={{ fontSize: 12.5, color: T.muted }}>Report generating — usually ready in 60 s</div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -423,7 +443,7 @@ export function ScanFlow({
   );
 }
 
-// ── Light shell for the picker / select steps (white app bar with the 2px navy underline).
+// ── Light shell for picker / select steps
 function LightShell({
   title,
   sub,
@@ -456,18 +476,6 @@ function LightShell({
           {footer}
         </div>
       )}
-    </div>
-  );
-}
-
-function DeltaTile({ label, value, sub, accent }: { label: string; value: string; sub: string; accent?: boolean }) {
-  return (
-    <div style={{ flex: 1, background: T.canvas, borderRadius: 12, padding: '12px 14px', minWidth: 0 }}>
-      <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
-      <div style={{ display: 'flex', gap: 6, alignItems: 'baseline', marginTop: 2 }}>
-        <span style={{ ...mono, fontSize: 22, fontWeight: 700, color: accent ? T.ink : T.teal }}>{value}</span>
-        <span style={{ ...mono, fontSize: 12, color: accent ? T.teal : T.muted }}>{sub}</span>
-      </div>
     </div>
   );
 }

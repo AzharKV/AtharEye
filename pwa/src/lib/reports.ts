@@ -95,6 +95,17 @@ interface Prose {
   footerExtra?: string;
 }
 const PROSE: Record<string, Record<string, Prose>> = {
+  rv1: {
+    'Early stage': {
+      summary:
+        '22% of the BIM model verified — strip-out and first fix complete. Two findings raised: a 17 mm wall plumb deviation in Bedroom 1 (Major, RV-01) and a partition offset of 38 mm in the Kitchen & dining zone (Minor, RV-02). Both require resolution before boarding and worktop installation proceed.',
+      nextActions: [
+        'Review and correct the gable wall plumb deviation (RV-01) before boarding.',
+        'Confirm or revise the kitchen island partition setting-out against the BIM line (RV-02).',
+        'Continue first fix across all zones; target next scan above 30%.',
+      ],
+    },
+  },
   'proj-stirling': {
     'Just started': {
       summary:
@@ -177,7 +188,7 @@ function proseFor(project: Project, coverage: number, rung: Rung): Prose {
   if (exact) return exact;
   // Synthesized fallback for an undocumented scrub point.
   return {
-    summary: `${coverage}% of the BIM model verified against site — ${descriptorFor(coverage).toLowerCase()}. This snapshot re-renders the report at the ${rung.toLowerCase()} stage of the programme.`,
+    summary: `${coverage}% of the BIM model verified — ${descriptorFor(coverage).toLowerCase()} complete.`,
     nextActions:
       project.depth === 'deep' && coverage < 100
         ? ['Resolve the open issues below.', `Continue on programme; target the next scan above ${coverage}%.`]
@@ -240,4 +251,4 @@ export function reportFor(project: Project, coverage?: number): ReportModel {
   };
 }
 
-const sev = (s: Issue['severity']): number => (s === 'Critical' ? 0 : s === 'Major' ? 1 : 2);
+const sev = (s: Issue['severity']): number => (s === 'Critical' ? 0 : s === 'Major' ? 1 : s === 'Minor' ? 2 : 3);
