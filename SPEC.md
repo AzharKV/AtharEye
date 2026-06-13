@@ -298,6 +298,32 @@ bonaly_stairs, bonaly_landing, bonaly_garden.
 ---
 
 ## 16. Change log
+- **v1.19 (13 Jun 2026) — Hotfix: scan poster/feed room mismatch.** Scan-flow visuals only — no data or
+  coverage changes (rollup stays 22).
+  - **The bug.** In the scan flow the aim freeze showed the correct room but the played clip could be a
+    different room (e.g. Bathroom froze on the bathroom still, then played the living-room clip). Cause:
+    poster and feed were resolved from **two separate sources** — the poster by room name (`bgForZone`),
+    the feed by zone id (`ZONE_FEED[zone.id] ?? SCAN_FEED`) — and the `??` fallback silently substituted
+    the living-room clip when an entry was missed, hiding the divergence.
+  - **The fix — one source of truth.** Replaced the split logic with a single per-zone media map
+    `ZONE_MEDIA: Record<string, { feed; poster }>` (keyed by `zone.id`, all four demo zones present) +
+    a `zoneMedia(zoneId)` resolver, both in `lib/photos.ts`. In `ScanFlow.tsx` the `<video>` reads
+    **both** `src={media.feed}` and `poster={media.poster}` from the same entry, so they cannot diverge.
+    Removed the old `bgForZone` by-name poster path and the `ZONE_FEED[…] ?? SCAN_FEED` feed path; deleted
+    `ZONE_FEED`. **No cross-room fallback:** an unmapped zone (e.g. legacy-dataset ids) resolves to a
+    *consistent* generic room (`SCAN_FEED` + `SCAN_BG.living`, `fallback: true`) — never one room's still
+    over another room's clip. DEV: `ScanFlow` logs the resolved `{ zoneId, feed }` on entering aim and
+    warns on any fallback; `data.ts` asserts every non-legacy zone id has a `ZONE_MEDIA` entry.
+  - **Posters == each clip's frame 0.** The four `pwa/public/scans/scan_{living,kitchen,bathroom,bedroom}
+    .mp4` were re-cut (clean in-room starts, ~8 s) and four new `poster_*.jpg` (frame 0 of each clip)
+    added, so aim freeze → Begin (play from t=0) is seamless and same-room by construction. Posters are
+    .jpg, already covered by the existing Workbox `optisync-images` runtime CacheFirst rule (no
+    `globPatterns`/precache change needed — jpgs/mp4s are runtime-cached by design). The single-play /
+    "Capture complete" / hold-last-frame behaviour from v1.18 is unchanged.
+  - Verified in the browser preview: for **all four zones** the aim poster and the played video are the
+    **same room** (Bathroom now plays `scan_bathroom.mp4`); DEV console logs the resolved `{zoneId,feed}`
+    with **no fallback warnings**; single-play + stop button + hold-last-frame still work. `tsc` + ESLint
+    clean; default + `VITE_DATASET=legacy` builds clean; rollup assertion green (unchanged 22).
 - **v1.18 (13 Jun 2026) — Demo round 2: lower starting state + scan-flow realism.** Two changes so the
   live demo scan is the meaningful action, and so the "scan" behaves like a real, user-triggered capture.
   - **Lower starting state (`data.house.ts`).** The project now opens **early-stage at 22%** (was 69%):

@@ -94,12 +94,28 @@ export const SCAN_BG_LIST = [SCAN_BG.living, SCAN_BG.kitchen, SCAN_BG.stairs, SC
 export const SCAN_FEED = `${import.meta.env.BASE_URL}scans/scan_feed.mp4`;
 export const SCAN_FEED_2 = `${import.meta.env.BASE_URL}scans/scan_feed_2.mp4`;
 
-/** Per-zone scan feed map for the Bonaly demo dataset. Each of the four scanned zones has its own
- *  dedicated clip (no fallback); other projects/zones fall back to SCAN_FEED. */
+/** Per-zone scan media for the demo — **poster and feed for each scanned zone come from ONE entry**, so
+ *  the aim freeze and the played clip can never be different rooms (the v1.18 split-source bug, where the
+ *  poster was resolved by room name and the feed by zone id). Keyed by zone.id; all four demo zones are
+ *  present, so there is no silent cross-room fallback. Each `poster_*.jpg` is frame 0 of its `scan_*.mp4`,
+ *  so the aim freeze → Begin (play from t=0) hand-off is seamless and same-room by construction. */
 const BASE = import.meta.env.BASE_URL;
-export const ZONE_FEED: Record<string, string> = {
-  z2: `${BASE}scans/scan_living.mp4`,
-  z3: `${BASE}scans/scan_kitchen.mp4`,
-  z4: `${BASE}scans/scan_bathroom.mp4`,
-  z5: `${BASE}scans/scan_bedroom.mp4`,
+export const ZONE_MEDIA: Record<string, { feed: string; poster: string }> = {
+  z2: { feed: `${BASE}scans/scan_living.mp4`, poster: `${BASE}scans/poster_living.jpg` },
+  z3: { feed: `${BASE}scans/scan_kitchen.mp4`, poster: `${BASE}scans/poster_kitchen.jpg` },
+  z4: { feed: `${BASE}scans/scan_bathroom.mp4`, poster: `${BASE}scans/poster_bathroom.jpg` },
+  z5: { feed: `${BASE}scans/scan_bedroom.mp4`, poster: `${BASE}scans/poster_bedroom.jpg` },
 };
+
+/** Neutral generic media for a zone with no dedicated entry (e.g. legacy-dataset zone ids). Poster and
+ *  feed share the SAME generic room, so even the fallback never shows one room's still over another
+ *  room's clip — it is consistent, not a cross-room mismatch. */
+const GENERIC_MEDIA = { feed: SCAN_FEED, poster: SCAN_BG.living };
+
+/** Resolve the scan poster + feed for a zone from a single source (they can't diverge). `fallback` is
+ *  true when no dedicated entry exists (generic room used) — surfaced so DEV can warn rather than
+ *  silently substituting another room. */
+export function zoneMedia(zoneId: string): { feed: string; poster: string; fallback: boolean } {
+  const m = ZONE_MEDIA[zoneId];
+  return m ? { ...m, fallback: false } : { ...GENERIC_MEDIA, fallback: true };
+}

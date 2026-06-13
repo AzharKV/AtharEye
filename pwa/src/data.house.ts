@@ -45,8 +45,8 @@ export const SEED_HOUSE: AppData = {
         { name: 'Decoration', status: 'Not started' },
         { name: 'Snagging', status: 'Not started' },
       ],
-      // Four scanned rooms (ids kept z2–z5 so ZONE_FEED + capture refs stay valid; each has its own
-      // dedicated feed, no fallback). Early stage across the board; Bedroom 1 is the problem zone.
+      // Four scanned rooms (ids kept z2–z5 so ZONE_MEDIA + capture refs stay valid; each has its own
+      // dedicated poster + feed, no fallback). Early stage across the board; Bedroom 1 is the problem zone.
       zones: [
         { id: 'z2', name: 'Living room', area_m2: 20, coverage: 25, stage: 'Early', note: 'Strip-out done; first fix under way' },
         { id: 'z3', name: 'Kitchen & dining', area_m2: 16, coverage: 23, stage: 'Early', note: 'First fix in; partition 38 mm off BIM' },

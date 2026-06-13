@@ -11,7 +11,7 @@ import { T } from '../../theme';
 import type { Project, Zone } from '../../types';
 import { fmtDateShort } from '../../lib/format';
 import { useStore } from '../../lib/store';
-import { SCAN_BG, SCAN_FEED, ZONE_FEED } from '../../lib/photos';
+import { zoneMedia } from '../../lib/photos';
 import { Button, Card, Ring, SectionLabel, StageChip, mono } from '../../components/primitives';
 import { Icon } from '../../components/Icon';
 
@@ -28,15 +28,6 @@ const AIM_DRIFT = true;
 
 const shortName = (name: string) => name.split(' ').slice(0, 2).join(' ');
 const defaultZone = (p: Project): Zone | null => p.zones.find((z) => /kitchen/i.test(z.name)) ?? p.zones[0] ?? null;
-
-// Zone → walkthrough still (people-free), matching the prototype's bgFor().
-function bgForZone(name: string): string {
-  const z = name.toLowerCase();
-  if (z.includes('kitchen')) return SCAN_BG.kitchen;
-  if (z.includes('bed')) return SCAN_BG.bedroom;
-  if (z.includes('hall') || z.includes('stair') || z.includes('landing')) return SCAN_BG.stairs;
-  return SCAN_BG.living;
-}
 
 interface CloudPt { x: number; y: number; d: number; jx: number; jy: number }
 function makeCloud(n: number, W: number, H: number): CloudPt[] {
@@ -240,6 +231,16 @@ export function ScanFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
+  // DEV breadcrumb: surface the resolved { zoneId, feed } the instant the camera feed mounts, and warn
+  // (never silently) if a zone has no dedicated media entry — poster + feed always share one source.
+  useEffect(() => {
+    if (!import.meta.env.DEV || step !== 'aim') return;
+    const zoneId = zone?.id ?? '(none)';
+    const m = zoneMedia(zoneId);
+    if (m.fallback) console.warn('[ScanFlow] no ZONE_MEDIA for zone — using generic feed', { zoneId, feed: m.feed });
+    else console.log('[ScanFlow] scan media resolved', { zoneId, feed: m.feed });
+  }, [step, zone?.id]);
+
   // ── Light step: project picker (no project preselected)
   if (step === 'picker' || !target) {
     return (
@@ -311,14 +312,17 @@ export function ScanFlow({
 
   // ── Camera steps (aim / capture / process / result)
   const zoneName = zone?.name ?? 'Area';
+  // Single source of truth: the aim poster AND the played clip read from the same per-zone entry, so
+  // they can never be different rooms. No `?? SCAN_FEED` cross-room fallback for the demo zones.
+  const media = zoneMedia(zone?.id ?? '');
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 500, background: '#0a0e14', overflow: 'hidden', animation: 'modalUp .3s cubic-bezier(.32,.72,0,1)' }}>
       {/* live feed (walkthrough still) */}
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
         <video
           ref={videoRef}
-          src={zone ? (ZONE_FEED[zone.id] ?? SCAN_FEED) : SCAN_FEED}
-          poster={bgForZone(zoneName)}
+          src={media.feed}
+          poster={media.poster}
           muted
           playsInline
           preload="auto"
