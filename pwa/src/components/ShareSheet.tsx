@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { T } from '../theme';
 import { haptic } from '../lib/haptic';
-import { generatePdf } from '../lib/pdf';
+import { generatePdf, generateClientPdf } from '../lib/pdf';
 import type { ReportModel } from '../lib/reports';
 import { Sheet } from './Sheet';
 import { Button } from './primitives';
@@ -12,10 +12,8 @@ import { Icon } from './Icon';
 import type { IconName } from './Icon';
 
 const REPORT_TYPES: { id: string; label: string; sub: string; icon: IconName }[] = [
-  { id: 'client', label: 'Client progress summary', sub: 'One-page, visual — for the client', icon: 'reports' },
-  { id: 'detailed', label: 'Detailed site report', sub: 'Full coverage, zones & issues', icon: 'layers' },
-  { id: 'snapshot', label: 'Coverage snapshot', sub: 'Just the numbers & donut', icon: 'target' },
-  { id: 'issues', label: 'Issues list', sub: 'For the subcontractor', icon: 'alert' },
+  { id: 'client', label: 'Client progress summary', sub: 'Single page, visual — for the client', icon: 'reports' },
+  { id: 'detailed', label: 'Detailed site report', sub: 'Full coverage, zones, findings & NSR', icon: 'layers' },
 ];
 
 export function ShareSheet({
@@ -44,7 +42,9 @@ export function ShareSheet({
     }, 120);
 
     try {
-      const blob = await generatePdf(report, scope, activeZoneId);
+      const blob = sel === 'client'
+        ? await generateClientPdf(report, scope, activeZoneId)
+        : await generatePdf(report, scope, activeZoneId);
       clearInterval(iv);
       setProg(100);
 

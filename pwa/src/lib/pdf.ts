@@ -44,21 +44,30 @@ const MR = 18;
 const MT = 20;
 const CONTENT_W = PAGE_W - ML - MR;
 
-// Fetch a URL and convert to data URL for jsPDF addImage
+// Decode image via Canvas → clean JPEG data URL. Avoids jsPDF colour-space/alpha issues.
 async function toDataUrl(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    return await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
+  return new Promise<string | null>((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const w = img.naturalWidth || img.width;
+        const h = img.naturalHeight || img.height;
+        if (!w || !h) { resolve(null); return; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(null); return; }
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      } catch {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
 }
 
 export async function generatePdf(report: ReportModel, scope: 'project' | 'zone', activeZoneId?: string): Promise<Blob> {
@@ -81,6 +90,21 @@ export async function generatePdf(report: ReportModel, scope: 'project' | 'zone'
     : report.zones;
 
   const scopeLabel = activeZone ? activeZone.name : 'Whole project';
+
+  // Zone-scoped exec summary — avoids project-level prose when drilling into a single zone
+  const displaySummary = activeZone
+    ? (() => {
+        const nf = issues.length;
+        if (nf === 0) {
+          return `${displayCoverage}% of the ${activeZone.name} zone verified — ${activeZone.stage.toLowerCase()} stage. No findings raised in this zone.`;
+        }
+        const sevCounts = (['Critical', 'Major', 'Minor', 'Cosmetic'] as const)
+          .map((s) => ({ s, n: issues.filter((i) => i.severity === s).length }))
+          .filter((x) => x.n > 0);
+        const sevStr = sevCounts.map((x) => `${x.n} ${x.s.toLowerCase()}`).join(', ');
+        return `${displayCoverage}% of the ${activeZone.name} zone verified — ${activeZone.stage.toLowerCase()} stage. ${nf} finding${nf > 1 ? 's' : ''} raised: ${sevStr}.`;
+      })()
+    : report.summary;
 
   // Pre-fetch finding thumbnails for evidence images
   const thumbnailDataUrls: Record<string, string | null> = {};
@@ -210,7 +234,7 @@ export async function generatePdf(report: ReportModel, scope: 'project' | 'zone'
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...INK);
-  const summaryLines = doc.splitTextToSize(report.summary, CONTENT_W) as string[];
+  const summaryLines = doc.splitTextToSize(displaySummary, CONTENT_W) as string[];
   doc.text(summaryLines, ML, y);
   y += summaryLines.length * 4.5 + 8;
 
@@ -295,7 +319,7 @@ export async function generatePdf(report: ReportModel, scope: 'project' | 'zone'
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...MUTED);
-    doc.text('No open findings for this scope.', ML, y);
+    doc.text(activeZone ? 'No findings raised in this zone.' : 'No open findings for this scope.', ML, y);
     y += 8;
   }
 
@@ -556,6 +580,153 @@ export async function generatePdf(report: ReportModel, scope: 'project' | 'zone'
   });
 
   drawFooter(pageNum);
+
+  return doc.output('blob');
+}
+
+// ─── Client progress summary — single page, visual, client-facing ───────────
+// Donut + headline + severity tally + top findings (title/severity/zone only).
+// No NSR tables, no methodology, no full finding fields.
+export async function generateClientPdf(report: ReportModel, scope: 'project' | 'zone', activeZoneId?: string): Promise<Blob> {
+  const { jsPDF } = await import('jspdf');
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+  const activeZone = scope === 'zone' && activeZoneId
+    ? report.project.zones.find((z) => z.id === activeZoneId)
+    : null;
+  const displayCoverage = activeZone ? activeZone.coverage : report.coverage;
+  const scopeLabel = activeZone ? activeZone.name : 'Whole project';
+  const issues = activeZone
+    ? report.openIssues.filter((i) => i.zone === activeZone.name)
+    : report.openIssues;
+
+  // Header
+  doc.setFillColor(...NAVY);
+  doc.rect(0, 0, PAGE_W, 22, 'F');
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...WHITE);
+  doc.text('OptiSync', ML, 14);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(180, 195, 215);
+  doc.text('Client Progress Summary', PAGE_W - MR, 14, { align: 'right' });
+
+  let y = 30;
+
+  // Project name
+  const nameLines = doc.splitTextToSize(report.project.name, CONTENT_W - 56) as string[];
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...INK);
+  doc.text(nameLines, ML, y);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...MUTED);
+  doc.text(`${scopeLabel} · ${report.date}`, ML, y + nameLines.length * 7 + 2);
+
+  // Donut (right of title)
+  const dCx = PAGE_W - MR - 24;
+  const dCy = y + 11;
+  doc.setFillColor(...NAVY);
+  doc.circle(dCx, dCy, 20, 'F');
+  doc.setFillColor(...WHITE);
+  doc.circle(dCx, dCy, 13, 'F');
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...INK);
+  doc.text(`${displayCoverage}%`, dCx, dCy + 4, { align: 'center' });
+
+  y += nameLines.length * 7 + 14;
+
+  // Teal rule
+  doc.setFillColor(...TEAL);
+  doc.rect(ML, y, CONTENT_W, 2, 'F');
+  y += 9;
+
+  // Headline
+  const stageText = activeZone ? activeZone.stage.toLowerCase() : 'in progress';
+  const headline = `${displayCoverage}% of the BIM model verified — ${stageText} stage.`;
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...INK);
+  const headLines = doc.splitTextToSize(headline, CONTENT_W) as string[];
+  doc.text(headLines, ML, y);
+  y += headLines.length * 6.5 + 11;
+
+  // Severity tally
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...NAVY);
+  doc.text('Findings', ML, y);
+  y += 7;
+
+  const sevs = ['Critical', 'Major', 'Minor', 'Cosmetic'] as const;
+  const tileW = CONTENT_W / 4 - 2;
+  sevs.forEach((sev, i) => {
+    const count = issues.filter((iss) => iss.severity === sev).length;
+    const tx = ML + i * (tileW + 2.6);
+    doc.setFillColor(...CANVAS);
+    doc.roundedRect(tx, y, tileW, 18, 2, 2, 'F');
+    doc.setFillColor(...SEVERITY_COLOR[sev]);
+    doc.circle(tx + 5, y + 5, 2, 'F');
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...INK);
+    doc.text(String(count), tx + tileW / 2, y + 10, { align: 'center' });
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...SEVERITY_COLOR[sev]);
+    doc.text(sev, tx + tileW / 2, y + 15.5, { align: 'center' });
+  });
+  y += 28;
+
+  // Top findings — compact list (title + severity dot + zone only)
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...NAVY);
+  doc.text('Open Findings', ML, y);
+  y += 7;
+
+  if (issues.length === 0) {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...MUTED);
+    doc.text('No open findings raised for this scope.', ML, y);
+    y += 8;
+  } else {
+    const topN = Math.min(issues.length, 6);
+    issues.slice(0, topN).forEach((issue) => {
+      doc.setFillColor(...CANVAS);
+      doc.roundedRect(ML, y, CONTENT_W, 11, 2, 2, 'F');
+      doc.setFillColor(...SEVERITY_COLOR[issue.severity]);
+      doc.circle(ML + 5, y + 5.5, 2.2, 'F');
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...INK);
+      const titleStr = (issue.title ?? issue.finding ?? issue.id).slice(0, 52);
+      doc.text(titleStr, ML + 11, y + 7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...MUTED);
+      doc.text(issue.zone, PAGE_W - MR, y + 7, { align: 'right' });
+      y += 14;
+    });
+    if (issues.length > topN) {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...MUTED);
+      doc.text(`+ ${issues.length - topN} further findings — see Detailed site report`, ML, y);
+    }
+  }
+
+  // Footer
+  doc.setDrawColor(...HAIRLINE);
+  doc.line(ML, PAGE_H - 14, PAGE_W - MR, PAGE_H - 14);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...MUTED);
+  doc.text('Generated by OptiSync · OptiSync P Ltd · Confidential', ML, PAGE_H - 9);
+  doc.text('Page 1 of 1', PAGE_W - MR, PAGE_H - 9, { align: 'right' });
 
   return doc.output('blob');
 }

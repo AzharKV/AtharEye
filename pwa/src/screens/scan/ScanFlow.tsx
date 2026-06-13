@@ -396,23 +396,14 @@ export function ScanFlow({
         </div>
       )}
 
-      {/* result */}
+      {/* result — capture done; BIM alignment happens server-side during ~60 s processing, so no deltas shown here */}
       {step === 'result' && plan && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 12, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'linear-gradient(transparent 40%, rgba(10,14,20,.6))', animation: 'scrimIn .3s ease' }}>
           <div style={{ padding: '0 16px calc(20px + env(safe-area-inset-bottom))' }}>
             <div style={{ background: T.surface, borderRadius: 18, padding: 18, boxShadow: '0 20px 50px rgba(8,12,18,0.5)', animation: 'sheetUp .35s cubic-bezier(.32,.72,0,1)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                <div style={{ width: 30, height: 30, borderRadius: 15, background: T.tealTint, color: T.teal, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name="checkCircle" size={19} color={T.teal} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: T.ink }}>Scan aligned to BIM</div>
-                  <div style={{ fontSize: 11.5, color: T.muted, fontWeight: 600 }}>{plan.zoneName} · {shortName(target.name)}</div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-                <DeltaTile label={plan.zoneName} value={`+${plan.zoneDelta}%`} sub={`${plan.zoneFrom}→${plan.zoneTo}%`} />
-                <DeltaTile label="Project coverage" value={`${plan.to}%`} sub={`${plan.from}→${plan.to}`} accent />
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: T.ink }}>Capture complete</div>
+                <div style={{ fontSize: 12, color: T.muted, marginTop: 3 }}>{plan.zoneName} · ready to upload</div>
               </div>
               <Button full primary icon="upload" onClick={() => setStep('uploading')}>
                 Upload & finish
@@ -485,18 +476,6 @@ function LightShell({
           {footer}
         </div>
       )}
-    </div>
-  );
-}
-
-function DeltaTile({ label, value, sub, accent }: { label: string; value: string; sub: string; accent?: boolean }) {
-  return (
-    <div style={{ flex: 1, background: T.canvas, borderRadius: 12, padding: '12px 14px', minWidth: 0 }}>
-      <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
-      <div style={{ display: 'flex', gap: 6, alignItems: 'baseline', marginTop: 2 }}>
-        <span style={{ ...mono, fontSize: 22, fontWeight: 700, color: accent ? T.ink : T.teal }}>{value}</span>
-        <span style={{ ...mono, fontSize: 12, color: accent ? T.teal : T.muted }}>{sub}</span>
-      </div>
     </div>
   );
 }

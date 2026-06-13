@@ -363,6 +363,14 @@ bonaly_stairs, bonaly_landing, bonaly_garden.
     on clip-end or tap → process → result with no looping and the video held on its last frame; Bedroom 1
     scan → report surfaces RV-01 (17 mm out of plumb). `tsc` + ESLint clean; `vite build` clean; DEV
     rollup assertion green (overall = 22); `VITE_DATASET=legacy` still restores the 6-project portfolio.
+- **v1.22 (13 Jun 2026) — Report fixes round 2: capture-complete card · share sheet · zone PDF scope · image embed.**
+  Bug-fixes from team review of the live screens and exported PDFs (OPTISYNC_REPORT_FIX2_PROMPT.md).
+  - **FIX A — Capture-complete card (ScanFlow.tsx).** `step === 'result'` now shows only "Capture complete · {zone} · ready to upload" + "Upload & finish" button. The "Scan aligned to BIM" heading, green tick, zone %, project % and +x% delta tiles are removed — they were fabricated before BIM alignment occurs (alignment is server-side, ~60 s). Deltas/tick revealed at `Ready` by the existing AppRoot timer/toast path. Unused `DeltaTile` helper removed.
+  - **FIX B — Share sheet cut to 2 types (ShareSheet.tsx + pdf.ts).** `REPORT_TYPES` trimmed from 4 to 2: "Client progress summary" (single-page, visual, client-facing) and "Detailed site report" (full multipage, contractor-facing). Coverage snapshot and Issues list removed. New export `generateClientPdf` in `pdf.ts`: genuine single-page A4 (header → project name + donut → teal rule → headline sentence → severity tally → compact findings list with severity dot + title + zone). No NSR table, no methodology, no full finding fields. `runExport` branches on `sel` to call the correct generator.
+  - **FIX C — Zone PDF exec summary zone-scoped (pdf.ts).** PDF exec summary previously used `report.summary` (project-level prose, mentioning project % and findings from other zones). Now computes `displaySummary`: for zone scope derives zone-specific prose ("{coverage}% of the {zone} zone verified — {stage} stage. {n} finding(s) raised: {sev list}." or "No findings raised in this zone."). Findings register was already zone-filtered; exec summary now agrees.
+  - **FIX D — Scan evidence images no longer black boxes (pdf.ts).** `toDataUrl` rewritten: `HTMLImageElement` loaded, drawn onto a `<canvas>`, re-exported via `canvas.toDataURL('image/jpeg', 0.85)`. Canvas decode strips alpha channels and normalises colour space, producing a clean JPEG data URL that jsPDF `addImage` renders correctly. Resolves to `null` (image omitted) on any decode failure — never draws a black box.
+  - `tsc` + ESLint + `vite build` clean; rollup assertion green; `VITE_DATASET=legacy` unaffected.
+
 - **v1.21 (13 Jun 2026) — Report rebuild: UX reorder + zone/project depth split + NSR works + PDF improvements.**
   Full rebuild of the report screen and PDF export, aligned to UK construction industry standards (NSR, NHBC).
   - **Report screen reordered (§1).** Content now leads with the coverage donut → severity tally → zone bars →
