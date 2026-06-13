@@ -1,5 +1,7 @@
 // Bonaly Terrace demo seed — single residential renovation project.
-// Default dataset (no VITE_DATASET env). Area-weighted rollup = 69 (verified below).
+// Default dataset (no VITE_DATASET env). Area-weighted rollup = 22 (verified below).
+// Early-stage starting state: a baseline + one progress scan, so the live demo scan is the
+// meaningful action that moves the project off 22%.
 // Captures at /captures/ are direct paths (photoSrc handles the leading-slash form).
 import type { AppData } from './types';
 
@@ -13,8 +15,8 @@ export const SEED_HOUSE: AppData = {
       location: 'Colinton, Edinburgh EH13',
       client: 'Private client',
       area_m2: 84,
-      stage: 'Mid',
-      overall_coverage: 69,
+      stage: 'Early',
+      overall_coverage: 22,
       status: 'Needs review',
       start_date: '2026-03-10',
       target_handover: '2026-09-30',
@@ -34,27 +36,26 @@ export const SEED_HOUSE: AppData = {
         'R. Stewart · Joiner',
       ],
       trades: [
-        { name: 'Strip-out', status: 'Done' },
-        { name: 'First fix M&E', status: 'Done' },
-        { name: 'Plastering', status: 'Done' },
-        { name: 'Kitchen install', status: 'Done' },
-        { name: 'Bathroom install', status: 'Done' },
-        { name: 'Joinery / second fix', status: 'In progress' },
-        { name: 'Flooring', status: 'In progress' },
+        { name: 'Strip-out & first fix', status: 'Done' },
+        { name: 'Plastering', status: 'In progress' },
+        { name: 'Kitchen install', status: 'In progress' },
+        { name: 'Bathroom install', status: 'In progress' },
+        { name: 'Joinery / second fix', status: 'Not started' },
+        { name: 'Flooring', status: 'Not started' },
         { name: 'Decoration', status: 'Not started' },
         { name: 'Snagging', status: 'Not started' },
       ],
+      // Four scanned rooms (ids kept z2–z5 so ZONE_FEED + capture refs stay valid; each has its own
+      // dedicated feed, no fallback). Early stage across the board; Bedroom 1 is the problem zone.
       zones: [
-        { id: 'z1', name: 'Hallway & stairs', area_m2: 12, coverage: 70, stage: 'Mid', note: 'Parquet to refinish' },
-        { id: 'z2', name: 'Living room', area_m2: 18, coverage: 72, stage: 'Mid', note: 'Bay reglazed; floor prep' },
-        { id: 'z3', name: 'Kitchen & dining', area_m2: 16, coverage: 80, stage: 'Mid', note: 'Units in; worktops set' },
-        { id: 'z4', name: 'Bathroom', area_m2: 6, coverage: 85, stage: 'Mid', note: 'Suite + tiling in' },
-        { id: 'z5', name: 'Bedroom 1 (front)', area_m2: 14, coverage: 58, stage: 'Mid', note: 'Plastered; plumb deviation flagged' },
-        { id: 'z6', name: 'Bedroom 2 (rear)', area_m2: 12, coverage: 60, stage: 'Mid', note: 'Plastered; boards lifted' },
-        { id: 'z7', name: 'Landing', area_m2: 6, coverage: 55, stage: 'Mid', note: 'Balustrade pending' },
+        { id: 'z2', name: 'Living room', area_m2: 20, coverage: 25, stage: 'Early', note: 'Strip-out done; first fix under way' },
+        { id: 'z3', name: 'Kitchen & dining', area_m2: 16, coverage: 23, stage: 'Early', note: 'First fix in; partition 38 mm off BIM' },
+        { id: 'z4', name: 'Bathroom', area_m2: 6, coverage: 26, stage: 'Early', note: 'Strip-out done; first fix in' },
+        { id: 'z5', name: 'Bedroom 1 (front)', area_m2: 14, coverage: 15, stage: 'Early', note: 'Stripped; 17 mm plumb deviation flagged' },
       ],
-      // Area-weighted check: (12×70 + 18×72 + 16×80 + 6×85 + 14×58 + 12×60 + 6×55) / 84
-      // = (840 + 1296 + 1280 + 510 + 812 + 720 + 330) / 84 = 5788 / 84 ≈ 68.9 → rounds to 69 ✓
+      // Area-weighted check (rollup is over the four scanned zones, not the 84 m² whole-house GIA):
+      // (20×25 + 16×23 + 6×26 + 14×15) / (20+16+6+14)
+      // = (500 + 368 + 156 + 210) / 56 = 1234 / 56 ≈ 22.04 → rounds to 22 ✓
       issues: [
         {
           id: 'RV-01',
@@ -63,7 +64,7 @@ export const SEED_HOUSE: AppData = {
           title: 'Front wall 17 mm out of plumb over 2.4 m (NHBC limit 8 mm)',
           status: 'Open',
           raised: '2026-06-11',
-          appear: 65,
+          appear: 18,
         },
         {
           id: 'RV-02',
@@ -72,30 +73,24 @@ export const SEED_HOUSE: AppData = {
           title: 'Island partition 38 mm off BIM setting-out line',
           status: 'Open',
           raised: '2026-05-30',
-          appear: 45,
+          appear: 14,
         },
       ],
       scans: [
-        { id: 'sc1', date: '2026-04-02', coverage: 0, note: 'Baseline vs BIM' },
-        { id: 'sc2', date: '2026-04-24', coverage: 22, note: 'Strip-out + first fix' },
-        { id: 'sc3', date: '2026-05-15', coverage: 41, note: 'Plastering' },
-        { id: 'sc4', date: '2026-05-30', coverage: 58, note: 'Kitchen + bathroom in' },
-        { id: 'sc5', date: '2026-06-11', coverage: 69, note: 'Second-fix pass — plumb deviation flagged' },
+        { id: 'sc1', date: '2026-05-28', coverage: 0, note: 'Baseline vs BIM' },
+        { id: 'sc2', date: '2026-06-11', coverage: 22, note: 'First progress scan — structure verified, plumb deviation flagged' },
       ],
       // Direct-path captures — photoSrc passes through paths starting with /
-      // Mapping: z1=hall+stairs, z2=living_room, z3=kitchen+kitchen_diner, z4=bathroom,
-      //          z5=bedroom1, z6=bedroom2, z7=landing; garden = context/hero
+      // Garden leads as the establishing project hero, then the four scanned zones:
+      // living→z2, kitchen + kitchen_diner→z3, bathroom→z4, bedroom1→z5.
+      // (hall/stairs/landing/bedroom2 images stay unused in public/captures/ after the 7→4 zone cut.)
       captures: [
+        '/captures/bonaly_garden.jpg',
         '/captures/bonaly_living_room.jpg',
         '/captures/bonaly_kitchen.jpg',
         '/captures/bonaly_kitchen_diner.jpg',
         '/captures/bonaly_bathroom.jpg',
         '/captures/bonaly_bedroom1.jpg',
-        '/captures/bonaly_bedroom2.jpg',
-        '/captures/bonaly_hall.jpg',
-        '/captures/bonaly_stairs.jpg',
-        '/captures/bonaly_landing.jpg',
-        '/captures/bonaly_garden.jpg',
       ],
     },
   ],

@@ -94,12 +94,12 @@ export const SCAN_BG_LIST = [SCAN_BG.living, SCAN_BG.kitchen, SCAN_BG.stairs, SC
 export const SCAN_FEED = `${import.meta.env.BASE_URL}scans/scan_feed.mp4`;
 export const SCAN_FEED_2 = `${import.meta.env.BASE_URL}scans/scan_feed_2.mp4`;
 
-/** Per-zone scan feed map for the Bonaly demo dataset. Zones not listed fall back to SCAN_FEED. */
+/** Per-zone scan feed map for the Bonaly demo dataset. Each of the four scanned zones has its own
+ *  dedicated clip (no fallback); other projects/zones fall back to SCAN_FEED. */
 const BASE = import.meta.env.BASE_URL;
 export const ZONE_FEED: Record<string, string> = {
   z2: `${BASE}scans/scan_living.mp4`,
   z3: `${BASE}scans/scan_kitchen.mp4`,
   z4: `${BASE}scans/scan_bathroom.mp4`,
   z5: `${BASE}scans/scan_bedroom.mp4`,
-  z6: `${BASE}scans/scan_bedroom.mp4`,
 };

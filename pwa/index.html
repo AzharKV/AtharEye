@@ -179,6 +179,16 @@
         }
       }
 
+      /* subtle stabilising drift on the paused feed before capture (aim step) */
+      @keyframes scanDrift {
+        from {
+          transform: scale(1);
+        }
+        to {
+          transform: scale(1.03);
+        }
+      }
+
       /* misc */
       @keyframes spin {
         to {

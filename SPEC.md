@@ -298,6 +298,39 @@ bonaly_stairs, bonaly_landing, bonaly_garden.
 ---
 
 ## 16. Change log
+- **v1.18 (13 Jun 2026) — Demo round 2: lower starting state + scan-flow realism.** Two changes so the
+  live demo scan is the meaningful action, and so the "scan" behaves like a real, user-triggered capture.
+  - **Lower starting state (`data.house.ts`).** The project now opens **early-stage at 22%** (was 69%):
+    `overall_coverage 22`, `stage Early`, status stays **Needs review**. **Zones reduced 7 → 4** — removed
+    `z1` Hallway & stairs, `z6` Bedroom 2, `z7` Landing; kept `z2` Living (area 20 / cov 25), `z3`
+    Kitchen & dining (16 / 23), `z4` Bathroom (6 / 26), `z5` Bedroom 1 (14 / 15, the problem zone), all
+    `stage Early`. Ids kept z2–z5 so `ZONE_FEED` + capture refs stay valid. **Area-weighted rollup over
+    the four scanned zones = 1234 / 56 ≈ 22** (project `area_m2` stays 84 m² whole-house GIA). **Scans
+    5 → 2:** `sc1` 28 May (0, baseline) + `sc2` 11 Jun (22, first progress). **Issues:** RV-01 `appear`
+    65 → **18**, RV-02 `appear` 45 → **14**, so both show by 22%. **Trades** → early state (strip-out &
+    first fix Done; plastering / kitchen / bathroom In progress; joinery / flooring / decoration /
+    snagging Not started). **Captures 10 → 6** (garden hero + the four scanned rooms; hall/stairs/landing/
+    bedroom2 images left unused). `ZONE_FEED` `z6` entry removed — each of the four zones now has its own
+    dedicated clip, no fallback. Result: donut 22% / "Early stage", a 2-point scrubber (0 → 22), both
+    issues visible, and the Bedroom 1 scan is the meaningful demo action.
+  - **Scan flow = a real single capture (`ScanFlow.tsx`).** The feed `<video>` loses `autoPlay` + `loop`,
+    keeps `muted playsInline poster`, gains `preload="auto"`. New playback state machine (the scan
+    animation/overlay itself is unchanged): **aim** holds the feed **paused on its first frame** (poster)
+    with the aim grid, reticle, a **"Hold steady"** indicator and a subtle `scanDrift` stabilising scale
+    (toggle `AIM_DRIFT`, keyframe in `index.html`); **Begin capture** runs `currentTime = 0; play()` and
+    starts a fresh point cloud; **capture** shows the progress bar + a **"Capture complete"** stop button;
+    capture **ends on whichever comes first** — the clip's `ended`, the sweep reaching the clip length,
+    the stop tap, or `CAP_SAFETY_MS` — then `pause()`s on the **last frame** (never reset to poster,
+    **never loops**) for process → result. The point-cloud sweep is now wall-clock-driven over the clip's
+    duration (robust if a device throttles the muted feed). The from→to delta stays frozen at capture
+    start; the scan is still written to the store on the user's finish action.
+  - **Assets.** The four `pwa/public/scans/scan_{living,kitchen,bathroom,bedroom}.mp4` clips replaced with
+    the re-cut **8.5–9 s** versions (same filenames), so capture length = clip length.
+  - Verified in the browser preview: opens 22% / Early with 4 zones (detail + scan picker) + a 2-scan
+    scrubber + both issues; aim feed still before Begin → plays once → "Capture complete" visible → ends
+    on clip-end or tap → process → result with no looping and the video held on its last frame; Bedroom 1
+    scan → report surfaces RV-01 (17 mm out of plumb). `tsc` + ESLint clean; `vite build` clean; DEV
+    rollup assertion green (overall = 22); `VITE_DATASET=legacy` still restores the 6-project portfolio.
 - **v1.17 (13 Jun 2026) — Demo dataset + per-zone scan feeds.**
   - **Dataset switch.** The default seed is now the single **Bonaly Terrace Refurbishment** project
     (`data.house.ts`, `SEED_HOUSE`). The original 6-project portfolio is preserved as
