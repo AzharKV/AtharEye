@@ -13,6 +13,7 @@ import { TabBar } from './navigation/TabBar';
 import type { TabName } from './navigation/TabBar';
 import { AppActionsCtx } from './navigation/AppActions';
 import { ProjectsList } from './screens/Projects';
+import { NewProject } from './screens/NewProject';
 import { ReportsList, ReportDetail } from './screens/Reports';
 import { Account } from './screens/Account';
 import { PROCESSING_MS, processingStage } from './lib/processing';
@@ -170,6 +171,15 @@ function AppRoot() {
     }, 60);
   }, []);
 
+  const openNewProject = useCallback(() => {
+    setScan(null);
+    setTab('Projects');
+    setTimeout(() => {
+      projNav.current?.popToRoot();
+      projNav.current?.push(<NewProject />);
+    }, 60);
+  }, []);
+
   const startProcessing = useCallback((projectId: string, zoneId: string, scanId: string) => {
     setJobs((prev) => ({ ...prev, [scanId]: { projectId, zoneId, scanId, startedAt: Date.now() } }));
   }, []);
@@ -193,7 +203,7 @@ function AppRoot() {
   const atRoot = depths[tab] <= 1;
 
   return (
-    <AppActionsCtx.Provider value={{ startScan, goToReports: () => setTab('Reports'), openReport, startProcessing, isZoneProcessing, processingStageFor }}>
+    <AppActionsCtx.Provider value={{ startScan, goToReports: () => setTab('Reports'), openNewProject, openReport, startProcessing, isZoneProcessing, processingStageFor }}>
       <div style={{ height: '100%', position: 'relative', background: T.canvas, color: T.ink, overflow: 'hidden' }}>
         {tabPane('Projects', projNav, <ProjectsList />)}
         {tabPane('Reports', repNav, <ReportsList />)}

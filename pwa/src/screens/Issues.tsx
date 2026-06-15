@@ -79,6 +79,9 @@ export function Issues() {
 
       {picking && (
         <Sheet title="Add issue to…" onClose={() => setPicking(false)}>
+          {data.projects.length === 0 && (
+            <div style={{ padding: '14px 4px', fontSize: 13.5, color: T.muted, lineHeight: 1.5 }}>No projects yet. Create a project before raising an issue.</div>
+          )}
           {data.projects.map((p) => (
             <button key={p.id} onClick={() => { setPicking(false); setEdit({ project: p, issueId: null }); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '13px 4px', border: 'none', borderBottom: `1px solid ${T.hairline2}`, background: 'none', cursor: 'pointer', textAlign: 'left' }}>
               <span style={{ flex: 1, fontSize: 14.5, fontWeight: 600, color: T.ink }}>{p.name}</span>

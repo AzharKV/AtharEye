@@ -18,6 +18,7 @@ import {
   Button,
   Card,
   Donut,
+  EmptyState,
   Gallery,
   KeyVal,
   LoadingBody,
@@ -61,6 +62,9 @@ export function ReportsList() {
         }
       />
       <div style={{ padding: '6px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {rows.length === 0 && (
+          <EmptyState icon="reports" title="No reports yet" sub="Create a project and run a scan to generate your first report." />
+        )}
         {rows.map((p) => {
           const last = p.scans[p.scans.length - 1];
           const processing = p.scans.some((s) => s.status === 'Processing');

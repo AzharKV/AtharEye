@@ -9,6 +9,8 @@ export interface AppActions {
   startScan: (projectId?: string | null) => void;
   /** Switch to the Reports tab (history root). */
   goToReports: () => void;
+  /** Close any modal, switch to Projects and open the New-project form (used by empty states). */
+  openNewProject: () => void;
   /** Switch to Reports and open a project's report (optionally at a scrubbed coverage). */
   openReport: (projectId: string, coverage?: number) => void;
   /**
@@ -25,6 +27,7 @@ export interface AppActions {
 export const AppActionsCtx = createContext<AppActions>({
   startScan: () => {},
   goToReports: () => {},
+  openNewProject: () => {},
   openReport: () => {},
   startProcessing: () => {},
   isZoneProcessing: () => false,

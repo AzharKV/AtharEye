@@ -46,7 +46,7 @@ export function ScanFlow({
   // OptiSync demo phase: scan with the live rear camera behind the point-cloud overlay, and resolve the
   // upload into a "doesn't match BIM" state instead of a coverage report.
   const optisync = phase === 'optisync';
-  const { startProcessing } = useAppActions();
+  const { startProcessing, openNewProject } = useAppActions();
   const initial = projectId ? data.projects.find((p) => p.id === projectId) ?? null : null;
   const [targetId, setTargetId] = useState<string | null>(projectId ?? null);
   const [zone, setZone] = useState<Zone | null>(initial ? defaultZone(initial) : null);
@@ -296,6 +296,16 @@ export function ScanFlow({
     return (
       <LightShell title="New scan" sub="Which site are you scanning?" backLabel="Cancel" onBack={onClose}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {data.projects.length === 0 && (
+            <Card style={{ padding: 22, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 6 }}>
+              <div style={{ width: 46, height: 46, borderRadius: 23, background: T.navyTint, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
+                <Icon name="projects" size={22} color={T.navy} />
+              </div>
+              <div style={{ fontSize: 15.5, fontWeight: 700, color: T.ink }}>No projects yet</div>
+              <div style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, marginBottom: 10 }}>Create a project first, then scan its areas.</div>
+              <Button primary full icon="plus" onClick={openNewProject}>Create a project</Button>
+            </Card>
+          )}
           {data.projects.map((p) => (
             <Card key={p.id} pressable onClick={() => selectProject(p)} style={{ padding: '14px 15px', display: 'flex', alignItems: 'center', gap: 13 }}>
               <Ring value={p.overall_coverage} size={44} stroke={5} color={p.overall_coverage >= 100 ? T.teal : T.navy} />

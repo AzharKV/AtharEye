@@ -316,6 +316,11 @@ client phase. `VITE_DATASET=legacy npm run build` for the 6-project edge dataset
     from the store (`demoNow`); the scan's OptiSync behaviour reads `phase` instead of an env const. Dead
     `blob:`/`data:` capture URLs are dropped on load (they can't survive a reload). `VITE_DATASET=legacy`
     still seeds the portfolio and never flips.
+  - **R2-2 — Empty-state flows (the optisync phase starts empty).** Tapping **Scan** in the bottom nav with
+    **0 projects** now shows a "No projects yet · Create a project" CTA in the picker (new
+    `AppActions.openNewProject` closes the modal → Projects → New project). The **Reports** tab shows a "No
+    reports yet" empty state; the **Issues → Add issue** picker shows a "create a project first" hint.
+    (Projects list "No projects yet" + scan "Select area" empty hint already landed in v1.24.)
 
 - **v1.24 (15 Jun 2026) — Final validation pass: BIM device upload · real-world latency.** Pre-submission
   polish. Sub-bullets per commit.
