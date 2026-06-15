@@ -133,16 +133,35 @@ function AppRoot() {
   const [jobs, setJobs] = useState<Record<string, ProcessingJob>>({});
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  const { update } = useStore();
+  const { update, data } = useStore();
 
-  // Poll every 2 s; complete any job that has run for PROCESSING_MS.
+  // Drop processing jobs whose project no longer exists (e.g. the user deleted it / the demo flipped to
+  // OptiSync) so no stray "report ready" toast fires for a project that's gone.
+  useEffect(() => {
+    setJobs((prev) => {
+      let changed = false;
+      const next: Record<string, ProcessingJob> = {};
+      for (const [id, j] of Object.entries(prev)) {
+        if (data.projects.some((p) => p.id === j.projectId)) next[id] = j;
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [data.projects]);
+
+  // Poll every 2 s; complete any job that has run for PROCESSING_MS. Only flip + toast for a scan whose
+  // project + scan still exist (a deleted project's job is pruned above, but guard here too).
   useEffect(() => {
     if (Object.keys(jobs).length === 0) return;
     const iv = setInterval(() => {
       const now = Date.now();
       const done = Object.entries(jobs).filter(([, j]) => now - j.startedAt >= PROCESSING_MS);
       if (done.length === 0) return;
+      let anyReady = false;
       done.forEach(([, j]) => {
+        const proj = data.projects.find((p) => p.id === j.projectId);
+        if (!proj || !proj.scans.some((s) => s.id === j.scanId)) return;
+        anyReady = true;
         update(j.projectId, (d) => {
           const s = d.scans.find((x) => x.id === j.scanId);
           if (s) s.status = 'Ready';
@@ -153,10 +172,10 @@ function AppRoot() {
         done.forEach(([id]) => delete next[id]);
         return next;
       });
-      setToastMsg('Report ready · tap to view');
+      if (anyReady) setToastMsg('Report ready · tap to view');
     }, 2000);
     return () => clearInterval(iv);
-  }, [jobs, update]);
+  }, [jobs, update, data.projects]);
 
   const startScan = useCallback((projectId?: string | null) => setScan({ projectId: projectId ?? null }), []);
   const closeScan = useCallback(() => setScan(null), []);

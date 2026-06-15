@@ -278,10 +278,12 @@ function ProcessingBanner() {
   );
 }
 
-// ── Zone scan evidence frame (poster still from the zone scan media)
+// ── Zone scan evidence frame (poster still from the zone scan media). Only a zone with REAL captured
+//    media (a scanned, mapped zone) has evidence; an unmapped/never-scanned zone resolves to the generic
+//    fallback, which must NOT be shown as if it were this zone's scan.
 function ZoneEvidenceFrame({ zoneId }: { zoneId: string }) {
   const media = zoneMedia(zoneId);
-  if (!media.poster) return null;
+  if (media.fallback || !media.poster) return null;
   return (
     <img
       src={media.poster}
@@ -642,11 +644,16 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
                 {/* What changed in this zone's latest scan */}
                 <ChangesSinceLastScan project={p} scope="zone" activeZone={activeZone} />
 
-                {/* Zone scan evidence frame */}
-                <SectionLabel>Scan evidence</SectionLabel>
-                <Card style={{ padding: 10, marginBottom: 0 }}>
-                  <ZoneEvidenceFrame zoneId={activeZone.id} />
-                </Card>
+                {/* Zone scan evidence frame — only for a zone with real captured media (a scanned zone);
+                    a never-scanned / user-created zone has no evidence, so the section is hidden. */}
+                {!zoneMedia(activeZone.id).fallback && (
+                  <>
+                    <SectionLabel>Scan evidence</SectionLabel>
+                    <Card style={{ padding: 10, marginBottom: 0 }}>
+                      <ZoneEvidenceFrame zoneId={activeZone.id} />
+                    </Card>
+                  </>
+                )}
 
                 {/* Zone severity tally */}
                 <SectionLabel>Findings summary</SectionLabel>

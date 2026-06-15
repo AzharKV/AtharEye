@@ -344,6 +344,16 @@ project, live-camera scan, BIM mismatch) → **clear the browser cache** to re-a
     correct too); the UI report's last-resort fallback is now account-derived, not hardcoded. A neutral
     **`samples/site_survey_model.ifc`** is added for the optisync demo so an uploaded BIM isn't named after
     the client (`tabley_…`). The seeded client project keeps Cairn / Emanuel.
+  - **R4 — Two demo bugs on a fresh project.** (1) **Phantom scan evidence:** the zone report's "Scan
+    evidence" frame rendered `zoneMedia()`'s **generic fallback poster** for any unmapped (user-created)
+    zone, so a never-scanned zone showed a stock room photo as if it had been scanned. Now the whole Scan-
+    evidence section is **hidden unless the zone has real captured media** (`!zoneMedia(id).fallback`) —
+    seeded client zones (z2–z5) still show their poster; optisync/user-created zones show nothing.
+    (2) **Stray "report ready" toast:** a 5-min processing job started by a *client*-phase scan survived the
+    project's deletion (the demo flip), then fired a "Report ready" toast for a project that no longer
+    existed. `AppRoot` now **prunes jobs whose project was deleted** (effect on `data.projects`) and only
+    toasts when the completing scan still exists. The optisync scan itself starts no job (it ends in the BIM
+    mismatch), so it never produces a report/toast.
 
 - **v1.24 (15 Jun 2026) — Final validation pass: BIM device upload · real-world latency.** Pre-submission
   polish. Sub-bullets per commit.
