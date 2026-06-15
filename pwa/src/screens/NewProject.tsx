@@ -1,9 +1,10 @@
 // New project — name, sector, location, client, area, connect/upload BIM. Creates a project at 0%
 // (Early, On track, empty zones/issues/scans) and opens its detail.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { T } from '../theme';
 import type { Project, Sector } from '../types';
 import { useStore } from '../lib/store';
+import { useDelayedSave } from '../hooks/useDelayedSave';
 import { DEMO_NOW } from '../data';
 import { Screen, useNav } from '../navigation/Navigator';
 import { PushHeader } from '../navigation/PushHeader';
@@ -41,8 +42,22 @@ export function NewProject() {
   const [client, setClient] = useState('');
   const [area, setArea] = useState('');
   const [bim, setBim] = useState('');
+  const [bimUploading, setBimUploading] = useState(false);
+  const bimRef = useRef<HTMLInputElement>(null);
+  const { saving, run } = useDelayedSave(650);
 
   const valid = name.trim().length > 0 && location.trim().length > 0;
+
+  const onPickBim = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    setBimUploading(true);
+    window.setTimeout(() => {
+      setBim(f.name);
+      setBimUploading(false);
+    }, 1100);
+  };
 
   const create = () => {
     const id = `proj-${Date.now().toString(36)}`;
@@ -61,10 +76,10 @@ export function NewProject() {
       target_handover: '',
       depth: 'light',
       bim: {
-        software: bim ? 'IFC import' : 'Not connected',
+        software: bim ? 'Autodesk Revit → IFC export' : 'Not connected',
         file: bim || '—',
-        lod: 0,
-        disciplines: [],
+        lod: bim ? 300 : 0,
+        disciplines: bim ? ['Architectural', 'Structural'] : [],
         last_aligned: '',
       },
       team: [],
@@ -128,8 +143,10 @@ export function NewProject() {
         </Field>
 
         <Field label="BIM model">
+          <input ref={bimRef} type="file" accept=".ifc,.ifcxml,.ifczip" onChange={onPickBim} style={{ display: 'none' }} />
           <button
-            onClick={() => setBim(bim ? '' : 'Project_R1.ifc')}
+            onClick={() => !bimUploading && bimRef.current?.click()}
+            disabled={bimUploading}
             style={{
               width: '100%',
               display: 'flex',
@@ -137,22 +154,32 @@ export function NewProject() {
               gap: 10,
               padding: '12px 13px',
               borderRadius: 12,
-              border: `1px dashed ${bim ? T.teal : T.hairline}`,
-              background: bim ? T.tealTint : T.surface,
-              color: bim ? T.teal : T.muted,
+              border: `1px dashed ${bimUploading ? T.navy : bim ? T.teal : T.hairline}`,
+              background: bim && !bimUploading ? T.tealTint : T.surface,
+              color: bimUploading ? T.navy : bim ? T.teal : T.muted,
               fontFamily: T.font,
               fontSize: 14.5,
               fontWeight: 600,
-              cursor: 'pointer',
+              cursor: bimUploading ? 'progress' : 'pointer',
+              textAlign: 'left',
             }}
           >
-            <Icon name={bim ? 'check' : 'upload'} size={18} color={bim ? T.teal : T.muted} />
-            {bim ? `Connected · ${bim}` : 'Connect / upload BIM (IFC)'}
+            {bimUploading ? (
+              <>
+                <span style={{ width: 17, height: 17, borderRadius: 999, border: `2px solid ${T.navyTint}`, borderTopColor: T.navy, animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />
+                Uploading &amp; aligning to BIM…
+              </>
+            ) : (
+              <>
+                <Icon name={bim ? 'check' : 'upload'} size={18} color={bim ? T.teal : T.navy} />
+                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bim ? `Connected · ${bim}` : 'Upload BIM from device (.ifc)'}</span>
+              </>
+            )}
           </button>
         </Field>
 
-        <Button primary full onClick={valid ? create : undefined} style={{ marginTop: 8, opacity: valid ? 1 : 0.5 }}>
-          Create project
+        <Button primary full loading={saving} disabled={!valid} onClick={() => run(create)} style={{ marginTop: 8 }}>
+          {saving ? 'Creating…' : 'Create project'}
         </Button>
       </div>
     </Screen>

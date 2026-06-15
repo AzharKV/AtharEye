@@ -1,12 +1,13 @@
 // editors.tsx — bottom-sheet CRUD editors for the project detail (zones, issues, trades, team, BIM,
 // project) + the scan log / per-scan detail. Editing a zone's coverage rolls up the project's overall
 // coverage (the single mutation path: useStore().update(id, recipe, {rollup})).
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { T, SEV } from '../theme';
 import type { Project, Scan, Severity, Stage, Status, TradeStatus } from '../types';
 import { fmtDate } from '../lib/format';
 import { DEMO_NOW } from '../data';
 import { useStore } from '../lib/store';
+import { useDelayedSave } from '../hooks/useDelayedSave';
 import { Sheet, TextField, NumberField, SelectField } from '../components/Sheet';
 import { Button, SevDot, mono } from '../components/primitives';
 import { Icon } from '../components/Icon';
@@ -256,13 +257,31 @@ export function TeamSheet({ project, index, onClose }: { project: Project; index
   );
 }
 
-// ── BIM edit
+// ── BIM edit — upload/replace the model by picking a file from the device
 export function BimSheet({ project, onClose }: { project: Project; onClose: () => void }) {
   const { update } = useStore();
   const [file, setFile] = useState(project.bim.file);
   const [software, setSoftware] = useState(project.bim.software);
   const [lod, setLod] = useState(project.bim.lod);
   const [disciplines, setDisciplines] = useState(project.bim.disciplines.join(', '));
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const { saving, run } = useDelayedSave();
+
+  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    // Brief "uploading + aligning to BIM" so a device pick feels like a real upload.
+    setUploading(true);
+    window.setTimeout(() => {
+      setFile(f.name);
+      if (!software.trim() || software === 'Not connected') setSoftware('Autodesk Revit → IFC export');
+      setUploading(false);
+    }, 1100);
+  };
+
+  const hasFile = !!file && file.trim() !== '' && file !== '—';
   const save = () => {
     update(project.id, (d) => {
       d.bim.file = file.trim() || d.bim.file;
@@ -272,9 +291,33 @@ export function BimSheet({ project, onClose }: { project: Project; onClose: () =
     });
     onClose();
   };
+
   return (
-    <Sheet title="Edit BIM model" onClose={onClose} footer={<Button primary full onClick={save}>Save</Button>}>
-      <TextField label="Model file" value={file} onChange={setFile} />
+    <Sheet title="BIM model" onClose={onClose} footer={<Button primary full loading={saving} onClick={() => run(save)}>Save</Button>}>
+      <input ref={fileRef} type="file" accept=".ifc,.ifcxml,.ifczip" onChange={onPick} style={{ display: 'none' }} />
+      <div style={{ marginBottom: 14 }}>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: T.muted, marginBottom: 7, letterSpacing: 0.2, display: 'block' }}>Model file</span>
+        <button
+          onClick={() => !uploading && fileRef.current?.click()}
+          disabled={uploading}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '13px 13px', borderRadius: 12, border: `1px dashed ${uploading ? T.navy : hasFile ? T.teal : T.hairline}`, background: hasFile && !uploading ? T.tealTint : T.surface, color: uploading ? T.navy : hasFile ? T.teal : T.muted, fontFamily: T.font, fontSize: 14.5, fontWeight: 600, cursor: uploading ? 'progress' : 'pointer', textAlign: 'left' }}
+        >
+          {uploading ? (
+            <>
+              <span style={{ width: 17, height: 17, borderRadius: 999, border: `2px solid ${T.navyTint}`, borderTopColor: T.navy, animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />
+              Uploading &amp; aligning to BIM…
+            </>
+          ) : (
+            <>
+              <Icon name={hasFile ? 'check' : 'upload'} size={18} color={hasFile ? T.teal : T.navy} />
+              <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hasFile ? `Replace · ${file}` : 'Upload model from device (.ifc)'}</span>
+            </>
+          )}
+        </button>
+        {hasFile && !uploading && (
+          <div style={{ ...mono, fontSize: 12, color: T.muted, marginTop: 6 }}>Linked: {file}</div>
+        )}
+      </div>
       <TextField label="Software" value={software} onChange={setSoftware} />
       <NumberField label="LOD" value={lod} onChange={setLod} max={500} />
       <TextField label="Disciplines (comma-separated)" value={disciplines} onChange={setDisciplines} />

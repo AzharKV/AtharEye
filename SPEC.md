@@ -302,6 +302,17 @@ for edge-case testing. Omit for the default client build. Selector + `DEMO_NOW` 
 ---
 
 ## 16. Change log
+- **v1.24 (15 Jun 2026) — Final validation pass: BIM device upload · real-world latency.** Pre-submission
+  polish. Sub-bullets per commit.
+  - **QA-1 — BIM model upload from the device.** The BIM is now attached by **picking a file from the
+    device** (`<input type="file" accept=".ifc,.ifcxml,.ifczip">`) instead of a fake toggle / text-only
+    edit. `NewProject`'s "Upload BIM from device (.ifc)" and the project-detail **BimSheet** "Upload model
+    from device" both open the OS file picker; on selection there's a short **"Uploading & aligning to
+    BIM…"** state (~1.1 s), then the file name is linked (and a new project's BIM defaults to LOD 300 /
+    Revit→IFC). A dummy **`samples/tabley_Refurb_R3.ifc`** (small but structurally valid IFC4) ships for the
+    user to keep on their device. `Button` gains a `loading` prop (spinner + blocked); new
+    `hooks/useDelayedSave` wraps writes with a small latency.
+
 - **v1.23 (15 Jun 2026) — Demo-prep: presets · report depth · scrubber honesty · OptiSync demo.** A
   recording-prep pass building two demo builds from one codebase and deepening the report. Tasks land in
   ordered commits; sub-bullets added as each lands.

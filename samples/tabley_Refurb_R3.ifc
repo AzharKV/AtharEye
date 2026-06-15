@@ -1,0 +1,41 @@
+ISO-10303-21;
+HEADER;
+/* OptiSync demo BIM model — Tabley Rd Refurbishment (LOD 300). Small but structurally valid IFC4
+   STEP file: Project -> Site -> Building -> Storey, with one wall and one floor slab. Pick this from
+   your device when uploading a BIM in the app. */
+FILE_DESCRIPTION(('ViewDefinition [CoordinationView]'),'2;1');
+FILE_NAME('tabley_Refurb_R3.ifc','2026-06-13T09:00:00',('Emanuel'),('CK Group of Construction'),'OptiSync 1.0','Autodesk Revit -> IFC export','');
+FILE_SCHEMA(('IFC4'));
+ENDSEC;
+DATA;
+#1=IFCPERSON($,'John','Clint',$,$,$,$,$);
+#2=IFCORGANIZATION($,'CK Group of Construction',$,$,$);
+#3=IFCPERSONANDORGANIZATION(#1,#2,$);
+#4=IFCAPPLICATION(#2,'1.0','OptiSync','OptiSync');
+#5=IFCOWNERHISTORY(#3,#4,$,.ADDED.,$,$,$,1718265600);
+#6=IFCCARTESIANPOINT((0.,0.,0.));
+#7=IFCDIRECTION((0.,0.,1.));
+#8=IFCDIRECTION((1.,0.,0.));
+#9=IFCAXIS2PLACEMENT3D(#6,#7,#8);
+#10=IFCGEOMETRICREPRESENTATIONCONTEXT($,'Model',3,1.E-05,#9,$);
+#11=IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);
+#12=IFCSIUNIT(*,.AREAUNIT.,$,.SQUARE_METRE.);
+#13=IFCSIUNIT(*,.VOLUMEUNIT.,$,.CUBIC_METRE.);
+#14=IFCUNITASSIGNMENT((#11,#12,#13));
+#15=IFCPROJECT('0YvctVUKr0kugbFTf53O90',#5,'Refurbishment - Tabley Rd, Liverpool L15','LOD 300 coordination model',$,$,$,(#10),#14);
+#16=IFCLOCALPLACEMENT($,#9);
+#17=IFCSITE('1xS3BCk291UvhgP2a6eflL',#5,'Tabley Rd Site',$,$,#16,$,$,.ELEMENT.,(53,24,0,0),(-2,58,0,0),0.,$,$);
+#18=IFCLOCALPLACEMENT(#16,#9);
+#19=IFCBUILDING('1xS3BCk291UvhgP2a6eflN',#5,'Tabley Rd Refurbishment',$,$,#18,$,$,.ELEMENT.,$,$,$);
+#20=IFCLOCALPLACEMENT(#18,#9);
+#21=IFCBUILDINGSTOREY('1xS3BCk291UvhgP2a6eflP',#5,'Ground Floor',$,$,#20,$,$,.ELEMENT.,0.);
+#22=IFCRELAGGREGATES('0aggr00000000000000001',#5,$,$,#15,(#17));
+#23=IFCRELAGGREGATES('0aggr00000000000000002',#5,$,$,#17,(#19));
+#24=IFCRELAGGREGATES('0aggr00000000000000003',#5,$,$,#19,(#21));
+#30=IFCLOCALPLACEMENT(#20,#9);
+#31=IFCWALLSTANDARDCASE('2hKpVcN91ABw8j3nQ9pX01',#5,'Gable Wall - North','Front bedroom gable',$,#30,$,$,.STANDARD.);
+#32=IFCLOCALPLACEMENT(#20,#9);
+#33=IFCSLAB('2hKpVcN91ABw8j3nQ9pX02',#5,'Ground Floor Slab',$,$,#32,$,$,.FLOOR.);
+#40=IFCRELCONTAINEDINSPATIALSTRUCTURE('0cont0000000000000001',#5,$,$,(#31,#33),#21);
+ENDSEC;
+END-ISO-10303-21;

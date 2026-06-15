@@ -257,6 +257,7 @@ export function Button({
   full,
   danger,
   disabled,
+  loading,
 }: {
   children: ReactNode;
   primary?: boolean;
@@ -266,18 +267,21 @@ export function Button({
   full?: boolean;
   danger?: boolean;
   disabled?: boolean;
+  loading?: boolean;
 }) {
   const [d, setD] = useState(false);
   const accent = danger ? T.red : T.navy;
+  const blocked = disabled || loading;
+  const fg = primary ? '#fff' : danger ? T.red : T.ink;
   return (
     <button
-      disabled={disabled}
+      disabled={blocked}
       onClick={() => {
-        if (disabled) return;
+        if (blocked) return;
         haptic();
         onClick?.();
       }}
-      onPointerDown={() => { if (!disabled) setD(true); }}
+      onPointerDown={() => { if (!blocked) setD(true); }}
       onPointerUp={() => setD(false)}
       onPointerLeave={() => setD(false)}
       style={{
@@ -287,11 +291,11 @@ export function Button({
         borderRadius: 13,
         border: primary ? 'none' : `1px solid ${T.hairline}`,
         background: primary ? accent : T.surface,
-        color: primary ? '#fff' : danger ? T.red : T.ink,
+        color: fg,
         fontSize: 15.5,
         fontWeight: 700,
         fontFamily: T.font,
-        cursor: disabled ? 'not-allowed' : 'pointer',
+        cursor: blocked ? (loading ? 'progress' : 'not-allowed') : 'pointer',
         opacity: disabled ? 0.5 : 1,
         display: 'flex',
         alignItems: 'center',
@@ -303,7 +307,13 @@ export function Button({
         ...style,
       }}
     >
-      {icon && <Icon name={icon} size={19} color={primary ? '#fff' : danger ? T.red : T.ink} />}
+      {loading ? (
+        <span
+          style={{ width: 17, height: 17, borderRadius: 999, border: `2px solid ${primary ? 'rgba(255,255,255,0.35)' : T.hairline}`, borderTopColor: primary ? '#fff' : T.navy, animation: 'spin 0.7s linear infinite', display: 'inline-block' }}
+        />
+      ) : (
+        icon && <Icon name={icon} size={19} color={fg} />
+      )}
       {children}
     </button>
   );

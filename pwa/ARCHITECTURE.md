@@ -10,7 +10,7 @@
 > - [`../design-source/`](../design-source/) — the locked Claude Design export (visual reference; **ported, not reinvented**).
 > - [`../CLAUDE.md`](../CLAUDE.md) — how an AI/dev session should work in this repo.
 
-**Last updated:** 2026-06-15 (SPEC §15 v1.23) · **Status:** **OptiSync redesign in progress** (branch
+**Last updated:** 2026-06-15 (SPEC §15 v1.24) · **Status:** **OptiSync redesign in progress** (branch
 `feature/optisync-phase-1`). The PWA is being rebuilt from *Athar Eye* (dark) into **OptiSync** (light
 "Blueprint + teal") per the handoff bundle — see `../SPEC.md` §15 v1.21 (report rebuild: UX reorder + zone/project depth split + NSR works breakdown + PDF improvements — builds on v1.20 async scan lifecycle).
 
@@ -61,7 +61,8 @@ offline on a real iPhone.
 - **`lib/reports.ts`** — `rollup`, `stateAt`, `reportFor` + staged prose. `sev()` severity rank updated to 4-level (Critical=0/Major=1/Minor=2/Cosmetic=3).
 - **`lib/store.ts`** — in-memory `StoreProvider`/`useStore`; single mutation path `update(id, recipe, {rollup})`. **No localStorage** — refresh re-seeds.
 - **`theme.ts`** — light Blueprint+teal `T` + `STATUS`/`SEV`/`STAGE`. `SEV` now includes `definition` text per level; 4th level `Cosmetic` added.
-- **`components/primitives.tsx`** — Donut/Ring, ZoneBars/Bar, Sparkline, SevDot, Status/Stage pills, Card, Chips, **Button** (now has `disabled` prop), **KeyVal** (now has `tight` prop), Gallery + Lightbox, ScreenHeader, mono.
+- **`components/primitives.tsx`** — Donut/Ring, ZoneBars/Bar, Sparkline, SevDot, Status/Stage pills, Card, Chips, **Button** (`disabled` + **v1.24 `loading`** spinner prop), **KeyVal** (`tight` prop), EmptyState, Gallery + Lightbox, ScreenHeader, mono.
+- **`hooks/`** — `useBackLayer`, `useCountUp`, **`useDelayedSave`** *(v1.24)* — wraps a write with a small latency + pending flag, and **`useReady`** *(v1.24)* — a short page-load gate (false → true after ~340 ms) used on the detail screens.
 - **`navigation/`** — Navigator/backstack/Screen; `TabBar`; `PushHeader`; **`AppActions`** (v1.20: adds `startProcessing`, `isZoneProcessing`, `processingStageFor`).
 - **`components/Sheet.tsx`** — bottom sheet + form fields.
 - **`components/ShareSheet.tsx`** *(rewritten v1.20, updated v1.22)* — **v1.22:** `REPORT_TYPES` cut from 4 to 2 (removed Coverage snapshot + Issues list). "Client progress summary" calls `generateClientPdf` (single page); "Detailed site report" calls `generatePdf` (full multipage). `runExport` branches on `sel`. Web Share API + download fallback + AbortError handling unchanged.
