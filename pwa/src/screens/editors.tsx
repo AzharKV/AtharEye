@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { T, SEV } from '../theme';
 import type { Project, Scan, Severity, Stage, Status, TradeStatus } from '../types';
 import { fmtDate } from '../lib/format';
+import { DEMO_NOW } from '../data';
 import { useStore } from '../lib/store';
 import { Sheet, TextField, NumberField, SelectField } from '../components/Sheet';
 import { Button, SevDot, mono } from '../components/primitives';
@@ -125,7 +126,7 @@ export function IssueSheet({ project, issueId, onClose }: { project: Project; is
           zone,
           title: title.trim() || 'New issue',
           status: 'Open',
-          raised: '2026-06-12',
+          raised: DEMO_NOW,
           appear: d.overall_coverage,
         });
       }
@@ -138,7 +139,7 @@ export function IssueSheet({ project, issueId, onClose }: { project: Project; is
       if (!it) return;
       if (it.status === 'Open') {
         it.status = 'Closed';
-        it.closed = '2026-06-12';
+        it.closed = DEMO_NOW;
         it.clear = d.overall_coverage;
       } else {
         it.status = 'Open';

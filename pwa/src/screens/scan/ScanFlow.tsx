@@ -8,6 +8,7 @@ import { T } from '../../theme';
 import type { Project, Zone } from '../../types';
 import { fmtDateShort } from '../../lib/format';
 import { useStore } from '../../lib/store';
+import { DEMO_NOW } from '../../data';
 import { useAppActions } from '../../navigation/AppActions';
 import { zoneMedia } from '../../lib/photos';
 import { Button, Card, Ring, SectionLabel, StageChip, mono } from '../../components/primitives';
@@ -99,7 +100,7 @@ export function ScanFlow({
       update(target.id, (d) => {
         d.scans.push({
           id: scanId,
-          date: '2026-06-13',
+          date: DEMO_NOW,
           coverage: plan.to,
           note: `${plan.zoneName} scan`,
           status: 'Processing',

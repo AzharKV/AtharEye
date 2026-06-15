@@ -298,6 +298,21 @@ bonaly_stairs, bonaly_landing, bonaly_garden.
 ---
 
 ## 16. Change log
+- **v1.23 (15 Jun 2026) — Demo-prep: presets · report depth · scrubber honesty · OptiSync demo.** A
+  recording-prep pass building two demo builds from one codebase and deepening the report. Tasks land in
+  ordered commits; sub-bullets added as each lands.
+  - **Task 0 — `VITE_DEMO` presets + a single `DEMO_NOW`.** New `VITE_DEMO` selector in `data.ts`,
+    mirroring `VITE_DATASET=legacy`: `(none)`/`client` → `SEED_CLIENT` (the new default), `optisync` →
+    `SEED_OPTISYNC` (empty), `house` → `SEED_HOUSE` (the prior Bonaly dataset, now behind the flag),
+    `legacy` → `SEED_LEGACY`. **Precedence:** `VITE_DEMO` wins; `VITE_DATASET=legacy` is consulted only
+    when `VITE_DEMO` is unset. New `data.client.ts` + `data.optisync.ts`; `SEED_HOUSE`/`SEED_LEGACY`
+    unchanged for edge testing. New exported **`DEMO_NOW`** (ISO `YYYY-MM-DD`, preset-pinned: client
+    `2026-06-12`, optisync `2026-06-15`, house/legacy `2026-06-13`) replaces hardcoded *displayed*
+    timestamps — the scan-completion date in `ScanFlow`, newly-raised/closed issue dates in `editors.tsx`,
+    and the new-project start date in `NewProject`. Internal timing math (`Date.now() - startedAt`) is
+    untouched, so a live on-camera scan stamps the pinned pre-LOD date, not the real current date. DEV
+    rollup assertion now guards empty seeds. `ImportMetaEnv` typed in `vite-env.d.ts`.
+
 - **v1.20 (13 Jun 2026) — Async scan lifecycle · Report rebuild · PDF export.**
   - **Task A — Async scan lifecycle.** New `ScanStatus` type: `Uploading | Uploaded | Processing | Ready | Failed`. After capture ScanFlow shows "Uploading… ✓ Uploaded" then auto-returns to project. New scan appears as **Processing** in the project (amber indicators in scrubber node, zone row, zone coverage bar). Timer runs in AppRoot state (`Record<string, ProcessingJob>`) — default `PROCESSING_MS = 60 000 ms`. Staged labels: `Queued → Aligning to BIM → Generating report → Ready`. On completion the scan flips to Ready and a toast notification fires. **Per-zone lock:** while any scan is Processing for a zone, that zone's scan button is disabled (amber "Processing" badge). Coverage updated immediately on scan write, not deferred to Ready.
   - **Task B — Report content & IA.** Reports screen gains a **scope toggle** ("Whole project / By zone") and per-zone chips. 4-level severity: **Critical · Major · Minor · Cosmetic** with definition text in `SEV` map. Severity tally (`SevTally` 4-column grid). Full **finding cards** (id · severity · zone · location_detail · measured / tolerance / deviation block · impact · action + responsible · status dot · raised date · optional thumbnail). Report header meta (project, client, contractor, BIM + LOD, coverage, accuracy, scan date). Footer: Methodology & limitations + Sign-off (prepared by J. Mackay / reviewed by TBC). Seeded findings: **RV-01** (Major, Bedroom 1, wall 17 mm out of plumb) · **RV-02** (Minor, Kitchen, partition 38 mm off BIM). Zone in Processing shows a "Pending" card. `Scan.status === 'Ready'` seeded on all existing scans in both datasets.

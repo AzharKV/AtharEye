@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { T } from '../theme';
 import type { Project, Sector } from '../types';
 import { useStore } from '../lib/store';
+import { DEMO_NOW } from '../data';
 import { Screen, useNav } from '../navigation/Navigator';
 import { PushHeader } from '../navigation/PushHeader';
 import { Button } from '../components/primitives';
@@ -56,7 +57,7 @@ export function NewProject() {
       stage: 'Early',
       overall_coverage: 0,
       status: 'On track',
-      start_date: '2026-06-12',
+      start_date: DEMO_NOW,
       target_handover: '',
       depth: 'light',
       bim: {
