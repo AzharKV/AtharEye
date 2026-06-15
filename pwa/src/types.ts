@@ -133,6 +133,8 @@ export interface Company {
   vat: string;
   registeredOffice: string;
   established: string;
+  /** Explicit account-avatar monogram. Falls back to the name's first two word-initials. */
+  monogram?: string;
 }
 
 export interface UserProfile {

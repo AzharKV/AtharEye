@@ -52,6 +52,10 @@ export function Plans() {
             <span style={{ ...mono, fontSize: 12.5, color: T.muted }}>{sub.used} / {sub.limit === 999 ? '∞' : sub.limit} projects</span>
             <span style={{ ...mono, fontSize: 12.5, color: T.muted }}>Renews {sub.renews}</span>
           </div>
+          <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${T.hairline2}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 12.5, color: T.muted }}>Billed to</span>
+            <span style={{ fontSize: 12.5, color: T.ink, fontWeight: 700 }}>{data.company.name}</span>
+          </div>
         </Card>
 
         <SectionLabel>Plans</SectionLabel>

@@ -312,6 +312,14 @@ bonaly_stairs, bonaly_landing, bonaly_garden.
     and the new-project start date in `NewProject`. Internal timing math (`Date.now() - startedAt`) is
     untouched, so a live on-camera scan stamps the pinned pre-LOD date, not the real current date. DEV
     rollup assertion now guards empty seeds. `ImportMetaEnv` typed in `vite-env.d.ts`.
+  - **Task 1 — CK Group account identity (client preset).** `SEED_CLIENT` account holder is now **CK
+    Group of Construction** · contact **Clint John · Director** · **100a North Birkbeck Road, London E11
+    4JQ** · member since **13 Jun 2026** · monogram **CK**. New optional `Company.monogram` (the account
+    avatar uses it, else falls back to name initials — "CK Group…" would otherwise derive "CG"). Account
+    Company row relabelled **Established → Member since**. **Plans** current-plan card gains a **Billed to ·
+    {company}** line (data-driven, so it switches per preset). Identity stays fully data-driven so the
+    `optisync` preset overrides it cleanly. Report "Prepared by"/contractor are separate per-project fields
+    (Task 2), not the account holder.
 
 - **v1.20 (13 Jun 2026) — Async scan lifecycle · Report rebuild · PDF export.**
   - **Task A — Async scan lifecycle.** New `ScanStatus` type: `Uploading | Uploaded | Processing | Ready | Failed`. After capture ScanFlow shows "Uploading… ✓ Uploaded" then auto-returns to project. New scan appears as **Processing** in the project (amber indicators in scrubber node, zone row, zone coverage bar). Timer runs in AppRoot state (`Record<string, ProcessingJob>`) — default `PROCESSING_MS = 60 000 ms`. Staged labels: `Queued → Aligning to BIM → Generating report → Ready`. On completion the scan flips to Ready and a toast notification fires. **Per-zone lock:** while any scan is Processing for a zone, that zone's scan button is disabled (amber "Processing" badge). Coverage updated immediately on scan write, not deferred to Ready.

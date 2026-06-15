@@ -26,7 +26,8 @@ export function Account() {
     open: ps.reduce((s, p) => s + p.issues.filter((i) => i.status === 'Open').length, 0),
     avg: Math.round(ps.reduce((s, p) => s + p.overall_coverage, 0) / Math.max(1, ps.length)),
   };
-  const monogram = data.company.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+  const monogram =
+    data.company.monogram ?? data.company.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
   return (
     <Screen padTop={0}>
@@ -64,7 +65,7 @@ export function Account() {
           <Row k="Company no." v={<span style={mono}>{data.company.companyNo}</span>} />
           <Row k="VAT" v={<span style={mono}>{data.company.vat}</span>} />
           <Row k="Registered office" v={data.company.registeredOffice} />
-          <Row k="Established" v={<span style={mono}>{data.company.established}</span>} last />
+          <Row k="Member since" v={<span style={mono}>{data.company.established}</span>} last />
         </Card>
 
         {/* Links — issues/snags live in the Reports tab (a portfolio-wide report concern), not here. */}
