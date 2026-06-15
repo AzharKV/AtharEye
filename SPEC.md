@@ -321,6 +321,12 @@ client phase. `VITE_DATASET=legacy npm run build` for the 6-project edge dataset
     `AppActions.openNewProject` closes the modal → Projects → New project). The **Reports** tab shows a "No
     reports yet" empty state; the **Issues → Add issue** picker shows a "create a project first" hint.
     (Projects list "No projects yet" + scan "Select area" empty hint already landed in v1.24.)
+  - **R2-3 — OptiSync scan = the live camera, not the seeded clip.** In the `optisync` phase the scan feed
+    is now the **live rear camera only** — the seeded `<video src/poster>` is dropped, so there's no
+    mismatched-room clip behind the point cloud. Entering the camera steps requests `getUserMedia`
+    (prompts permission); on grant the stream is the feed, on **deny/unavailable** a retryable **"Camera
+    access needed"** card shows instead of a fallback video. The `client` phase is unchanged (seeded
+    walkthrough clip). Needs HTTPS (or localhost) for camera access.
 
 - **v1.24 (15 Jun 2026) — Final validation pass: BIM device upload · real-world latency.** Pre-submission
   polish. Sub-bullets per commit.

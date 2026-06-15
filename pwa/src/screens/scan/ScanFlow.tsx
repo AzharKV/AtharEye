@@ -52,6 +52,8 @@ export function ScanFlow({
   const [zone, setZone] = useState<Zone | null>(initial ? defaultZone(initial) : null);
   const [step, setStep] = useState<Step>(projectId ? 'select' : 'picker');
   const [counter, setCounter] = useState(0);
+  const [camState, setCamState] = useState<'idle' | 'granted' | 'denied'>('idle');
+  const [camAttempt, setCamAttempt] = useState(0);
 
   const target = data.projects.find((p) => p.id === targetId) ?? null;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -244,29 +246,34 @@ export function ScanFlow({
   }, [step]);
 
   useEffect(() => {
-    if (!import.meta.env.DEV || step !== 'aim') return;
+    if (!import.meta.env.DEV || step !== 'aim' || optisync) return;
     const zoneId = zone?.id ?? '(none)';
     const m = zoneMedia(zoneId);
     if (m.fallback) console.warn('[ScanFlow] no ZONE_MEDIA for zone — using generic feed', { zoneId, feed: m.feed });
     else console.log('[ScanFlow] scan media resolved', { zoneId, feed: m.feed });
-  }, [step, zone?.id]);
+  }, [step, zone?.id, optisync]);
 
-  // OptiSync preset: attach the live rear camera to the feed <video> on the camera steps. srcObject
-  // overrides the seeded `src`; if permission is denied/unavailable we leave the seeded clip as a graceful
-  // fallback. Requires HTTPS (or localhost).
+  // OptiSync phase: the live rear camera IS the feed (no seeded clip). Request permission on entering the
+  // camera steps and attach the stream via srcObject. On deny/unavailable we show a "camera access needed"
+  // state (retryable) rather than a mismatched seeded video. Requires HTTPS (or localhost).
   useEffect(() => {
     if (!optisync) return;
     const camSteps: Step[] = ['aim', 'capture', 'process', 'result', 'uploading'];
     if (!camSteps.includes(step) || streamRef.current) return;
     let cancelled = false;
-    navigator.mediaDevices
-      ?.getUserMedia?.({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+    const md = navigator.mediaDevices;
+    if (!md || !md.getUserMedia) {
+      setCamState('denied');
+      return;
+    }
+    md.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
       .then((stream) => {
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
           return;
         }
         streamRef.current = stream;
+        setCamState('granted');
         const v = videoRef.current;
         if (v) {
           v.srcObject = stream;
@@ -275,12 +282,19 @@ export function ScanFlow({
         }
       })
       .catch(() => {
-        /* denied / unavailable — keep the seeded clip fallback */
+        if (!cancelled) setCamState('denied');
       });
     return () => {
       cancelled = true;
     };
-  }, [step, optisync]);
+  }, [step, optisync, camAttempt]);
+
+  const retryCamera = () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setCamState('idle');
+    setCamAttempt((a) => a + 1);
+  };
 
   // Stop the live camera when the scan flow unmounts.
   useEffect(
@@ -383,19 +397,21 @@ export function ScanFlow({
 
   // ── Camera steps (aim / capture / process / result / uploading / uploaded)
   const zoneName = zone?.name ?? 'Area';
-  const media = zoneMedia(zone?.id ?? '');
+  // OptiSync phase: NO seeded clip — the live camera is the feed (attached via srcObject below).
+  const media = optisync ? null : zoneMedia(zone?.id ?? '');
+  const camDenied = optisync && camState === 'denied';
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 500, background: '#0a0e14', overflow: 'hidden', animation: 'modalUp .3s cubic-bezier(.32,.72,0,1)' }}>
       {/* live feed */}
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
         <video
           ref={videoRef}
-          src={media.feed}
-          poster={media.poster}
+          src={media?.feed}
+          poster={media?.poster}
           muted
           playsInline
           preload="auto"
-          style={{ position: 'absolute', inset: '-4%', width: '108%', height: '108%', objectFit: 'cover', filter: step === 'process' ? 'brightness(.4) saturate(.6)' : step === 'result' || step === 'uploading' || step === 'uploaded' ? 'brightness(.7)' : 'brightness(.86)', transition: 'filter .5s', animation: AIM_DRIFT && step === 'aim' ? 'scanDrift 3s ease-out forwards' : undefined }}
+          style={{ position: 'absolute', inset: '-4%', width: '108%', height: '108%', objectFit: 'cover', filter: step === 'process' ? 'brightness(.4) saturate(.6)' : step === 'result' || step === 'uploading' || step === 'uploaded' ? 'brightness(.7)' : 'brightness(.86)', transition: 'filter .5s', animation: AIM_DRIFT && step === 'aim' && !optisync ? 'scanDrift 3s ease-out forwards' : undefined }}
         />
         {step === 'aim' && (
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.10) 1px,transparent 1px)', backgroundSize: '34px 34px', animation: 'gridfade 2s ease-in-out infinite alternate' }} />
@@ -427,7 +443,7 @@ export function ScanFlow({
       )}
 
       {/* aim: hold-steady indicator */}
-      {step === 'aim' && (
+      {step === 'aim' && !camDenied && (
         <div style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top) + 78px)', left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(10,14,20,.5)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', borderRadius: 999, padding: '8px 14px', color: '#fff', fontSize: 13, fontWeight: 700 }}>
             <span style={{ width: 9, height: 9, borderRadius: 999, background: T.amber, boxShadow: '0 0 0 4px rgba(181,120,26,0.25)', animation: 'pulse 1.4s ease-in-out infinite' }} />
@@ -437,14 +453,28 @@ export function ScanFlow({
       )}
 
       {/* aim: reticle + prompt + Begin capture */}
-      {step === 'aim' && <Reticle />}
-      {step === 'aim' && (
+      {step === 'aim' && !camDenied && <Reticle />}
+      {step === 'aim' && !camDenied && (
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 18px calc(22px + env(safe-area-inset-bottom))', zIndex: 10, textAlign: 'center' }}>
           <div style={{ color: '#fff', fontSize: 15, fontWeight: 650, marginBottom: 4 }}>Move slowly across the room</div>
           <div style={{ color: 'rgba(255,255,255,.7)', fontSize: 12.5, marginBottom: 18 }}>Keep the area inside the frame · iPhone LiDAR, no extra hardware</div>
           <button onClick={beginCapture} style={{ width: '100%', height: 50, borderRadius: 13, border: 'none', background: T.teal, color: '#fff', fontSize: 15.5, fontWeight: 700, fontFamily: T.font, cursor: 'pointer', boxShadow: '0 8px 24px rgba(24,131,126,.5)' }}>
             Begin capture
           </button>
+        </div>
+      )}
+
+      {/* OptiSync: camera permission needed (no seeded fallback) */}
+      {camDenied && (step === 'aim' || step === 'capture') && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'rgba(10,14,20,.6)' }}>
+          <div style={{ background: T.surface, borderRadius: 18, padding: 22, maxWidth: 320, textAlign: 'center', boxShadow: '0 20px 50px rgba(8,12,18,0.5)' }}>
+            <div style={{ width: 46, height: 46, borderRadius: 23, background: T.amberTint, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+              <Icon name="alert" size={22} color={T.amber} />
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, marginBottom: 6 }}>Camera access needed</div>
+            <div style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, marginBottom: 16 }}>OptiSync scans with your device camera. Allow camera access in your browser, then try again.</div>
+            <Button primary full icon="scan" onClick={retryCamera}>Try again</Button>
+          </div>
         </div>
       )}
 
