@@ -8,11 +8,13 @@ export const SEED_CLIENT: AppData = {
   projects: [
     {
       id: 'rv1',
-      name: 'Bonaly Terrace Refurbishment',
+      name: 'Refurbishment',
       sector: 'Residential',
-      type: 'Residential — full refurbishment',
-      location: 'Colinton, Edinburgh EH13',
+      type: 'Refurbishment',
+      location: 'Tabley Rd, Liverpool L15',
       client: 'Private client',
+      contractor: 'Cairn Refurbishment Ltd',
+      preparedBy: 'Emanuel · Site Supervisor',
       area_m2: 84,
       stage: 'Early',
       overall_coverage: 22,
@@ -24,10 +26,10 @@ export const SEED_CLIENT: AppData = {
         'Our supervisor scanned the front bedroom in minutes — OptiSync flagged a 17 mm lean in the gable wall we\'d otherwise only have caught at final inspection. Saved a re-plaster after decoration. — Cairn Refurbishment Ltd',
       bim: {
         software: 'Autodesk Revit → IFC export',
-        file: 'Bonaly_Refurb_R3.ifc',
+        file: 'tabley_Refurb_R3.ifc',
         lod: 300,
         disciplines: ['Architectural', 'Structural'],
-        last_aligned: '2026-06-11',
+        last_aligned: '2026-06-13',
       },
       team: [
         'J. Mackay · Site supervisor',
@@ -92,7 +94,7 @@ export const SEED_CLIENT: AppData = {
           zone: 'Bedroom 1 (front)',
           title: 'Front wall 17 mm out of plumb over 2.4 m (NHBC limit 8 mm)',
           status: 'Open',
-          raised: '2026-06-11',
+          raised: '2026-06-12',
           appear: 18,
           location_detail: 'Gable wall, north elevation',
           finding: 'Wall measured 17 mm out of plumb over 2.4 m height by OptiSync LiDAR scan.',
@@ -110,7 +112,7 @@ export const SEED_CLIENT: AppData = {
           zone: 'Kitchen & dining',
           title: 'Island partition 38 mm off BIM setting-out line',
           status: 'Open',
-          raised: '2026-05-30',
+          raised: '2026-06-09',
           appear: 14,
           location_detail: 'Island partition, kitchen & dining zone',
           finding: 'Partition built 38 mm off the BIM setting-out line, confirmed by LiDAR scan alignment.',
@@ -124,8 +126,8 @@ export const SEED_CLIENT: AppData = {
         },
       ],
       scans: [
-        { id: 'sc1', date: '2026-05-28', coverage: 0, note: 'Baseline vs BIM', status: 'Ready' },
-        { id: 'sc2', date: '2026-06-11', coverage: 22, note: 'First progress scan — structure verified, plumb deviation flagged', status: 'Ready' },
+        { id: 'sc1', date: '2026-06-09', coverage: 0, note: 'Baseline vs BIM', status: 'Ready' },
+        { id: 'sc2', date: '2026-06-12', coverage: 22, note: 'First progress scan — structure verified, plumb deviation flagged', status: 'Ready' },
       ],
       captures: [
         '/captures/bonaly_garden.jpg',

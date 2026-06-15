@@ -230,7 +230,9 @@ export function reportFor(project: Project, coverage?: number): ReportModel {
   const dateIso = exactScan?.date ?? lastScan?.date ?? project.start_date;
   const openIssues = st.openIssues;
   const closedIssues = project.issues.filter((i) => !openIssues.includes(i));
-  const footerBase = `Prepared by Cairn Refurbishment Ltd · ${'A. Patel'} · ${fmtDate(dateIso)}`;
+  const contractor = project.contractor ?? 'Cairn Refurbishment Ltd';
+  const preparedBy = project.preparedBy ?? 'J. Mackay · Site Supervisor';
+  const footerBase = `Prepared by ${preparedBy} · ${contractor} · ${fmtDate(dateIso)}`;
   return {
     project,
     coverage: c,

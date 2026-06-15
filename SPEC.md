@@ -251,49 +251,53 @@ athar-eye/
 
 ---
 
-## 15. Demo scenario — Bonaly Terrace Refurbishment
+## 15. Demo scenario — recording presets
 
-The default demo dataset (no `VITE_DATASET` env var) loads a single residential renovation
-project. Set `VITE_DATASET=legacy` to restore the 6-project portfolio.
+The PWA ships **two recording presets from one codebase**, chosen by `VITE_DEMO` (see §16 v1.23):
 
-**Project:** Bonaly Terrace Refurbishment · id `rv1` · Residential full refurbishment ·
-Colinton, Edinburgh EH13 · Private client · 84 m² · Stage Mid · Status **Needs review** ·
-Overall coverage **69%** · Last scan 2026-06-11 · BIM: Autodesk Revit → IFC · `Bonaly_Refurb_R3.ifc` · LOD 300.
+- **`VITE_DEMO=client`** *(default — no env var)* → **CK Group of Construction** account holder (Clint John ·
+  Director · 100a North Birkbeck Road, London E11 4JQ) and a single project, **Refurbishment** (Tabley Rd,
+  Liverpool L15). The client-facing build.
+- **`VITE_DEMO=optisync`** → **Athar Robotics / OptiSync** account, **no projects** (empty state) — used to
+  record OptiSync demoing its own app: a live-camera scan that surfaces a **BIM mismatch** (§16 v1.23 Task 7).
 
-**Team:** J. Mackay · Site supervisor; Cairn Refurbishment Ltd · Main contractor; R. Stewart · Joiner.
+Edge-case datasets stay available: **`VITE_DEMO=house`** (the original Bonaly Terrace single-project set) and
+**`VITE_DATASET=legacy`** (the 6-project portfolio). `VITE_DEMO` wins; `VITE_DATASET` is consulted only when
+`VITE_DEMO` is unset. A single exported **`DEMO_NOW`** (client = `2026-06-12`) pins user-visible timestamps so
+a live on-camera scan stamps a pinned pre-LOD date.
 
-**Zones (area-weighted rollup = 69%):**
+**Client preset — Refurbishment (id `rv1`):** Residential refurbishment · Tabley Rd, Liverpool L15 · Private
+client · contractor **Cairn Refurbishment Ltd** · prepared by **Emanuel · Site Supervisor** · 84 m² GIA ·
+Stage Early · Status **Needs review** · overall coverage **22%** · BIM **tabley_Refurb_R3.ifc** (Autodesk
+Revit → IFC, LOD 300, created 13 Jun 2026). Site team: a single member, **Emanuel · Site Supervisor**.
+
+**Zones (area-weighted rollup over the scanned zones = 22%):**
 | id | Name | Area | Coverage | Note |
 |---|---|---|---|---|
-| z1 | Hallway & stairs | 12 m² | 70% | Parquet to refinish |
-| z2 | Living room | 18 m² | 72% | Bay reglazed; floor prep |
-| z3 | Kitchen & dining | 16 m² | 80% | Units in; worktops set |
-| z4 | Bathroom | 6 m² | 85% | Suite + tiling in |
-| z5 | Bedroom 1 (front) | 14 m² | 58% | Plastered; plumb deviation flagged |
-| z6 | Bedroom 2 (rear) | 12 m² | 60% | Plastered; boards lifted |
-| z7 | Landing | 6 m² | 55% | Balustrade pending |
+| z2 | Living room | 20 m² | 25% | Strip-out done; first fix under way |
+| z3 | Kitchen & dining | 16 m² | 23% | First fix in; partition 38 mm off BIM |
+| z4 | Bathroom | 6 m² | 26% | Strip-out done; first fix in |
+| z5 | Bedroom 1 (front) | 14 m² | 15% | Stripped; 17 mm plumb deviation flagged |
 
-**Scan history:** sc1 2026-04-02 0% (Baseline) → sc2 2026-04-24 22% → sc3 2026-05-15 41% →
-sc4 2026-05-30 58% → sc5 2026-06-11 69% (plumb deviation flagged).
+Zone ids `z2`–`z5` reuse the existing `ZONE_MEDIA` scan clips/posters.
 
-**Issues:**
-- **RV-01 · Major** · Bedroom 1 (front) · "Front wall 17 mm out of plumb over 2.4 m (NHBC limit 8 mm)" · Open · raised 2026-06-11 · appears at 65%.
-  *Defensible: NHBC tolerance for internal walls is max 8 mm from plumb up to 3 m; scan reports 17 mm — ~2× tolerance, invisible to the naked eye.*
-- **RV-02 · Minor** · Kitchen & dining · "Island partition 38 mm off BIM setting-out line" · Open · raised 2026-05-30 · appears at 45%.
+**Scans (every date ≤ 12 Jun 2026 — the scan story predates the 13 Jun LOD-300 model):**
+sc1 2026-06-09 0% (baseline vs BIM) → sc2 2026-06-12 22% (first progress scan; structure verified, 2
+findings raised). Each scan carries a frozen per-zone/project coverage snapshot + the findings it
+raised/resolved, surfaced by the "Changes since last scan" block (§16 v1.23 Task 5).
 
-**Review note:** "Our supervisor scanned the front bedroom in minutes — OptiSync flagged a 17 mm lean in the gable wall we'd otherwise only have caught at final inspection. Saved a re-plaster after decoration. — Cairn Refurbishment Ltd"
+**Findings:**
+- **RV-01 · Major** · Bedroom 1 (front) · "Front wall 17 mm out of plumb over 2.4 m (NHBC limit 8 mm)" ·
+  Open · raised 2026-06-12 · appears at 18%.
+- **RV-02 · Minor** · Kitchen & dining · "Island partition 38 mm off BIM setting-out line" · Open ·
+  raised 2026-06-09 · appears at 14%.
 
-**Captures (10 stills, `pwa/public/captures/`):** bonaly_living_room, bonaly_kitchen,
-bonaly_kitchen_diner, bonaly_bathroom, bonaly_bedroom1, bonaly_bedroom2, bonaly_hall,
-bonaly_stairs, bonaly_landing, bonaly_garden.
+**Captures (`pwa/public/captures/`):** the Bonaly stills are reused (garden, living room, kitchen, kitchen
+diner, bathroom, bedroom1). **Per-zone scan feeds (`pwa/public/scans/`):** `scan_living`→z2, `scan_kitchen`→z3,
+`scan_bathroom`→z4, `scan_bedroom`→z5 (one source per zone for both feed + poster — see §16 v1.19).
 
-**Per-zone scan feeds (`pwa/public/scans/`):**
-- `scan_living.mp4` → z2 (Living room) + fallback
-- `scan_kitchen.mp4` → z3 (Kitchen & dining)
-- `scan_bathroom.mp4` → z4 (Bathroom)
-- `scan_bedroom.mp4` → z5 (Bedroom 1) + z6 (Bedroom 2)
-
-**Dataset switch:** `VITE_DATASET=legacy npm run dev` loads `SEED_LEGACY` (6-project portfolio from `data.legacy.ts`). Omit for the house demo (`SEED_HOUSE` from `data.house.ts`). Selector in `data.ts`.
+**Preset switch:** `VITE_DEMO=optisync npm run build` (our own app demo) · `VITE_DEMO=house` / `VITE_DATASET=legacy`
+for edge-case testing. Omit for the default client build. Selector + `DEMO_NOW` in `data.ts`.
 
 ---
 
@@ -320,6 +324,17 @@ bonaly_stairs, bonaly_landing, bonaly_garden.
     {company}** line (data-driven, so it switches per preset). Identity stays fully data-driven so the
     `optisync` preset overrides it cleanly. Report "Prepared by"/contractor are separate per-project fields
     (Task 2), not the account holder.
+  - **Task 2 — Tabley Refurbishment project (client preset).** `SEED_CLIENT`'s single project is now
+    **Refurbishment** · Tabley Rd, Liverpool L15 · Private client · contractor **Cairn Refurbishment Ltd** ·
+    prepared by **Emanuel · Site Supervisor** · BIM **tabley_Refurb_R3.ifc** (LOD 300, created 13 Jun 2026).
+    New optional `Project.contractor` + `Project.preparedBy` replace the report identity that was hardcoded
+    ("Cairn Refurbishment Ltd" / "J. Mackay · Site Supervisor") across `reports.ts` (footer), `Reports.tsx`
+    (project + zone metadata, sign-off) and `pdf.ts` (meta block + sign-off); both fall back to the old
+    literals so `house`/`legacy` are unchanged. **Date discipline:** every scan/finding is dated **≤ 12 Jun
+    2026** (sc1 09 Jun baseline → sc2 12 Jun progress; RV-01 12 Jun, RV-02 09 Jun); the only later dates are
+    intentionally prospective — the BIM model's own **13 Jun** creation/alignment line, plus the planned
+    target-handover (30 Sep 2026) and subscription-renewal (01 Jul 2026) milestones. Zones keep ids z2–z5
+    so the existing `ZONE_MEDIA` clips + Bonaly capture stills are reused (DEV asserts pass).
 
 - **v1.20 (13 Jun 2026) — Async scan lifecycle · Report rebuild · PDF export.**
   - **Task A — Async scan lifecycle.** New `ScanStatus` type: `Uploading | Uploaded | Processing | Ready | Failed`. After capture ScanFlow shows "Uploading… ✓ Uploaded" then auto-returns to project. New scan appears as **Processing** in the project (amber indicators in scrubber node, zone row, zone coverage bar). Timer runs in AppRoot state (`Record<string, ProcessingJob>`) — default `PROCESSING_MS = 60 000 ms`. Staged labels: `Queued → Aligning to BIM → Generating report → Ready`. On completion the scan flips to Ready and a toast notification fires. **Per-zone lock:** while any scan is Processing for a zone, that zone's scan button is disabled (amber "Processing" badge). Coverage updated immediately on scan write, not deferred to Ready.

@@ -90,6 +90,8 @@ export async function generatePdf(report: ReportModel, scope: 'project' | 'zone'
     : report.zones;
 
   const scopeLabel = activeZone ? activeZone.name : 'Whole project';
+  const contractor = report.project.contractor ?? 'Cairn Refurbishment Ltd';
+  const preparedBy = report.project.preparedBy ?? 'J. Mackay · Site Supervisor';
 
   // Zone-scoped exec summary — avoids project-level prose when drilling into a single zone
   const displaySummary = activeZone
@@ -189,10 +191,10 @@ export async function generatePdf(report: ReportModel, scope: 'project' | 'zone'
     ['Project', report.project.name],
     ['Address', report.project.location],
     ['Client', report.project.client],
-    ['Contractor', 'Cairn Refurbishment Ltd'],
+    ['Contractor', contractor],
     ['Scope', scopeLabel],
     ['Report date', report.date],
-    ['Prepared by', 'J. Mackay · Site Supervisor'],
+    ['Prepared by', preparedBy],
     ['BIM model', `${report.project.bim.file} (LOD ${report.project.bim.lod})`],
     ['Coverage', `${displayCoverage}%`],
     ['Accuracy', '±17 mm'],
@@ -562,7 +564,7 @@ export async function generatePdf(report: ReportModel, scope: 'project' | 'zone'
   doc.roundedRect(ML, y, CONTENT_W, 36, 3, 3, 'F');
 
   const signoffs: [string, string][] = [
-    ['Prepared by', 'J. Mackay · Site Supervisor · Cairn Refurbishment Ltd'],
+    ['Prepared by', `${preparedBy} · ${contractor}`],
     ['Reviewed by', '——————————————'],
     ['Date', report.date],
     ['Report ID', `RPT-${report.project.id.toUpperCase()}-${report.project.scans.filter((s) => s.status === 'Ready').length.toString().padStart(3, '0')}`],

@@ -304,6 +304,8 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
 
   const r = reportFor(p, coverage);
   const deep = p.depth === 'deep';
+  const contractor = p.contractor ?? 'Cairn Refurbishment Ltd';
+  const preparedBy = p.preparedBy ?? 'J. Mackay · Site Supervisor';
   const ringColor = p.status === 'Needs review' && r.coverage < 100 ? T.amber : r.coverage >= 100 ? T.teal : T.navy;
 
   const activeZone = activeZoneId ? p.zones.find((z) => z.id === activeZoneId) : null;
@@ -470,12 +472,12 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
                     <KeyVal k="Project" v={p.name} />
                     <KeyVal k="Address" v={<span style={mono}>{p.location}</span>} />
                     <KeyVal k="Client" v={p.client} />
-                    <KeyVal k="Contractor" v="Cairn Refurbishment Ltd" />
+                    <KeyVal k="Contractor" v={contractor} />
                     <KeyVal k="Type" v={p.type} />
                     <KeyVal k="Scope" v="Whole project" />
                     <KeyVal k="Stage" v={r.rung} />
                     <KeyVal k="Report date" v={<span style={mono}>{r.date}</span>} />
-                    <KeyVal k="Prepared by" v="J. Mackay · Site Supervisor" />
+                    <KeyVal k="Prepared by" v={preparedBy} />
                     <KeyVal k="BIM model" v={<span style={mono}>{p.bim.file} (LOD {p.bim.lod})</span>} />
                     <KeyVal k="Coverage" v={<span style={{ ...mono, fontWeight: 700, color: T.teal }}>{r.coverage}%</span>} />
                     <KeyVal k="Accuracy" v={<span style={mono}>±17 mm</span>} />
@@ -577,10 +579,10 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
                     <KeyVal k="Zone" v={activeZone.name} />
                     <KeyVal k="Address" v={<span style={mono}>{p.location}</span>} />
                     <KeyVal k="Client" v={p.client} />
-                    <KeyVal k="Contractor" v="Cairn Refurbishment Ltd" />
+                    <KeyVal k="Contractor" v={contractor} />
                     <KeyVal k="Stage" v={activeZone.stage} />
                     <KeyVal k="Report date" v={<span style={mono}>{r.date}</span>} />
-                    <KeyVal k="Prepared by" v="J. Mackay · Site Supervisor" />
+                    <KeyVal k="Prepared by" v={preparedBy} />
                     <KeyVal k="BIM model" v={<span style={mono}>{p.bim.file} (LOD {p.bim.lod})</span>} />
                     <KeyVal k="Coverage" v={<span style={{ ...mono, fontWeight: 700, color: T.teal }}>{displayCoverage}%</span>} />
                     <KeyVal k="Accuracy" v={<span style={mono}>±17 mm</span>} />
@@ -603,7 +605,7 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
             {/* ── Sign-off */}
             <SectionLabel>Sign-off</SectionLabel>
             <Card style={{ padding: '6px 16px', marginBottom: 0 }}>
-              <KeyVal k="Prepared by" v="J. Mackay · Site Supervisor" />
+              <KeyVal k="Prepared by" v={preparedBy} />
               <KeyVal k="Reviewed by" v="—" />
               <KeyVal k="Date" v={<span style={mono}>{r.date}</span>} />
             </Card>

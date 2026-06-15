@@ -106,6 +106,10 @@ export interface Project {
   depth: 'deep' | 'light';
   /** Why a project is flagged Needs review (e.g. the Hyndland partition deviation). */
   reviewNote?: string;
+  /** Main contractor on the report header/footer (distinct from the account holder + the client). */
+  contractor?: string;
+  /** Report preparer as "Name · Role" (the site person who signs off the report). */
+  preparedBy?: string;
   bim: Bim;
   /** Project site team as "Name · Role" labels (incl. the external contractor). CRUD as text.
    *  Distinct from AppData.team, which is the org roster (app roles) on the Team & access screen. */
