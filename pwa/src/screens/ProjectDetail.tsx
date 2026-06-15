@@ -155,15 +155,20 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
           </div>
         )}
 
-        {/* Zones (crossfade) */}
-        {p.zones.length > 0 && (
+        {/* Zones (crossfade). Always available on the latest view so a fresh 0-zone project can add its
+            first area to scan; scrubbed historical views only render when zones exist. */}
+        {(p.zones.length > 0 || isLatest) && (
           <div key={`z-${cov}`} style={{ animation: 'fadeIn .18s ease' }}>
             <SectionLabel right={isLatest ? <AddBtn onClick={() => setSheet({ t: 'zone', id: null })} /> : undefined}>Zone coverage</SectionLabel>
             <Card style={{ padding: 16 }}>
-              {[...view.zones].sort((a, b) => b.coverage - a.coverage).map((z) => {
-                const processing = isLatest && p.scans.some((s) => s.status === 'Processing' && s.zoneId === z.id);
-                return <ZoneRow key={z.id} zone={z} editable={isLatest} processing={processing} onEdit={() => setSheet({ t: 'zone', id: z.id })} />;
-              })}
+              {view.zones.length === 0 ? (
+                <div style={{ color: T.muted, fontSize: 13.5, padding: '6px 0' }}>No zones yet. Add the first area to scan.</div>
+              ) : (
+                [...view.zones].sort((a, b) => b.coverage - a.coverage).map((z) => {
+                  const processing = isLatest && p.scans.some((s) => s.status === 'Processing' && s.zoneId === z.id);
+                  return <ZoneRow key={z.id} zone={z} editable={isLatest} processing={processing} onEdit={() => setSheet({ t: 'zone', id: z.id })} />;
+                })
+              )}
             </Card>
           </div>
         )}

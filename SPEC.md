@@ -319,6 +319,15 @@ for edge-case testing. Omit for the default client build. Selector + `DEMO_NOW` 
     committing. **Page loads:** a **`useReady`** gate (~0.34 s) shows a small centered spinner on the two
     pushed detail screens (**ProjectDetail**, **ReportDetail**) so opening a record briefly "loads".
     Tab-root lists stay instant (no laggy tab switches); deletes stay instant. New `LoadingBody` primitive.
+  - **QA-3 — Validation fix: a fresh project couldn't add its first zone.** Found during the full CRUD
+    audit on the `optisync` build. `ProjectDetail` gated the **entire** Zone-coverage section (including its
+    **+ Add** button) behind `zones.length > 0`, so a just-created 0-zone project had no way to add a zone —
+    which also blocked scanning (the scan "Select area" step had nothing to pick). Now the section always
+    renders on the latest view with an empty state ("No zones yet. Add the first area to scan.") + the Add
+    button; scrubbed historical views still only render when zones exist. The scan "Select area" step also
+    shows a hint when a project has no zones. **Audited on `optisync` (all green):** create project (with
+    BIM device upload + latency) → add zone (rolls up coverage) → scan (live-camera with graceful fallback)
+    → capture → upload → **BIM-mismatch** panel; no console errors.
 
 - **v1.23 (15 Jun 2026) — Demo-prep: presets · report depth · scrubber honesty · OptiSync demo.** A
   recording-prep pass building two demo builds from one codebase and deepening the report. Tasks land in

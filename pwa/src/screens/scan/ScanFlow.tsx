@@ -335,6 +335,11 @@ export function ScanFlow({
         }
       >
         <SectionLabel>Select area</SectionLabel>
+        {target.zones.length === 0 && (
+          <Card style={{ padding: 16, color: T.muted, fontSize: 13.5, lineHeight: 1.5 }}>
+            No areas to scan yet. Add a zone to this project first, then return here to scan it.
+          </Card>
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {target.zones.map((z) => {
             const on = zone?.id === z.id;
