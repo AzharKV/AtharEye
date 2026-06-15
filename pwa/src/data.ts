@@ -5,7 +5,7 @@
 //                        state on a fresh cache).
 //   • phase 'optisync' → identity from SEED_OPTISYNC — Athar Robotics, empty projects (our own-app demo).
 // The app starts in 'client'; deleting the seeded project flips it to 'optisync' (a localStorage flag).
-// Clearing the cache (or Settings → Reset demo) re-seeds 'client'. State is **persisted to localStorage** —
+// Clearing the browser cache re-seeds 'client'. State is **persisted to localStorage** —
 // a refresh no longer resets.
 //
 // `VITE_DATASET=legacy` is a separate edge-case escape hatch (the 6-project portfolio; no phase flip).

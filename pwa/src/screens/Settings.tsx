@@ -1,6 +1,5 @@
-// Settings — units, date format, LiDAR quality, auto-align to BIM, notifications, about, demo reset.
-// Writes data.settings; "Reset demo" clears persistence and re-seeds the client phase.
-import { useState } from 'react';
+// Settings — units, date format, LiDAR quality, auto-align to BIM, notifications, about. Writes
+// data.settings. State is persisted to localStorage; reset = clear the browser cache.
 import { T } from '../theme';
 import type { Settings as SettingsType } from '../types';
 import { useStore } from '../lib/store';
@@ -10,18 +9,9 @@ import { Card, SectionLabel } from '../components/primitives';
 import { Icon } from '../components/Icon';
 
 export function Settings() {
-  const { data, patch, resetDemo } = useStore();
+  const { data, patch } = useStore();
   const s = data.settings;
   const set = (partial: Partial<SettingsType>) => patch({ settings: { ...s, ...partial } });
-  const [confirm, setConfirm] = useState(false);
-  const onReset = () => {
-    if (!confirm) {
-      setConfirm(true);
-      return;
-    }
-    resetDemo();
-    if (typeof window !== 'undefined') window.location.reload();
-  };
 
   return (
     <Screen padTop={0}>
@@ -57,20 +47,6 @@ export function Settings() {
             <br />
             Scan. Compare. Prove. · © 2026 Athar Robotics
           </div>
-        </Card>
-
-        <SectionLabel>Demo</SectionLabel>
-        <Card style={{ padding: '12px 16px' }}>
-          <div style={{ fontSize: 12.5, color: T.muted, lineHeight: 1.5, marginBottom: 12 }}>
-            Reset clears all saved data and returns to the predefined client demo (same as clearing the cache).
-          </div>
-          <button
-            onClick={onReset}
-            style={{ width: '100%', padding: '11px 0', borderRadius: 11, border: `1px solid ${confirm ? T.red : T.hairline}`, background: confirm ? T.redTint : T.surface, color: T.red, fontWeight: 700, fontSize: 14, fontFamily: T.font, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-          >
-            <Icon name="trash" size={17} color={T.red} />
-            {confirm ? 'Tap again to reset' : 'Reset demo data'}
-          </button>
         </Card>
       </div>
     </Screen>

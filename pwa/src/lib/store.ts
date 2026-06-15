@@ -2,7 +2,7 @@
 //
 // Persistence (owner direction): the full AppData + the demo `phase` are saved to localStorage on every
 // change, so created projects, recorded scans, edits and identity survive a refresh / relaunch. Only
-// clearing the cache (or Settings → Reset demo, which calls `resetDemo`) re-seeds.
+// clearing the browser cache re-seeds.
 //
 // Two runtime phases from ONE build:
 //   • 'client'   — boot state on a fresh cache: CK Group identity + the seeded Tabley project.
@@ -97,8 +97,6 @@ export interface Store {
   deleteProject(id: string): void;
   /** Patch top-level app state (company / user / team / subscription / settings). */
   patch(partial: Partial<AppData>): void;
-  /** Clear persistence and re-seed the client phase (for re-recording — same as clearing the cache). */
-  resetDemo(): void;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -162,20 +160,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setData((prev) => ({ ...prev, ...partial }));
   }, []);
 
-  const resetDemo = useCallback<Store['resetDemo']>(() => {
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* ignore */
-    }
-    const fresh = freshSeed();
-    setPhase(fresh.phase);
-    setData(fresh.data);
-  }, []);
-
   const store = useMemo<Store>(
-    () => ({ data, phase, demoNow: DEMO_NOW[phase], update, addProject, deleteProject, patch, resetDemo }),
-    [data, phase, update, addProject, deleteProject, patch, resetDemo],
+    () => ({ data, phase, demoNow: DEMO_NOW[phase], update, addProject, deleteProject, patch }),
+    [data, phase, update, addProject, deleteProject, patch],
   );
 
   return createElement(Ctx.Provider, { value: store }, children);

@@ -52,7 +52,7 @@ iPhone **Safari → Add to Home Screen**.
 - **State is persisted to localStorage** (owner direction, SPEC §16 v1.25 — supersedes the earlier
   in-memory rule), seeded from the typed data module (`src/data.ts`) via `lib/store`'s single mutation
   path `update(id, fn, {rollup})`. Created projects, scans, edits and identity **survive a refresh**.
-  **Reset = clear the cache** (or Settings → Reset demo). **Single build, two runtime phases:** boots in
+  **Reset = clear the browser cache.** **Single build, two runtime phases:** boots in
   `client` (CK Group / Tabley); deleting that project writes a flag → flips to `optisync` (Athar Robotics,
   empty, live-camera scan + BIM mismatch). Clearing the cache re-seeds `client`. No `VITE_DEMO` builds.
 - **Commit per logical step** with conventional messages (`feat(pwa):`, `fix(pwa):`, `docs(spec):`…).

@@ -254,7 +254,7 @@ athar-eye/
 ## 15. Demo scenario — single build, two runtime phases
 
 **One build, two recording phases driven by a localStorage flag** (SPEC §16 v1.25 — no `VITE_DEMO`). State
-**persists** to localStorage; **clearing the cache** (or Settings → Reset demo) re-seeds the boot phase.
+**persists** to localStorage; **clearing the browser cache** re-seeds the boot phase.
 
 - **Phase `client`** *(boot state on a fresh cache)* → **CK Group of Construction** account holder (Clint
   John · Director · 100a North Birkbeck Road, London E11 4JQ) and a single project, **Refurbishment**
@@ -298,8 +298,8 @@ diner, bathroom, bedroom1). **Per-zone scan feeds (`pwa/public/scans/`):** `scan
 
 **Recording flow:** `npm run build` → open the app (client phase, Tabley) → record the client demo →
 **delete the project** (swipe-left → Delete) → the app flips to OptiSync → record our own-app demo (create
-project, live-camera scan, BIM mismatch) → **Settings → Reset demo** (or clear the cache) to re-arm the
-client phase. `VITE_DATASET=legacy npm run build` for the 6-project edge dataset.
+project, live-camera scan, BIM mismatch) → **clear the browser cache** to re-arm the client phase.
+`VITE_DATASET=legacy npm run build` for the 6-project edge dataset.
 
 ---
 
@@ -308,7 +308,7 @@ client phase. `VITE_DATASET=legacy npm run build` for the 6-project edge dataset
   the long-standing "in-memory, refresh resets" decision (§14/§15 earlier entries are superseded).
   - **R2-1 — Persistence + phases.** `lib/store.ts` now **persists the full `AppData` + a demo `phase` to
     localStorage** (`optisync:state`, schema-versioned) on every change, so created projects, scans, edits
-    and identity survive a refresh/relaunch. **Reset = clear the cache** (or `resetDemo`). **Single build,
+    and identity survive a refresh/relaunch. **Reset = clear the browser cache.** **Single build,
     two runtime phases** (no `VITE_DEMO`): boots in **`client`** (CK Group / Tabley); deleting that project
     so projects go empty **flips to `optisync`** — a persisted flag that swaps the identity to Athar
     Robotics / OptiSync (projects empty) and switches the scan flow to live-camera + BIM-mismatch. Stays
@@ -327,13 +327,13 @@ client phase. `VITE_DATASET=legacy npm run build` for the 6-project edge dataset
     (prompts permission); on grant the stream is the feed, on **deny/unavailable** a retryable **"Camera
     access needed"** card shows instead of a fallback video. The `client` phase is unchanged (seeded
     walkthrough clip). Needs HTTPS (or localhost) for camera access.
-  - **R2-4 — Settings "Reset demo" + full QA.** Settings gains a **Demo → Reset demo data** control
-    (two-tap confirm) that clears persistence and reloads to the `client` phase — for re-recording without
-    DevTools. **Full click-through (both phases, all green):** fresh cache → client persisted; edit a zone →
-    survives reload; delete project → flips to optisync (persisted) → reload keeps phase; create project +
-    zone in optisync → scan shows the **camera-permission** card (no seeded clip) → BIM mismatch; empty
-    flows (scan CTA, reports empty); Settings reset → back to client. All report values re-validated against
-    the spec (CK Group / Tabley / Cairn / Emanuel / tabley_Refurb_R3.ifc LOD 300 / 12 Jun 2026).
+  - **R2-4 — Full two-phase QA.** **Full click-through (both phases, all green):** fresh cache → client
+    persisted; edit a zone → survives reload; delete project → flips to optisync (persisted) → reload keeps
+    phase; create project + zone in optisync → scan shows the **camera-permission** card (no seeded clip) →
+    BIM mismatch; empty flows (scan CTA, reports empty). All report values re-validated against the spec
+    (CK Group / Tabley / Cairn / Emanuel / tabley_Refurb_R3.ifc LOD 300 / 12 Jun 2026). Reset = clear the
+    browser cache. *(An in-app "Reset demo" control added during this pass was removed at the owner's
+    request — clearing the cache is the reset.)*
 
 - **v1.24 (15 Jun 2026) — Final validation pass: BIM device upload · real-world latency.** Pre-submission
   polish. Sub-bullets per commit.
