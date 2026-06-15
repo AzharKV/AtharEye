@@ -251,20 +251,20 @@ athar-eye/
 
 ---
 
-## 15. Demo scenario — recording presets
+## 15. Demo scenario — single build, two runtime phases
 
-The PWA ships **two recording presets from one codebase**, chosen by `VITE_DEMO` (see §16 v1.23):
+**One build, two recording phases driven by a localStorage flag** (SPEC §16 v1.25 — no `VITE_DEMO`). State
+**persists** to localStorage; **clearing the cache** (or Settings → Reset demo) re-seeds the boot phase.
 
-- **`VITE_DEMO=client`** *(default — no env var)* → **CK Group of Construction** account holder (Clint John ·
-  Director · 100a North Birkbeck Road, London E11 4JQ) and a single project, **Refurbishment** (Tabley Rd,
-  Liverpool L15). The client-facing build.
-- **`VITE_DEMO=optisync`** → **Athar Robotics / OptiSync** account, **no projects** (empty state) — used to
-  record OptiSync demoing its own app: a live-camera scan that surfaces a **BIM mismatch** (§16 v1.23 Task 7).
+- **Phase `client`** *(boot state on a fresh cache)* → **CK Group of Construction** account holder (Clint
+  John · Director · 100a North Birkbeck Road, London E11 4JQ) and a single project, **Refurbishment**
+  (Tabley Rd, Liverpool L15). Record the client demo here.
+- **Phase `optisync`** *(after the client project is deleted)* → the app FLIPS: identity swaps to **Athar
+  Robotics / OptiSync**, projects go empty. Record our own-app demo here — create a project live, scan with
+  the **live camera**, get a **BIM mismatch**. Stays flipped until the cache is cleared.
 
-Edge-case datasets stay available: **`VITE_DEMO=house`** (the original Bonaly Terrace single-project set) and
-**`VITE_DATASET=legacy`** (the 6-project portfolio). `VITE_DEMO` wins; `VITE_DATASET` is consulted only when
-`VITE_DEMO` is unset. A single exported **`DEMO_NOW`** (client = `2026-06-12`) pins user-visible timestamps so
-a live on-camera scan stamps a pinned pre-LOD date.
+`DEMO_NOW` is phase-keyed (`client` = `2026-06-12`, `optisync` = `2026-06-15`) so a live on-camera scan stamps
+a pinned date. **`VITE_DATASET=legacy`** still seeds the 6-project portfolio (edge testing; never flips).
 
 **Client preset — Refurbishment (id `rv1`):** Residential refurbishment · Tabley Rd, Liverpool L15 · Private
 client · contractor **Cairn Refurbishment Ltd** · prepared by **Emanuel · Site Supervisor** · 84 m² GIA ·
@@ -296,12 +296,27 @@ raised/resolved, surfaced by the "Changes since last scan" block (§16 v1.23 Tas
 diner, bathroom, bedroom1). **Per-zone scan feeds (`pwa/public/scans/`):** `scan_living`→z2, `scan_kitchen`→z3,
 `scan_bathroom`→z4, `scan_bedroom`→z5 (one source per zone for both feed + poster — see §16 v1.19).
 
-**Preset switch:** `VITE_DEMO=optisync npm run build` (our own app demo) · `VITE_DEMO=house` / `VITE_DATASET=legacy`
-for edge-case testing. Omit for the default client build. Selector + `DEMO_NOW` in `data.ts`.
+**Recording flow:** `npm run build` → open the app (client phase, Tabley) → record the client demo →
+**delete the project** (swipe-left → Delete) → the app flips to OptiSync → record our own-app demo (create
+project, live-camera scan, BIM mismatch) → **Settings → Reset demo** (or clear the cache) to re-arm the
+client phase. `VITE_DATASET=legacy npm run build` for the 6-project edge dataset.
 
 ---
 
 ## 16. Change log
+- **v1.25 (15 Jun 2026) — localStorage persistence + single-build phase flag (owner direction).** Reverses
+  the long-standing "in-memory, refresh resets" decision (§14/§15 earlier entries are superseded).
+  - **R2-1 — Persistence + phases.** `lib/store.ts` now **persists the full `AppData` + a demo `phase` to
+    localStorage** (`optisync:state`, schema-versioned) on every change, so created projects, scans, edits
+    and identity survive a refresh/relaunch. **Reset = clear the cache** (or `resetDemo`). **Single build,
+    two runtime phases** (no `VITE_DEMO`): boots in **`client`** (CK Group / Tabley); deleting that project
+    so projects go empty **flips to `optisync`** — a persisted flag that swaps the identity to Athar
+    Robotics / OptiSync (projects empty) and switches the scan flow to live-camera + BIM-mismatch. Stays
+    flipped until the cache is cleared; clearing re-seeds `client`. `DEMO_NOW` is now a phase-keyed map read
+    from the store (`demoNow`); the scan's OptiSync behaviour reads `phase` instead of an env const. Dead
+    `blob:`/`data:` capture URLs are dropped on load (they can't survive a reload). `VITE_DATASET=legacy`
+    still seeds the portfolio and never flips.
+
 - **v1.24 (15 Jun 2026) — Final validation pass: BIM device upload · real-world latency.** Pre-submission
   polish. Sub-bullets per commit.
   - **QA-1 — BIM model upload from the device.** The BIM is now attached by **picking a file from the

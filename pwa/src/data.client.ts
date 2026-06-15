@@ -1,6 +1,6 @@
-// Client demo seed (VITE_DEMO=client — the default recording build).
-// Refined across Tasks 1–3: CK Group account identity, the Tabley Refurbishment project, and a
-// single site-team member (Emanuel). In-memory only — a refresh re-seeds (intended demo reset).
+// Client demo seed — the 'client' phase (boot state on a fresh cache; see lib/store.ts).
+// CK Group account identity, the Tabley Refurbishment project, and a single site-team member (Emanuel).
+// State persists to localStorage; deleting this project flips the app to the 'optisync' phase.
 // Captures at /captures/ are direct paths (photoSrc handles the leading-slash form).
 import type { AppData } from './types';
 

@@ -5,7 +5,6 @@ import { useRef, useState } from 'react';
 import { T, SEV } from '../theme';
 import type { Project, Scan, Severity, Stage, Status, TradeStatus } from '../types';
 import { fmtDate } from '../lib/format';
-import { DEMO_NOW } from '../data';
 import { useStore } from '../lib/store';
 import { useDelayedSave } from '../hooks/useDelayedSave';
 import { Sheet, TextField, NumberField, SelectField } from '../components/Sheet';
@@ -108,7 +107,7 @@ export function ZoneSheet({ project, zoneId, onClose }: { project: Project; zone
 
 // ── Issue add / edit / close-reopen / delete / re-tag zone
 export function IssueSheet({ project, issueId, onClose }: { project: Project; issueId: string | null; onClose: () => void }) {
-  const { update } = useStore();
+  const { update, demoNow } = useStore();
   const existing = project.issues.find((i) => i.id === issueId);
   const zoneNames = project.zones.map((z) => z.name);
   const [title, setTitle] = useState(existing?.title ?? '');
@@ -127,7 +126,7 @@ export function IssueSheet({ project, issueId, onClose }: { project: Project; is
           zone,
           title: title.trim() || 'New issue',
           status: 'Open',
-          raised: DEMO_NOW,
+          raised: demoNow,
           appear: d.overall_coverage,
         });
       }
@@ -140,7 +139,7 @@ export function IssueSheet({ project, issueId, onClose }: { project: Project; is
       if (!it) return;
       if (it.status === 'Open') {
         it.status = 'Closed';
-        it.closed = DEMO_NOW;
+        it.closed = demoNow;
         it.clear = d.overall_coverage;
       } else {
         it.status = 'Open';

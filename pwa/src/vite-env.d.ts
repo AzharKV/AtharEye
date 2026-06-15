@@ -1,10 +1,9 @@
 /// <reference types="vite/client" />
 /// <reference types="vite-plugin-pwa/client" />
 
-// Build-time demo selectors (see src/data.ts). VITE_DEMO chooses the recording preset;
-// VITE_DATASET=legacy is a separate edge-case escape hatch.
+// `VITE_DATASET=legacy` is an edge-case escape hatch (the 6-project portfolio). The client→optisync
+// demo transition is a runtime localStorage phase flag (see lib/store.ts), not a build-time selector.
 interface ImportMetaEnv {
-  readonly VITE_DEMO?: 'client' | 'optisync' | 'house';
   readonly VITE_DATASET?: 'legacy';
 }
 interface ImportMeta {

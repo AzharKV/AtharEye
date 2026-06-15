@@ -1,7 +1,7 @@
-// OptiSync demo seed (VITE_DEMO=optisync — Athar Robotics recording our own app).
-// No seeded projects: the empty / "no projects yet" state, so the demo creates a project live on
-// camera. Account identity is ours (OptiSync / Athar Robotics). The live camera + BIM-mismatch
-// result are wired in ScanFlow behind the same preset flag (see Task 7).
+// OptiSync demo seed — the 'optisync' phase (Athar Robotics recording our own app; see lib/store.ts).
+// Only the identity (company/user/team/subscription/settings) is used: the store swaps to it when the
+// client project is deleted (projects stay empty so the demo creates a project live on camera). The
+// live camera + BIM-mismatch result are wired in ScanFlow behind the same phase flag.
 import type { AppData } from './types';
 
 export const SEED_OPTISYNC: AppData = {

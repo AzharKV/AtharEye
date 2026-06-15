@@ -49,9 +49,12 @@ iPhone **Safari → Add to Home Screen**.
   bars; issues = severity dots (red/amber/grey); status = dot+label; stage = tinted pill.
 - **Strict TypeScript**, ESLint clean (`--max-warnings 0`), Prettier formatting. No new runtime deps
   without reason (keep the bundle lean; CSS transforms/opacity + canvas for animation).
-- **State is in-memory**, seeded from the typed data module (`src/data.ts`) via `lib/store`'s single
-  mutation path `update(id, fn, {rollup})`. **A refresh resets to baseline** — no localStorage for core
-  state (the intended demo reset).
+- **State is persisted to localStorage** (owner direction, SPEC §16 v1.25 — supersedes the earlier
+  in-memory rule), seeded from the typed data module (`src/data.ts`) via `lib/store`'s single mutation
+  path `update(id, fn, {rollup})`. Created projects, scans, edits and identity **survive a refresh**.
+  **Reset = clear the cache** (or Settings → Reset demo). **Single build, two runtime phases:** boots in
+  `client` (CK Group / Tabley); deleting that project writes a flag → flips to `optisync` (Athar Robotics,
+  empty, live-camera scan + BIM mismatch). Clearing the cache re-seeds `client`. No `VITE_DEMO` builds.
 - **Commit per logical step** with conventional messages (`feat(pwa):`, `fix(pwa):`, `docs(spec):`…).
   End commit messages with `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
 - **Test as you go**: dev for visuals, `npm run preview` for SW/offline/install. Cover the edge cases

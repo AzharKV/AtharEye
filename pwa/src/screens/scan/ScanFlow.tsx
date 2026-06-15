@@ -8,7 +8,6 @@ import { T } from '../../theme';
 import type { Project, Zone } from '../../types';
 import { fmtDateShort } from '../../lib/format';
 import { useStore } from '../../lib/store';
-import { DEMO_NOW } from '../../data';
 import { useAppActions } from '../../navigation/AppActions';
 import { zoneMedia } from '../../lib/photos';
 import { Button, Card, Ring, SectionLabel, StageChip, mono } from '../../components/primitives';
@@ -21,10 +20,6 @@ const CAP_FALLBACK_MS = 9000;
 const AIM_DRIFT = true;
 const UPLOAD_MS = 1500; // "Uploading…" phase duration
 const UPLOADED_MS = 1500; // "✓ Uploaded" phase before auto-close
-
-// OptiSync demo preset (VITE_DEMO=optisync): scan with the live rear camera behind the point-cloud
-// overlay, and resolve the upload into a "doesn't match BIM" state instead of a coverage report.
-const OPTISYNC = import.meta.env.VITE_DEMO === 'optisync';
 
 const shortName = (name: string) => name.split(' ').slice(0, 2).join(' ');
 const defaultZone = (p: Project): Zone | null => p.zones.find((z) => /kitchen/i.test(z.name)) ?? p.zones[0] ?? null;
@@ -47,7 +42,10 @@ export function ScanFlow({
   onClose: () => void;
   onViewReport: (projectId: string, coverage?: number) => void;
 }) {
-  const { data, update } = useStore();
+  const { data, update, phase, demoNow } = useStore();
+  // OptiSync demo phase: scan with the live rear camera behind the point-cloud overlay, and resolve the
+  // upload into a "doesn't match BIM" state instead of a coverage report.
+  const optisync = phase === 'optisync';
   const { startProcessing } = useAppActions();
   const initial = projectId ? data.projects.find((p) => p.id === projectId) ?? null : null;
   const [targetId, setTargetId] = useState<string | null>(projectId ?? null);
@@ -105,7 +103,7 @@ export function ScanFlow({
       update(target.id, (d) => {
         d.scans.push({
           id: scanId,
-          date: DEMO_NOW,
+          date: demoNow,
           coverage: plan.to,
           note: `${plan.zoneName} scan`,
           status: 'Processing',
@@ -233,8 +231,8 @@ export function ScanFlow({
       return () => clearTimeout(to);
     }
     if (step === 'uploading') {
-      // OptiSync preset: the upload comes back as a BIM mismatch instead of a coverage report.
-      const to = setTimeout(() => setStep(OPTISYNC ? 'mismatch' : 'uploaded'), UPLOAD_MS);
+      // OptiSync phase: the upload comes back as a BIM mismatch instead of a coverage report.
+      const to = setTimeout(() => setStep(optisync ? 'mismatch' : 'uploaded'), UPLOAD_MS);
       return () => clearTimeout(to);
     }
     if (step === 'uploaded') {
@@ -257,7 +255,7 @@ export function ScanFlow({
   // overrides the seeded `src`; if permission is denied/unavailable we leave the seeded clip as a graceful
   // fallback. Requires HTTPS (or localhost).
   useEffect(() => {
-    if (!OPTISYNC) return;
+    if (!optisync) return;
     const camSteps: Step[] = ['aim', 'capture', 'process', 'result', 'uploading'];
     if (!camSteps.includes(step) || streamRef.current) return;
     let cancelled = false;
@@ -282,7 +280,7 @@ export function ScanFlow({
     return () => {
       cancelled = true;
     };
-  }, [step]);
+  }, [step, optisync]);
 
   // Stop the live camera when the scan flow unmounts.
   useEffect(
