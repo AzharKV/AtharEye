@@ -12,6 +12,7 @@ export const SEED_OPTISYNC: AppData = {
     vat: 'GB 421 9930 17',
     registeredOffice: 'Bayes Centre, 47 Potterrow, Edinburgh, EH8 9BT',
     established: '2024',
+    monogram: 'OS',
   },
   user: {
     name: 'OptiSync Demo',

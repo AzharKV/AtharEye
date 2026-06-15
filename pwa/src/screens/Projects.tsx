@@ -7,7 +7,7 @@ import type { Project } from '../types';
 import { haptic } from '../lib/haptic';
 import { useStore } from '../lib/store';
 import { Screen, useNav } from '../navigation/Navigator';
-import { Ring, ScreenHeader, StageChip, StatusPill } from '../components/primitives';
+import { EmptyState, Ring, ScreenHeader, StageChip, StatusPill } from '../components/primitives';
 import { Icon } from '../components/Icon';
 import { ProjectDetail } from './ProjectDetail';
 import { NewProject } from './NewProject';
@@ -100,7 +100,9 @@ export function ProjectsList() {
       </ScreenHeader>
 
       <div style={{ padding: '14px 16px 4px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {list.length === 0 ? (
+        {data.projects.length === 0 ? (
+          <EmptyState icon="projects" title="No projects yet" sub="Tap New to create your first project, then run a scan to start a report." />
+        ) : list.length === 0 ? (
           <div style={{ textAlign: 'center', color: T.muted, fontSize: 13, padding: '40px 0' }}>No projects match.</div>
         ) : (
           list.map((p) => (

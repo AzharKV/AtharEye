@@ -14,13 +14,17 @@ import { zoneMedia } from '../../lib/photos';
 import { Button, Card, Ring, SectionLabel, StageChip, mono } from '../../components/primitives';
 import { Icon } from '../../components/Icon';
 
-type Step = 'picker' | 'select' | 'aim' | 'capture' | 'process' | 'result' | 'uploading' | 'uploaded';
+type Step = 'picker' | 'select' | 'aim' | 'capture' | 'process' | 'result' | 'uploading' | 'uploaded' | 'mismatch';
 const PROC_MS = 1500;
 const CAP_SAFETY_MS = 11000;
 const CAP_FALLBACK_MS = 9000;
 const AIM_DRIFT = true;
 const UPLOAD_MS = 1500; // "Uploading…" phase duration
 const UPLOADED_MS = 1500; // "✓ Uploaded" phase before auto-close
+
+// OptiSync demo preset (VITE_DEMO=optisync): scan with the live rear camera behind the point-cloud
+// overlay, and resolve the upload into a "doesn't match BIM" state instead of a coverage report.
+const OPTISYNC = import.meta.env.VITE_DEMO === 'optisync';
 
 const shortName = (name: string) => name.split(' ').slice(0, 2).join(' ');
 const defaultZone = (p: Project): Zone | null => p.zones.find((z) => /kitchen/i.test(z.name)) ?? p.zones[0] ?? null;
@@ -57,6 +61,7 @@ export function ScanFlow({
   const cloudRef = useRef<CloudPt[] | null>(null);
   const rafRef = useRef(0);
   const wrote = useRef(false);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const [plan, setPlan] = useState<{ from: number; to: number; zoneId: string; zoneName: string; zoneFrom: number; zoneTo: number; zoneDelta: number } | null>(null);
 
@@ -78,7 +83,7 @@ export function ScanFlow({
   const beginCapture = () => {
     const v = videoRef.current;
     if (v) {
-      v.currentTime = 0;
+      if (!streamRef.current) v.currentTime = 0; // seeked clip; a live MediaStream isn't seekable
       const pr = v.play();
       if (pr) pr.catch(() => {});
     }
@@ -228,7 +233,8 @@ export function ScanFlow({
       return () => clearTimeout(to);
     }
     if (step === 'uploading') {
-      const to = setTimeout(() => setStep('uploaded'), UPLOAD_MS);
+      // OptiSync preset: the upload comes back as a BIM mismatch instead of a coverage report.
+      const to = setTimeout(() => setStep(OPTISYNC ? 'mismatch' : 'uploaded'), UPLOAD_MS);
       return () => clearTimeout(to);
     }
     if (step === 'uploaded') {
@@ -246,6 +252,46 @@ export function ScanFlow({
     if (m.fallback) console.warn('[ScanFlow] no ZONE_MEDIA for zone — using generic feed', { zoneId, feed: m.feed });
     else console.log('[ScanFlow] scan media resolved', { zoneId, feed: m.feed });
   }, [step, zone?.id]);
+
+  // OptiSync preset: attach the live rear camera to the feed <video> on the camera steps. srcObject
+  // overrides the seeded `src`; if permission is denied/unavailable we leave the seeded clip as a graceful
+  // fallback. Requires HTTPS (or localhost).
+  useEffect(() => {
+    if (!OPTISYNC) return;
+    const camSteps: Step[] = ['aim', 'capture', 'process', 'result', 'uploading'];
+    if (!camSteps.includes(step) || streamRef.current) return;
+    let cancelled = false;
+    navigator.mediaDevices
+      ?.getUserMedia?.({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+      .then((stream) => {
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        streamRef.current = stream;
+        const v = videoRef.current;
+        if (v) {
+          v.srcObject = stream;
+          const pr = v.play();
+          if (pr) pr.catch(() => {});
+        }
+      })
+      .catch(() => {
+        /* denied / unavailable — keep the seeded clip fallback */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [step]);
+
+  // Stop the live camera when the scan flow unmounts.
+  useEffect(
+    () => () => {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    },
+    [],
+  );
 
   // ── Light step: project picker
   if (step === 'picker' || !target) {
@@ -446,6 +492,39 @@ export function ScanFlow({
           </div>
         </div>
       )}
+
+      {/* BIM mismatch (OptiSync preset) — the upload aligned to no overlap; no coverage report produced */}
+      {step === 'mismatch' && (
+        <BimMismatchPanel zoneName={zoneName} bimFile={target.bim.file} onClose={onClose} />
+      )}
+    </div>
+  );
+}
+
+// ── BIM-mismatch result panel (OptiSync demo) — branded, red-for-critical "no alignment" state.
+function BimMismatchPanel({ zoneName, bimFile, onClose }: { zoneName: string; bimFile?: string; onClose: () => void }) {
+  const hasFile = !!bimFile && bimFile !== '—';
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 12, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'linear-gradient(transparent 30%, rgba(10,14,20,.8))', animation: 'scrimIn .3s ease' }}>
+      <div style={{ padding: '0 16px calc(20px + env(safe-area-inset-bottom))' }}>
+        <div style={{ background: T.surface, borderRadius: 18, padding: 18, boxShadow: '0 20px 50px rgba(8,12,18,0.5)', borderTop: `3px solid ${T.red}`, animation: 'sheetUp .35s cubic-bezier(.32,.72,0,1)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 20, background: T.redTint, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Icon name="alert" size={21} color={T.red} />
+            </div>
+            <div>
+              <div style={{ fontSize: 15.5, fontWeight: 800, color: T.red, letterSpacing: -0.2 }}>Scan doesn&apos;t match BIM model</div>
+              <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>No alignment found</div>
+            </div>
+          </div>
+          <div style={{ fontSize: 13, color: T.ink, lineHeight: 1.55, marginBottom: 16 }}>
+            The captured geometry of <strong>{zoneName}</strong> couldn&apos;t be aligned to the BIM reference
+            {hasFile ? <> (<span style={mono}>{bimFile}</span>)</> : ''}. The scan and model don&apos;t overlap —
+            check you&apos;re scanning the right area, or that the correct model is linked, then try again.
+          </div>
+          <Button full primary onClick={onClose}>Done</Button>
+        </div>
+      </div>
     </div>
   );
 }

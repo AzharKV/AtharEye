@@ -372,6 +372,21 @@ for edge-case testing. Omit for the default client build. Selector + `DEMO_NOW` 
     to **View log** for the real per-scan record, and the time-travel banner now reads **"Preview · scan
     {date}"**. The real-per-scan-history rebuild is the **proper path shared with Task 5 — flagged above,
     NOT built without go-ahead.**
+  - **Task 7 — OptiSync demo preset (`VITE_DEMO=optisync`).** Records OptiSync demoing its own app.
+    (1) **Identity = ours:** `SEED_OPTISYNC` account is **Athar Robotics / OptiSync** (monogram OS) across
+    Account, Settings and the Plans "Billed to" line. (2) **Empty state:** no seeded projects — `ProjectsList`
+    gains a real **"No projects yet"** empty state (tap New → create a project live on camera). (3) **Live
+    camera:** in `ScanFlow`, when the preset is active, a `getUserMedia({ facingMode:'environment' })` stream
+    is attached to the feed `<video>` (via `srcObject`) on the camera steps, keeping the point-cloud canvas +
+    grid overlay on top; `beginCapture` skips `currentTime=0` for the non-seekable stream; the stream is
+    stopped on unmount; **graceful fallback** to the seeded clip if permission is denied/unavailable (needs
+    HTTPS). (4) **BIM mismatch:** new `'mismatch'` step — the upload resolves to a branded **red-for-critical
+    "Scan doesn't match BIM model · no alignment found"** panel (`BimMismatchPanel`) instead of the coverage
+    pipeline, and **no scan is committed**. All four are gated on `OPTISYNC = VITE_DEMO === 'optisync'`, so the
+    `client` preset is visually + behaviourally unchanged.
+  - **Build commands.** `npm run build` (= `VITE_DEMO=client`, the default) → CK Group / Tabley client build ·
+    `VITE_DEMO=optisync npm run build` → Athar Robotics / live-camera / BIM-mismatch build ·
+    `VITE_DEMO=house npm run build` / `VITE_DATASET=legacy npm run build` for edge-case testing.
 
 - **v1.20 (13 Jun 2026) — Async scan lifecycle · Report rebuild · PDF export.**
   - **Task A — Async scan lifecycle.** New `ScanStatus` type: `Uploading | Uploaded | Processing | Ready | Failed`. After capture ScanFlow shows "Uploading… ✓ Uploaded" then auto-returns to project. New scan appears as **Processing** in the project (amber indicators in scrubber node, zone row, zone coverage bar). Timer runs in AppRoot state (`Record<string, ProcessingJob>`) — default `PROCESSING_MS = 60 000 ms`. Staged labels: `Queued → Aligning to BIM → Generating report → Ready`. On completion the scan flips to Ready and a toast notification fires. **Per-zone lock:** while any scan is Processing for a zone, that zone's scan button is disabled (amber "Processing" badge). Coverage updated immediately on scan write, not deferred to Ready.
