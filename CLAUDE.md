@@ -18,9 +18,6 @@ design-source/          Locked OptiSync Claude Design export — the visual refe
 README.md               Monorepo overview
 pwa/                    ✅ OptiSync — the production PWA (Vite + React 18 + TS + vite-plugin-pwa)  ← the product
   ARCHITECTURE.md       ⭐ Full engineering reference for the PWA codebase (read this, don't scan)
-reactnative/            🧊 Frozen legacy — Athar-Eye-era React Native + Expo port (prior dark design)
-flutter/                🧊 Frozen legacy — Athar-Eye-era Flutter comparison port
-ios-native/             🧊 Frozen legacy — Athar-Eye-era SwiftUI comparison port
 ```
 
 ## Read in this order
@@ -41,9 +38,6 @@ npm run lint       # must pass clean (--max-warnings 0)
 ```
 The deliverable is a static **`pwa/dist/`** deployed to Netlify/Vercel/Cloudflare (root, HTTPS), then
 iPhone **Safari → Add to Home Screen**.
-
-*(The `reactnative/` · `flutter/` · `ios-native/` ports are frozen Athar-Eye-era artifacts; they are not
-part of the OptiSync build and aren't maintained here.)*
 
 ## How to work here
 - **Port, don't redesign.** The design in `design-source/` is locked. Match look, layout, motion and
@@ -81,8 +75,3 @@ reports + share/export sheet, the account cluster (Issues/Plans/Team/Settings), 
 PWA icons, and offline asset caching. `tsc` + ESLint + `vite build` clean; verified in the browser
 preview. **Remaining manual step:** deploy `pwa/dist/` + verify Add-to-Home-Screen / standalone / offline
 on a real iPhone.
-
-**Frozen legacy ports** — `reactnative/` (Expo SDK 56), `flutter/` (3.41), `ios-native/` (SwiftUI) were
-built against the **previous Athar Eye** dark design and have **not** been re-ported to OptiSync. They
-remain for reference only. To migrate them later, follow **`OPTISYNC_PORTING_GUIDE.md`** (the Athar
-Eye → OptiSync delta, with the PWA as the reference implementation).
