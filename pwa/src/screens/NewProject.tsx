@@ -94,7 +94,9 @@ export function NewProject() {
     };
     addProject(p);
     nav.pop();
-    setTimeout(() => nav.push(<ProjectDetail projectId={id} />), 80);
+    // Wait out the Navigator's 380 ms pop animation-lock before pushing the new project's detail —
+    // an earlier push lands inside the lock and is silently dropped (leaving you on the list).
+    setTimeout(() => nav.push(<ProjectDetail projectId={id} />), 420);
   };
 
   return (

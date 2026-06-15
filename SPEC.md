@@ -354,6 +354,10 @@ project, live-camera scan, BIM mismatch) → **clear the browser cache** to re-a
     existed. `AppRoot` now **prunes jobs whose project was deleted** (effect on `data.projects`) and only
     toasts when the completing scan still exists. The optisync scan itself starts no job (it ends in the BIM
     mismatch), so it never produces a report/toast.
+  - **R5 — Create-project now opens the new project.** `NewProject` pushed the detail 80 ms after `nav.pop()`
+    — inside the Navigator's 380 ms pop animation-lock, so the push was silently dropped and you landed on
+    the Projects list. Bumped the push delay to 420 ms so it clears the lock; creating a project now opens
+    its detail (so you can add zones / scan straight away in the demo).
 
 - **v1.24 (15 Jun 2026) — Final validation pass: BIM device upload · real-world latency.** Pre-submission
   polish. Sub-bullets per commit.
