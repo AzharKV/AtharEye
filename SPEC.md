@@ -312,6 +312,13 @@ for edge-case testing. Omit for the default client build. Selector + `DEMO_NOW` 
     Revit→IFC). A dummy **`samples/tabley_Refurb_R3.ifc`** (small but structurally valid IFC4) ships for the
     user to keep on their device. `Button` gains a `loading` prop (spinner + blocked); new
     `hooks/useDelayedSave` wraps writes with a small latency.
+  - **QA-2 — Small real-world latency on writes + page loads.** The app was instant everywhere (in-memory
+    store); added subtle delays so it reads like a real networked product — *small, not slow*. **Writes:** a
+    reusable **`SaveButton`** (primary save/add in every CRUD sheet — project, zone, issue, trade, site
+    member, BIM, account profile, team member, new-project create) shows a spinner for ~0.5 s before
+    committing. **Page loads:** a **`useReady`** gate (~0.34 s) shows a small centered spinner on the two
+    pushed detail screens (**ProjectDetail**, **ReportDetail**) so opening a record briefly "loads".
+    Tab-root lists stay instant (no laggy tab switches); deletes stay instant. New `LoadingBody` primitive.
 
 - **v1.23 (15 Jun 2026) — Demo-prep: presets · report depth · scrubber honesty · OptiSync demo.** A
   recording-prep pass building two demo builds from one codebase and deepening the report. Tasks land in

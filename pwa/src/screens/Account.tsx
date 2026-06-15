@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { T } from '../theme';
 import { useStore } from '../lib/store';
 import { Screen, useNav } from '../navigation/Navigator';
-import { Avatar, Button, Card, ScreenHeader, SectionLabel, mono } from '../components/primitives';
+import { Avatar, Card, SaveButton, ScreenHeader, SectionLabel, mono } from '../components/primitives';
 import { Sheet, TextField } from '../components/Sheet';
 import { Icon } from '../components/Icon';
 import type { IconName } from '../components/Icon';
@@ -99,7 +99,7 @@ function ProfileSheet({ onClose }: { onClose: () => void }) {
     onClose();
   };
   return (
-    <Sheet title="Edit profile" onClose={onClose} footer={<Button primary full onClick={save}>Save</Button>}>
+    <Sheet title="Edit profile" onClose={onClose} footer={<SaveButton onSave={save}>Save</SaveButton>}>
       <TextField label="Name" value={name} onChange={setName} />
       <TextField label="Role" value={role} onChange={setRole} />
       <TextField label="Email" value={email} onChange={setEmail} />

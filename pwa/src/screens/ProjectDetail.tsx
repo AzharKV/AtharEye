@@ -11,12 +11,13 @@ import { stateAt, rungFor } from '../lib/reports';
 import { photoSrc } from '../lib/photos';
 import { useStore } from '../lib/store';
 import { useBackLayer } from '../hooks/useBackLayer';
+import { useReady } from '../hooks/useReady';
 import { useAppActions } from '../navigation/AppActions';
 import { Screen, useNav } from '../navigation/Navigator';
 import { PushHeader, RoundBtn } from '../navigation/PushHeader';
 import { ReportDetail } from './Reports';
 import { EditProjectSheet, ZoneSheet, IssueSheet, TradeSheet, TeamSheet, BimSheet, ScanLogSheet } from './editors';
-import { Avatar, Bar, Button, Card, Donut, Gallery, KeyVal, Lightbox, SectionLabel, SevDot, StageChip, StatusPill, mono } from '../components/primitives';
+import { Avatar, Bar, Button, Card, Donut, Gallery, KeyVal, Lightbox, LoadingBody, SectionLabel, SevDot, StageChip, StatusPill, mono } from '../components/primitives';
 import { Icon } from '../components/Icon';
 
 type SheetState =
@@ -43,12 +44,22 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
   const [showClosed, setShowClosed] = useState(false);
   const [editCaps, setEditCaps] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const ready = useReady();
 
   if (!p) {
     return (
       <Screen padTop={0}>
         <PushHeader title="Project" />
         <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>This project was removed.</div>
+      </Screen>
+    );
+  }
+
+  if (!ready) {
+    return (
+      <Screen padTop={0}>
+        <PushHeader title={p.name} />
+        <LoadingBody />
       </Screen>
     );
   }

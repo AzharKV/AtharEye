@@ -7,6 +7,7 @@ import type { Severity, Stage, Status, Zone } from '../types';
 import { haptic } from '../lib/haptic';
 import { useBackLayer } from '../hooks/useBackLayer';
 import { useCountUp } from '../hooks/useCountUp';
+import { useDelayedSave } from '../hooks/useDelayedSave';
 import { photoSrc } from '../lib/photos';
 import { Icon } from './Icon';
 import type { IconName } from './Icon';
@@ -316,6 +317,27 @@ export function Button({
       )}
       {children}
     </button>
+  );
+}
+
+/** Centered spinner body for a page-load gate (render inside a <Screen> alongside the header while
+ *  `useReady` is false). */
+export function LoadingBody() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '140px 0' }}>
+      <span style={{ width: 30, height: 30, borderRadius: 999, border: `3px solid ${T.hairline}`, borderTopColor: T.navy, animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
+    </div>
+  );
+}
+
+/** A primary, full-width Save/Add button that wraps the write with a small real-world latency: tapping
+ *  shows a spinner for a beat, then commits (`onSave` usually closes the sheet). Use in CRUD sheets. */
+export function SaveButton({ onSave, children, ms }: { onSave: () => void; children: ReactNode; ms?: number }) {
+  const { saving, run } = useDelayedSave(ms);
+  return (
+    <Button primary full loading={saving} onClick={() => run(onSave)}>
+      {children}
+    </Button>
   );
 }
 

@@ -9,7 +9,7 @@ import { DEMO_NOW } from '../data';
 import { useStore } from '../lib/store';
 import { useDelayedSave } from '../hooks/useDelayedSave';
 import { Sheet, TextField, NumberField, SelectField } from '../components/Sheet';
-import { Button, SevDot, mono } from '../components/primitives';
+import { Button, SaveButton, SevDot, mono } from '../components/primitives';
 import { Icon } from '../components/Icon';
 
 const STAGES = ['Early', 'Mid', 'Complete'] as const;
@@ -41,7 +41,7 @@ export function EditProjectSheet({ project, onClose }: { project: Project; onClo
     onClose();
   };
   return (
-    <Sheet title="Edit project" onClose={onClose} footer={<Button primary full onClick={save}>Save changes</Button>}>
+    <Sheet title="Edit project" onClose={onClose} footer={<SaveButton onSave={save}>Save changes</SaveButton>}>
       <TextField label="Project name" value={name} onChange={setName} />
       <TextField label="Client" value={client} onChange={setClient} />
       <TextField label="Location" value={location} onChange={setLocation} />
@@ -92,7 +92,7 @@ export function ZoneSheet({ project, zoneId, onClose }: { project: Project; zone
       footer={
         <>
           {existing && <Button danger onClick={remove} icon="trash">Delete</Button>}
-          <Button primary full onClick={save}>{existing ? 'Save' : 'Add zone'}</Button>
+          <SaveButton onSave={save}>{existing ? 'Save' : 'Add zone'}</SaveButton>
         </>
       }
     >
@@ -164,7 +164,7 @@ export function IssueSheet({ project, issueId, onClose }: { project: Project; is
       footer={
         <>
           {existing && <Button danger onClick={remove} icon="trash">Delete</Button>}
-          <Button primary full onClick={save}>{existing ? 'Save' : 'Add issue'}</Button>
+          <SaveButton onSave={save}>{existing ? 'Save' : 'Add issue'}</SaveButton>
         </>
       }
     >
@@ -210,7 +210,7 @@ export function TradeSheet({ project, index, onClose }: { project: Project; inde
       footer={
         <>
           {existing && <Button danger onClick={remove} icon="trash">Delete</Button>}
-          <Button primary full onClick={save}>{existing ? 'Save' : 'Add trade'}</Button>
+          <SaveButton onSave={save}>{existing ? 'Save' : 'Add trade'}</SaveButton>
         </>
       }
     >
@@ -247,7 +247,7 @@ export function TeamSheet({ project, index, onClose }: { project: Project; index
       footer={
         <>
           {existing && <Button danger onClick={remove} icon="trash">Remove</Button>}
-          <Button primary full onClick={save}>{existing ? 'Save' : 'Add'}</Button>
+          <SaveButton onSave={save}>{existing ? 'Save' : 'Add'}</SaveButton>
         </>
       }
     >

@@ -9,6 +9,7 @@ import { reportFor } from '../lib/reports';
 import type { ReportModel } from '../lib/reports';
 import { fmtDate } from '../lib/format';
 import { useStore } from '../lib/store';
+import { useReady } from '../hooks/useReady';
 import { Screen, useNav } from '../navigation/Navigator';
 import { PushHeader, RoundBtn } from '../navigation/PushHeader';
 import { ProjectDetail } from './ProjectDetail';
@@ -19,6 +20,7 @@ import {
   Donut,
   Gallery,
   KeyVal,
+  LoadingBody,
   Ring,
   ScreenHeader,
   SectionLabel,
@@ -380,6 +382,7 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
   const [share, setShare] = useState(false);
   const [scope, setScope] = useState<'project' | 'zone'>('project');
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
+  const ready = useReady();
 
   const p = data.projects.find((x) => x.id === projectId);
   if (!p) {
@@ -387,6 +390,15 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
       <Screen padTop={0}>
         <PushHeader title="Report" />
         <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>This project was removed.</div>
+      </Screen>
+    );
+  }
+
+  if (!ready) {
+    return (
+      <Screen padTop={0}>
+        <PushHeader title="Progress report" />
+        <LoadingBody />
       </Screen>
     );
   }

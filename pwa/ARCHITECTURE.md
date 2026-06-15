@@ -61,7 +61,7 @@ offline on a real iPhone.
 - **`lib/reports.ts`** — `rollup`, `stateAt`, `reportFor` + staged prose. `sev()` severity rank updated to 4-level (Critical=0/Major=1/Minor=2/Cosmetic=3).
 - **`lib/store.ts`** — in-memory `StoreProvider`/`useStore`; single mutation path `update(id, recipe, {rollup})`. **No localStorage** — refresh re-seeds.
 - **`theme.ts`** — light Blueprint+teal `T` + `STATUS`/`SEV`/`STAGE`. `SEV` now includes `definition` text per level; 4th level `Cosmetic` added.
-- **`components/primitives.tsx`** — Donut/Ring, ZoneBars/Bar, Sparkline, SevDot, Status/Stage pills, Card, Chips, **Button** (`disabled` + **v1.24 `loading`** spinner prop), **KeyVal** (`tight` prop), EmptyState, Gallery + Lightbox, ScreenHeader, mono.
+- **`components/primitives.tsx`** — Donut/Ring, ZoneBars/Bar, Sparkline, SevDot, Status/Stage pills, Card, Chips, **Button** (`disabled` + **v1.24 `loading`** spinner prop), **`SaveButton`** *(v1.24 — primary save with built-in `useDelayedSave` latency)*, **`LoadingBody`** *(v1.24 — page-load spinner)*, **KeyVal** (`tight` prop), EmptyState, Gallery + Lightbox, ScreenHeader, mono.
 - **`hooks/`** — `useBackLayer`, `useCountUp`, **`useDelayedSave`** *(v1.24)* — wraps a write with a small latency + pending flag, and **`useReady`** *(v1.24)* — a short page-load gate (false → true after ~340 ms) used on the detail screens.
 - **`navigation/`** — Navigator/backstack/Screen; `TabBar`; `PushHeader`; **`AppActions`** (v1.20: adds `startProcessing`, `isZoneProcessing`, `processingStageFor`).
 - **`components/Sheet.tsx`** — bottom sheet + form fields.

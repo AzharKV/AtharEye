@@ -8,7 +8,7 @@ import { Screen } from '../navigation/Navigator';
 import { PushHeader, RoundBtn } from '../navigation/PushHeader';
 import { Avatar, Card, mono } from '../components/primitives';
 import { Sheet, TextField, SelectField } from '../components/Sheet';
-import { Button } from '../components/primitives';
+import { Button, SaveButton } from '../components/primitives';
 import { Icon } from '../components/Icon';
 
 const ROLES = ['Owner', 'Admin', 'Editor', 'Viewer'] as const;
@@ -78,7 +78,7 @@ function MemberSheet({ id, onClose }: { id: string | null; onClose: () => void }
       footer={
         <>
           {existing && existing.role !== 'Owner' && <Button danger onClick={remove} icon="trash">Remove</Button>}
-          <Button primary full onClick={save}>{existing ? 'Save' : 'Send invite'}</Button>
+          <SaveButton onSave={save}>{existing ? 'Save' : 'Send invite'}</SaveButton>
         </>
       }
     >
