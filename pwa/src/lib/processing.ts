@@ -1,13 +1,15 @@
 // processing.ts — async scan lifecycle: Uploading → Uploaded → Processing → Ready.
-// Processing simulates cloud-side alignment + report generation (SPEC §16 v1.20).
-// Default ≥ 60 s; stage labels advance proportionally through the window.
+// Processing simulates cloud-side alignment + report generation (SPEC §16 v1.20, v1.23).
+// Default 5 min; stage labels are fractions of the window so they spread across the full duration.
 
-export const PROCESSING_MS = 60_000; // configurable ≥ 60 s
+export const PROCESSING_MS = 300_000; // 5 min (configurable)
 
+// Thresholds are fractions of PROCESSING_MS, deliberately spread across the 5-min window:
+// Queued 0–30 s · Aligning to BIM 30 s–2:45 · Generating report 2:45–5:00.
 const STAGES = [
   { label: 'Queued', threshold: 0 },
-  { label: 'Aligning to BIM', threshold: 0.15 },
-  { label: 'Generating report', threshold: 0.60 },
+  { label: 'Aligning to BIM', threshold: 0.1 },
+  { label: 'Generating report', threshold: 0.55 },
 ] as const;
 
 /** Compute the current processing stage label from elapsed ms. */

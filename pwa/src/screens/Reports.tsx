@@ -267,7 +267,7 @@ function ProcessingBanner() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: T.amberTint, borderRadius: 10, padding: '9px 14px', marginBottom: 12 }}>
       <span style={{ width: 7, height: 7, borderRadius: 7, background: T.amber, flexShrink: 0, animation: 'pulse 1.4s ease-in-out infinite' }} />
-      <span style={{ fontSize: 12.5, fontWeight: 600, color: T.amber }}>New scan processing — updated report ready in ~60 s.</span>
+      <span style={{ fontSize: 12.5, fontWeight: 600, color: T.amber }}>New scan processing — updated report ready in ~5 min.</span>
     </div>
   );
 }
@@ -374,7 +374,7 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
               <Icon name="clock" size={22} color={T.amber} />
             </div>
             <div style={{ fontSize: 15, fontWeight: 700, color: T.ink }}>Report pending</div>
-            <div style={{ fontSize: 12.5, color: T.muted }}>Generating — usually ready within 60 s. The whole-project report is still viewable.</div>
+            <div style={{ fontSize: 12.5, color: T.muted }}>Generating — usually ready within ~5 min. The whole-project report is still viewable.</div>
           </Card>
         )}
 

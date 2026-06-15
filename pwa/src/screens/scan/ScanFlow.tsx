@@ -397,7 +397,7 @@ export function ScanFlow({
         </div>
       )}
 
-      {/* result — capture done; BIM alignment happens server-side during ~60 s processing, so no deltas shown here */}
+      {/* result — capture done; BIM alignment happens server-side during ~5 min processing, so no deltas shown here */}
       {step === 'result' && plan && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 12, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'linear-gradient(transparent 40%, rgba(10,14,20,.6))', animation: 'scrimIn .3s ease' }}>
           <div style={{ padding: '0 16px calc(20px + env(safe-area-inset-bottom))' }}>
@@ -433,7 +433,7 @@ export function ScanFlow({
                     <Icon name="checkCircle" size={24} color={T.teal} />
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: T.ink }}>✓ Uploaded</div>
-                  <div style={{ fontSize: 12.5, color: T.muted }}>Report generating — usually ready in 60 s</div>
+                  <div style={{ fontSize: 12.5, color: T.muted }}>Report generating — usually ready in ~5 min</div>
                 </>
               )}
             </div>

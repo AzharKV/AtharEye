@@ -342,6 +342,11 @@ for edge-case testing. Omit for the default client build. Selector + `DEMO_NOW` 
     genericised. The only human shown in the client build is **Emanuel** (the report preparer) — the account
     holder **Clint John** remains the Account/Settings identity (Task 1). The `'J. Mackay'`/`'M. Ahmed'`
     literals survive only as `??` fallbacks for the `house`/`legacy` presets.
+  - **Task 4 — Processing 60 s → 5 min.** `PROCESSING_MS` is now **300 000 ms** (5 min). `processingStage`
+    thresholds (fractions of the window) re-spread across the full 5 min: Queued 0–30 s · Aligning to BIM
+    30 s–2:45 · Generating report 2:45–5:00. All "~60 s" copy updated to "~5 min" (the report Processing
+    banner, the pending-report placeholder, the scan-flow "Uploaded" card). Internal 2-s completion poll
+    in `AppRoot` is unchanged.
 
 - **v1.20 (13 Jun 2026) — Async scan lifecycle · Report rebuild · PDF export.**
   - **Task A — Async scan lifecycle.** New `ScanStatus` type: `Uploading | Uploaded | Processing | Ready | Failed`. After capture ScanFlow shows "Uploading… ✓ Uploaded" then auto-returns to project. New scan appears as **Processing** in the project (amber indicators in scrubber node, zone row, zone coverage bar). Timer runs in AppRoot state (`Record<string, ProcessingJob>`) — default `PROCESSING_MS = 60 000 ms`. Staged labels: `Queued → Aligning to BIM → Generating report → Ready`. On completion the scan flips to Ready and a toast notification fires. **Per-zone lock:** while any scan is Processing for a zone, that zone's scan button is disabled (amber "Processing" badge). Coverage updated immediately on scan write, not deferred to Ready.
