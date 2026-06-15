@@ -97,7 +97,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: T.navyTint, borderRadius: 12 }}>
             <Icon name="clock" size={17} color={T.navy} />
             <div style={{ flex: 1, fontSize: 13, color: T.navy, fontWeight: 600 }}>
-              Viewing scan · <span style={mono}>{fmtDate(scrubScan.date)}</span>
+              Preview · scan <span style={mono}>{fmtDate(scrubScan.date)}</span>
             </div>
             <button onClick={() => setScrub(null)} style={{ border: 'none', background: T.navy, color: '#fff', borderRadius: 999, padding: '5px 12px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
               Latest
@@ -133,10 +133,13 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
         {p.scans.length > 0 && (
           <div>
             <SectionLabel right={<button onClick={() => setSheet({ t: 'log' })} style={{ border: 'none', background: 'none', color: T.navy, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}>View log →</button>}>
-              Scan history · tap to scrub
+              Coverage timeline · preview
             </SectionLabel>
             <Card style={{ padding: 16 }}>
               <Scrubber project={p} selected={cov} onSelect={(c) => setScrub(c === p.overall_coverage ? null : c)} />
+              <div style={{ fontSize: 11.5, color: T.muted, lineHeight: 1.5, marginTop: 6, paddingTop: 10, borderTop: `1px solid ${T.hairline2}` }}>
+                <strong style={{ color: T.ink }}>Simulation.</strong> Tap a point to preview the whole site at that overall coverage — zone bars scale to the selected point, they are not independent per-zone scan history. Tap <strong style={{ color: T.navy }}>View log</strong> for the real per-scan record.
+              </div>
             </Card>
           </div>
         )}

@@ -360,6 +360,18 @@ for edge-case testing. Omit for the default client build. Selector + `DEMO_NOW` 
     - **Proper path (NOT built — awaiting go-ahead):** model the timeline as discrete scan *events*, each
       carrying a per-zone snapshot, and derive both the scrubber and the deltas from real scan history
       instead of the synthetic `stateAt` interpolation. Shared with Task 6.
+  - **Task 6 — Scrubber honesty (diagnosis + relabel).** *Root cause (confirmed):* the Project-detail
+    scan-history scrubber is the **synthetic coverage simulation** — `ProjectDetail` drives a whole-project
+    sweep via `stateAt(coverage)` (`lib/reports.ts`), whose `zonesAt` scales **every** zone proportionally
+    to the hypothetical overall position and reveals/clears issues at their `appear`/`clear` thresholds. So
+    dragging the timeline moves *all* zone bars. The zone-scan → project roll-up (area-weighted `rollup`) is
+    correct; the misleading part is the global scrubber reading as real per-zone history. It is **not** a
+    bug in the maths — it is a "what the site looks like at X% overall" preview. *Fix (fast path):* made it
+    honest rather than rebuilding it — section relabelled **"Coverage timeline · preview"**, a "Simulation"
+    caption explains the zone bars scale to the selected point (not independent per-zone history) and points
+    to **View log** for the real per-scan record, and the time-travel banner now reads **"Preview · scan
+    {date}"**. The real-per-scan-history rebuild is the **proper path shared with Task 5 — flagged above,
+    NOT built without go-ahead.**
 
 - **v1.20 (13 Jun 2026) — Async scan lifecycle · Report rebuild · PDF export.**
   - **Task A — Async scan lifecycle.** New `ScanStatus` type: `Uploading | Uploaded | Processing | Ready | Failed`. After capture ScanFlow shows "Uploading… ✓ Uploaded" then auto-returns to project. New scan appears as **Processing** in the project (amber indicators in scrubber node, zone row, zone coverage bar). Timer runs in AppRoot state (`Record<string, ProcessingJob>`) — default `PROCESSING_MS = 60 000 ms`. Staged labels: `Queued → Aligning to BIM → Generating report → Ready`. On completion the scan flips to Ready and a toast notification fires. **Per-zone lock:** while any scan is Processing for a zone, that zone's scan button is disabled (amber "Processing" badge). Coverage updated immediately on scan write, not deferred to Ready.
