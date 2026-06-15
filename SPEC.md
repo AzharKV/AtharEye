@@ -327,6 +327,13 @@ client phase. `VITE_DATASET=legacy npm run build` for the 6-project edge dataset
     (prompts permission); on grant the stream is the feed, on **deny/unavailable** a retryable **"Camera
     access needed"** card shows instead of a fallback video. The `client` phase is unchanged (seeded
     walkthrough clip). Needs HTTPS (or localhost) for camera access.
+  - **R2-4 — Settings "Reset demo" + full QA.** Settings gains a **Demo → Reset demo data** control
+    (two-tap confirm) that clears persistence and reloads to the `client` phase — for re-recording without
+    DevTools. **Full click-through (both phases, all green):** fresh cache → client persisted; edit a zone →
+    survives reload; delete project → flips to optisync (persisted) → reload keeps phase; create project +
+    zone in optisync → scan shows the **camera-permission** card (no seeded clip) → BIM mismatch; empty
+    flows (scan CTA, reports empty); Settings reset → back to client. All report values re-validated against
+    the spec (CK Group / Tabley / Cairn / Emanuel / tabley_Refurb_R3.ifc LOD 300 / 12 Jun 2026).
 
 - **v1.24 (15 Jun 2026) — Final validation pass: BIM device upload · real-world latency.** Pre-submission
   polish. Sub-bullets per commit.
