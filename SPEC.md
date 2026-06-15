@@ -347,6 +347,19 @@ for edge-case testing. Omit for the default client build. Selector + `DEMO_NOW` 
     30 s–2:45 · Generating report 2:45–5:00. All "~60 s" copy updated to "~5 min" (the report Processing
     banner, the pending-report placeholder, the scan-flow "Uploaded" card). Internal 2-s completion poll
     in `AppRoot` is unchanged.
+  - **Task 5 — "Changes since last scan" (report + zone).** *Fast path* (per the brief's recommendation;
+    the "discrete-scan-event timeline" proper path is flagged below, not built). Each `Scan` now carries a
+    **frozen snapshot** — `prevCoverage` (project), `zonePrev`/`zoneNew` (zone), and `newFindings`/
+    `resolvedFindings` issue-id lists — seeded on the demo scans (sc1 raised RV-02 at baseline; sc2 0→22
+    raised RV-01) and written by `ScanFlow` on every live scan. New **`ChangesSinceLastScan`** card renders
+    **above** the findings register in both scopes: `previous % → new % (Δ)` plus the findings the latest
+    scan raised/resolved (severity dots; resolved struck through). It considers Ready **+ Processing** scans
+    so a just-recorded live scan shows its coverage delta immediately (coverage is written on commit, before
+    the ~5-min processing finishes), and hides itself for a first-time/baseline report. So a re-scan's
+    report is distinguishable at a glance from a first-time one.
+    - **Proper path (NOT built — awaiting go-ahead):** model the timeline as discrete scan *events*, each
+      carrying a per-zone snapshot, and derive both the scrubber and the deltas from real scan history
+      instead of the synthetic `stateAt` interpolation. Shared with Task 6.
 
 - **v1.20 (13 Jun 2026) — Async scan lifecycle · Report rebuild · PDF export.**
   - **Task A — Async scan lifecycle.** New `ScanStatus` type: `Uploading | Uploaded | Processing | Ready | Failed`. After capture ScanFlow shows "Uploading… ✓ Uploaded" then auto-returns to project. New scan appears as **Processing** in the project (amber indicators in scrubber node, zone row, zone coverage bar). Timer runs in AppRoot state (`Record<string, ProcessingJob>`) — default `PROCESSING_MS = 60 000 ms`. Staged labels: `Queued → Aligning to BIM → Generating report → Ready`. On completion the scan flips to Ready and a toast notification fires. **Per-zone lock:** while any scan is Processing for a zone, that zone's scan button is disabled (amber "Processing" badge). Coverage updated immediately on scan write, not deferred to Ready.

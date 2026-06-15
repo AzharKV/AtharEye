@@ -122,8 +122,10 @@ export const SEED_CLIENT: AppData = {
         },
       ],
       scans: [
-        { id: 'sc1', date: '2026-06-09', coverage: 0, note: 'Baseline vs BIM', status: 'Ready' },
-        { id: 'sc2', date: '2026-06-12', coverage: 22, note: 'First progress scan — structure verified, plumb deviation flagged', status: 'Ready' },
+        // Baseline established geometry + caught the kitchen partition off the BIM line (RV-02).
+        { id: 'sc1', date: '2026-06-09', coverage: 0, note: 'Baseline vs BIM', status: 'Ready', newFindings: ['RV-02'] },
+        // First progress scan — coverage 0 → 22 and flagged the Bedroom 1 plumb deviation (RV-01).
+        { id: 'sc2', date: '2026-06-12', coverage: 22, note: 'First progress scan — structure verified, plumb deviation flagged', status: 'Ready', prevCoverage: 0, newFindings: ['RV-01'] },
       ],
       captures: [
         '/captures/bonaly_garden.jpg',

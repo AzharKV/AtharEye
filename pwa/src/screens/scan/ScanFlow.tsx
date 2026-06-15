@@ -106,6 +106,12 @@ export function ScanFlow({
           status: 'Processing',
           zoneId: plan.zoneId,
           startedAt: Date.now(),
+          // Frozen snapshot for the "Changes since last scan" block (a re-scan raises no new findings).
+          prevCoverage: plan.from,
+          zonePrev: plan.zoneFrom,
+          zoneNew: plan.zoneTo,
+          newFindings: [],
+          resolvedFindings: [],
         });
         d.overall_coverage = plan.to;
         const z = d.zones.find((x) => x.id === plan.zoneId);

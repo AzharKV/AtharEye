@@ -31,7 +31,7 @@ import {
 import { Wordmark } from '../components/Brand';
 import { ShareSheet } from '../components/ShareSheet';
 import { Icon } from '../components/Icon';
-import type { Project } from '../types';
+import type { Issue, Project, Zone } from '../types';
 import type { NsrItem, NsrStatus } from '../types';
 import { zoneMedia } from '../lib/photos';
 
@@ -285,6 +285,95 @@ function ZoneEvidenceFrame({ zoneId }: { zoneId: string }) {
   );
 }
 
+// ── "Changes since last scan" — previous → new coverage delta + findings raised/resolved by the
+//    latest scan. Reads the frozen per-scan snapshot (Scan.prevCoverage/zonePrev/zoneNew/newFindings/
+//    resolvedFindings). Considers Ready + Processing scans so a just-recorded live scan shows its delta
+//    immediately (coverage is written on commit, before the ~5-min processing completes). Hidden when the
+//    latest scan carries no delta and no finding changes (a first-time / baseline report).
+function ChangesSinceLastScan({ project, scope, activeZone }: { project: Project; scope: 'project' | 'zone'; activeZone: Zone | null }) {
+  const considered = project.scans.filter((s) => s.status === 'Ready' || s.status === 'Processing');
+  if (considered.length === 0) return null;
+
+  const zone = scope === 'zone' ? activeZone : null;
+  const scan = zone
+    ? [...considered].reverse().find((s) => s.zoneId === zone.id)
+    : considered[considered.length - 1];
+  if (!scan) return null;
+
+  const prev = zone ? scan.zonePrev : scan.prevCoverage;
+  const next = zone ? scan.zoneNew ?? zone.coverage : scan.coverage;
+  const hasDelta = prev != null && next != null && next !== prev;
+  const delta = prev != null && next != null ? next - prev : 0;
+
+  const byId = (ids?: string[]) =>
+    (ids ?? []).map((id) => project.issues.find((i) => i.id === id)).filter((i): i is Issue => !!i);
+  let raised = byId(scan.newFindings);
+  let resolved = byId(scan.resolvedFindings);
+  if (zone) {
+    raised = raised.filter((i) => i.zone === zone.name);
+    resolved = resolved.filter((i) => i.zone === zone.name);
+  }
+
+  if (!hasDelta && raised.length === 0 && resolved.length === 0) return null;
+
+  return (
+    <>
+      <SectionLabel right={<span style={{ ...mono, fontSize: 11.5, color: T.muted, fontWeight: 700 }}>{fmtDate(scan.date)}</span>}>
+        Changes since last scan
+      </SectionLabel>
+      <Card style={{ padding: 16, marginBottom: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: raised.length || resolved.length ? 12 : 0, borderBottom: raised.length || resolved.length ? `1px solid ${T.hairline2}` : 'none', marginBottom: raised.length || resolved.length ? 12 : 0 }}>
+          <span style={{ fontSize: 12.5, color: T.muted, fontWeight: 600, flex: 1, minWidth: 0 }}>
+            {zone ? `${zone.name} coverage` : 'Overall coverage'}
+          </span>
+          {hasDelta ? (
+            <>
+              <span style={{ ...mono, fontSize: 13, color: T.muted }}>{prev}%</span>
+              <span style={{ color: T.faint, fontSize: 14, fontWeight: 700 }}>→</span>
+              <span style={{ ...mono, fontSize: 16, fontWeight: 700, color: T.ink }}>{next}%</span>
+              <span style={{ ...mono, fontSize: 12, fontWeight: 700, color: delta > 0 ? T.teal : T.muted, background: delta > 0 ? T.tealTint : T.surface2, borderRadius: 999, padding: '2px 8px' }}>
+                {delta > 0 ? `+${delta}` : delta}%
+              </span>
+            </>
+          ) : (
+            <span style={{ ...mono, fontSize: 13, fontWeight: 700, color: T.ink }}>{next}%</span>
+          )}
+        </div>
+
+        {raised.length > 0 && (
+          <div style={{ marginBottom: resolved.length ? 10 : 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: T.amber, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6 }}>New findings raised</div>
+            {raised.map((i) => (
+              <div key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0' }}>
+                <SevDot sev={i.severity} />
+                <span style={{ fontSize: 12.5, color: T.ink, fontWeight: 600, flex: 1, minWidth: 0 }}>{i.title}</span>
+                <span style={{ ...mono, fontSize: 11, color: T.muted, flexShrink: 0 }}>{i.id}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {resolved.length > 0 && (
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: T.teal, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6 }}>Findings resolved</div>
+            {resolved.map((i) => (
+              <div key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0' }}>
+                <Icon name="checkCircle" size={14} color={T.teal} />
+                <span style={{ fontSize: 12.5, color: T.muted, fontWeight: 600, textDecoration: 'line-through', flex: 1, minWidth: 0 }}>{i.title}</span>
+                <span style={{ ...mono, fontSize: 11, color: T.muted, flexShrink: 0 }}>{i.id}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {hasDelta && raised.length === 0 && resolved.length === 0 && (
+          <div style={{ fontSize: 12, color: T.muted, marginTop: 10 }}>No new or resolved findings since the previous scan.</div>
+        )}
+      </Card>
+    </>
+  );
+}
+
 export function ReportDetail({ projectId, coverage }: { projectId: string; coverage?: number }) {
   const { data } = useStore();
   const nav = useNav();
@@ -395,6 +484,9 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
                   </div>
                   <p style={{ fontSize: 13.5, lineHeight: 1.6, color: T.ink, margin: '4px 2px 0' }}>{r.summary}</p>
                 </Card>
+
+                {/* What changed in the latest scan — read first, above the static findings */}
+                <ChangesSinceLastScan project={p} scope="project" activeZone={null} />
 
                 {/* Severity tally */}
                 <SectionLabel>Findings summary</SectionLabel>
@@ -530,6 +622,9 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
                     </div>
                   </div>
                 </Card>
+
+                {/* What changed in this zone's latest scan */}
+                <ChangesSinceLastScan project={p} scope="zone" activeZone={activeZone} />
 
                 {/* Zone scan evidence frame */}
                 <SectionLabel>Scan evidence</SectionLabel>

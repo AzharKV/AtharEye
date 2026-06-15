@@ -77,6 +77,15 @@ export interface Scan {
   zoneId?: string;
   /** Wall-clock ms when processing started (for stage label computation). */
   startedAt?: number;
+  // ── Frozen snapshot for the "Changes since last scan" report block (v1.23). ──
+  /** Project overall coverage immediately before this scan. */
+  prevCoverage?: number;
+  /** Active-zone coverage before / after this scan (zone-targeted scans). */
+  zonePrev?: number;
+  zoneNew?: number;
+  /** Issue ids first raised / resolved by this scan. */
+  newFindings?: string[];
+  resolvedFindings?: string[];
 }
 
 export interface Bim {
