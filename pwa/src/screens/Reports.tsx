@@ -409,8 +409,8 @@ export function ReportDetail({ projectId, coverage }: { projectId: string; cover
 
   const r = reportFor(p, coverage);
   const deep = p.depth === 'deep';
-  const contractor = p.contractor ?? 'Cairn Refurbishment Ltd';
-  const preparedBy = p.preparedBy ?? 'J. Mackay · Site Supervisor';
+  const contractor = p.contractor ?? data.company.name;
+  const preparedBy = p.preparedBy ?? `${data.user.name} · ${data.user.role}`;
   const ringColor = p.status === 'Needs review' && r.coverage < 100 ? T.amber : r.coverage >= 100 ? T.teal : T.navy;
 
   const activeZone = activeZoneId ? p.zones.find((z) => z.id === activeZoneId) : null;

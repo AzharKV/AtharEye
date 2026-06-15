@@ -33,7 +33,7 @@ const inputStyle: React.CSSProperties = {
 };
 
 export function NewProject() {
-  const { addProject, demoNow } = useStore();
+  const { addProject, demoNow, data } = useStore();
   const nav = useNav();
   const [name, setName] = useState('');
   const [sector, setSector] = useState<Sector>('Residential');
@@ -67,6 +67,10 @@ export function NewProject() {
       type: sector === 'Residential' ? 'Refurbishment' : 'Fit-out',
       location: location.trim(),
       client: client.trim() || 'Client TBC',
+      // Report identity defaults to the current account (so it never falls back to the client-demo
+      // "Cairn / J. Mackay" in the optisync phase). Editable later if a contractor editor is added.
+      contractor: data.company.name,
+      preparedBy: `${data.user.name} · ${data.user.role}`,
       area_m2: Math.max(0, Math.round(Number(area) || 0)),
       stage: 'Early',
       overall_coverage: 0,

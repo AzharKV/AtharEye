@@ -34,11 +34,19 @@ interface Persisted {
   data: AppData;
 }
 
-/** Drop capture URLs that can't survive a reload (object/data URLs are revoked on unload). */
+/** On load: drop capture URLs that can't survive a reload (object/data URLs are revoked on unload), and
+ *  backfill report identity (`contractor`/`preparedBy`) from the persisted account for any project created
+ *  before those fields existed — so a report never falls back to the client-demo "Cairn / J. Mackay". */
 function sanitize(data: AppData): AppData {
+  const preparedBy = `${data.user.name} · ${data.user.role}`;
   return {
     ...data,
-    projects: data.projects.map((p) => ({ ...p, captures: p.captures.filter((c) => !/^(blob:|data:)/.test(c)) })),
+    projects: data.projects.map((p) => ({
+      ...p,
+      captures: p.captures.filter((c) => !/^(blob:|data:)/.test(c)),
+      contractor: p.contractor ?? data.company.name,
+      preparedBy: p.preparedBy ?? preparedBy,
+    })),
   };
 }
 

@@ -334,6 +334,16 @@ project, live-camera scan, BIM mismatch) → **clear the browser cache** to re-a
     (CK Group / Tabley / Cairn / Emanuel / tabley_Refurb_R3.ifc LOD 300 / 12 Jun 2026). Reset = clear the
     browser cache. *(An in-app "Reset demo" control added during this pass was removed at the owner's
     request — clearing the cache is the reset.)*
+  - **R3 — Report identity no longer leaks client defaults in the optisync phase.** A project created in
+    the optisync phase had no `contractor`/`preparedBy`, so its report fell back to the hardcoded
+    client-demo defaults ("Cairn Refurbishment Ltd" / "J. Mackay · Site Supervisor"). Fix: **`NewProject`
+    now sets `contractor` + `preparedBy` from the current account** (`data.company.name` /
+    `{user.name} · {user.role}`) — so an optisync project reads **Athar Robotics / OptiSync Demo · Product
+    team**, a client-phase one reads CK Group / Clint John. `store.sanitize` **backfills** those fields on
+    load for any project created before the fix (the report footer/PDF read the populated field, so they're
+    correct too); the UI report's last-resort fallback is now account-derived, not hardcoded. A neutral
+    **`samples/site_survey_model.ifc`** is added for the optisync demo so an uploaded BIM isn't named after
+    the client (`tabley_…`). The seeded client project keeps Cairn / Emanuel.
 
 - **v1.24 (15 Jun 2026) — Final validation pass: BIM device upload · real-world latency.** Pre-submission
   polish. Sub-bullets per commit.
