@@ -82,8 +82,8 @@ function MemberSheet({ id, onClose }: { id: string | null; onClose: () => void }
         </>
       }
     >
-      <TextField label="Name" value={name} onChange={setName} placeholder="e.g. J. Fraser" />
-      <TextField label="Email" value={email} onChange={setEmail} placeholder="name@cairnrefurb.co.uk" />
+      <TextField label="Name" value={name} onChange={setName} placeholder="Full name" />
+      <TextField label="Email" value={email} onChange={setEmail} placeholder="name@company.co.uk" />
       <TextField label="Trade / role label" value={trade} onChange={setTrade} placeholder="e.g. Site manager" />
       <SelectField label="Access role" value={role} options={ROLES} onChange={setRole} />
     </Sheet>

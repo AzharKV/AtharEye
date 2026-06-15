@@ -335,6 +335,13 @@ for edge-case testing. Omit for the default client build. Selector + `DEMO_NOW` 
     intentionally prospective — the BIM model's own **13 Jun** creation/alignment line, plus the planned
     target-handover (30 Sep 2026) and subscription-renewal (01 Jul 2026) milestones. Zones keep ids z2–z5
     so the existing `ZONE_MEDIA` clips + Bonaly capture stills are reused (DEV asserts pass).
+  - **Task 3 — One person only (client preset).** The dummy site/roster profiles (J. Mackay · M. Ahmed ·
+    R. Stewart · K. Dunn · A. Patel) are gone. `SEED_CLIENT` now has a **single** site-team member and org
+    roster entry: **Emanuel · Site Supervisor**. Scan-detail "Captured by" reads `project.preparedBy`
+    (Emanuel); `NewProject` seeds an empty team; dummy-name input placeholders in `Team.tsx`/`editors.tsx`
+    genericised. The only human shown in the client build is **Emanuel** (the report preparer) — the account
+    holder **Clint John** remains the Account/Settings identity (Task 1). The `'J. Mackay'`/`'M. Ahmed'`
+    literals survive only as `??` fallbacks for the `house`/`legacy` presets.
 
 - **v1.20 (13 Jun 2026) — Async scan lifecycle · Report rebuild · PDF export.**
   - **Task A — Async scan lifecycle.** New `ScanStatus` type: `Uploading | Uploaded | Processing | Ready | Failed`. After capture ScanFlow shows "Uploading… ✓ Uploaded" then auto-returns to project. New scan appears as **Processing** in the project (amber indicators in scrubber node, zone row, zone coverage bar). Timer runs in AppRoot state (`Record<string, ProcessingJob>`) — default `PROCESSING_MS = 60 000 ms`. Staged labels: `Queued → Aligning to BIM → Generating report → Ready`. On completion the scan flips to Ready and a toast notification fires. **Per-zone lock:** while any scan is Processing for a zone, that zone's scan button is disabled (amber "Processing" badge). Coverage updated immediately on scan write, not deferred to Ready.

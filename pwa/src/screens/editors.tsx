@@ -250,7 +250,7 @@ export function TeamSheet({ project, index, onClose }: { project: Project; index
         </>
       }
     >
-      <TextField label="Name / company" value={name} onChange={setName} placeholder="e.g. A. Patel" />
+      <TextField label="Name / company" value={name} onChange={setName} placeholder="Full name or company" />
       <TextField label="Role" value={role} onChange={setRole} placeholder="e.g. Main contractor" />
     </Sheet>
   );
@@ -328,7 +328,7 @@ function ScanDetailSheet({ project, scan, onOpenReport, onClose }: { project: Pr
       <div style={{ fontSize: 13.5, color: T.ink, marginBottom: 14 }}>{scan.note}</div>
       <Row k="Date" v={fmtDate(scan.date)} />
       <Row k="Aligned to" v={project.bim.file} />
-      <Row k="Captured by" v="M. Ahmed · Scan/tech" />
+      <Row k="Captured by" v={project.preparedBy ?? 'M. Ahmed · Scan/tech'} />
       <Row k="Open issues at scan" v={`${open.length}`} />
       {open.length > 0 && (
         <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>

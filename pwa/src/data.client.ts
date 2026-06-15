@@ -31,11 +31,7 @@ export const SEED_CLIENT: AppData = {
         disciplines: ['Architectural', 'Structural'],
         last_aligned: '2026-06-13',
       },
-      team: [
-        'J. Mackay · Site supervisor',
-        'Cairn Refurbishment Ltd · Main contractor',
-        'R. Stewart · Joiner',
-      ],
+      team: ['Emanuel · Site Supervisor'],
       trades: [
         { name: 'Strip-out & first fix', status: 'Done' },
         { name: 'Plastering', status: 'In progress' },
@@ -154,10 +150,7 @@ export const SEED_CLIENT: AppData = {
     initials: 'CJ',
   },
   team: [
-    { id: 'm-jm', name: 'J. Mackay', initials: 'JM', role: 'Owner', email: 'j.mackay@cairnrefurb.co.uk', trade: 'Site supervisor' },
-    { id: 'm-ma', name: 'M. Ahmed', initials: 'MA', role: 'Admin', email: 'm.ahmed@cairnrefurb.co.uk', trade: 'Scan / tech' },
-    { id: 'm-rs', name: 'R. Stewart', initials: 'RS', role: 'Editor', email: 'r.stewart@cairnrefurb.co.uk', trade: 'Joiner' },
-    { id: 'm-kd', name: 'K. Dunn', initials: 'KD', role: 'Viewer', email: 'k.dunn@cairnrefurb.co.uk', trade: 'Quantity surveyor' },
+    { id: 'm-em', name: 'Emanuel', initials: 'EM', role: 'Admin', email: 'emanuel@ckgroupconstruction.co.uk', trade: 'Site supervisor' },
   ],
   subscription: {
     plan: 'Business',

@@ -67,7 +67,7 @@ export function NewProject() {
         disciplines: [],
         last_aligned: '',
       },
-      team: ['A. Patel · Project lead'],
+      team: [],
       trades: [],
       zones: [],
       issues: [],
